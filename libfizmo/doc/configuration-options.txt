@@ -1,0 +1,117 @@
+
+
+
+
+ libfizmo configuration option names
+ 2010-11-22
+
+
+
+
+
+ Overview
+
+ This file lists all available configuration file options. Please note that
+ these option names may not be valid for the actual interface command line
+ options, which may be named otherwise for convenience.
+
+
+ Syntax
+
+ Every option must be listed on a separate line. Lines starting with a # are
+ interpreted as comments and not evaluated. For some options, a value may
+ be supplied, in which case option name and value are separated by a = sign,
+ for example: "left-margin = 1".
+ 
+
+ Variables
+
+ Option values may contain variables. Variables start with a dollar sign $
+ and are enclosed by parantheses. Example: $(VARIABLE_NAME). The only currently
+ implemented variable is $(HOME), which refers to the current user's home
+ directory.
+
+
+
+ List of valid libfizmo option names and values
+
+ locale = <locale-name>
+ Defines which language settings libfizmo should use by default. The standard
+ setting is "en_US".
+
+ savegame-path = <directory-name>
+ Gives the directory name where savegames are read from and written to. Should
+ be specified as an absolute directory file name.
+
+ transscript-filename = <filename>
+ Specifies the default filename for the transcript file. Especially useful
+ when "start-script-when-story-starts" is enabled, so that transcripting
+ may always start directly without asking for a filename.
+
+ start-script-when-story-starts
+ When selected, stream 2 will be enabled directly from the story start. This
+ allows a user to capture a full transscript of the story, including the
+ introductional text.
+
+ sync-transcript
+ When enabled, this option will try to flush and fsync output to the
+ trankscript file as soon as possible.
+
+ start-command-recording-when-story-starts
+ (?)
+
+ command-filename = <filename>
+ (?)
+
+ start-file-input-when-story-starts
+ (?)
+
+ random-mode = <random | predictable>
+ By default, the random-mode is always set to "random", meaning that the
+ randomizaion generator will try to deliver random numbers. When set to
+ "predictable", the generator will always deliver the same range of
+ numbers, as defined in the Z-Specification[1] section 2.4.2.
+
+ foreground-color = <color-name>
+ This sets a custom foreground color. The color name must be one out of
+ black, red, green, yellow, blue, magenta, cyan and white.
+
+ background-color = <color-name>
+ This sets a custom background color. The color name must be one out of
+ black, red, green, yellow, blue, magenta, cyan and white.
+
+ enable-color
+ Force libfizmo to enable color mode, even if the output interface reports
+ that it cannot handle color.
+
+ disable-color
+ Force libfizmo to disabled color mode, even if the output interface reports
+ that color is available.
+
+ quetzal-umem
+ Force libfizmo to write savegames in an uncompressed memory format. See
+ quetzal appendix in the Z-Specification[1], section 3.
+
+ force-8bit-sound
+ (?)
+
+ disable-sound
+ Force libfizmo to not play any sound.
+
+ set-tandy-flag
+ Set the tandy flag in the story header. For more information about the flag,
+ see http://www.ifarchive.org/if-archive/infocom/info/tandy_bits.html.
+
+
+
+
+ ---------
+
+ [1] Z-Maschine-Specification
+     http://www.gnelson.demon.co.uk/zspec/
+
+ ---------
+
+ CVS-Id: $Id: configuration-options.txt,v 1.3 2010-11-29 08:30:53 chrender Exp $
+ CVS-Revision: $Revision: 1.3 $
+

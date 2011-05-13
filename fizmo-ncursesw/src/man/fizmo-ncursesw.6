@@ -1,0 +1,345 @@
+.TH FIZMO 6 "17 November 2010" "0.7.0-beta3"
+.SH NAME
+fizmo
+- Z-Machine Interpreter
+- \[lq]\fBF\fPimzo \fBi\fPnterprets \fBZ\fP-\fBm\fPachine \fBo\fPpcodes\[rq]
+
+.SH SYNOPSIS
+.B fizmo
+[ options ] [
+.I storyfile [ blorbfile ]
+|
+.I storytitle
+|
+.I quetzal-save-file
+]
+
+.SH DESCRIPTION
+.B Fizmo
+is a Z-Machine interpreter, which means that it runs most of the interactive
+fiction games aka text adventures written by Infocom or other games which
+are based on the Z-Machine. Currently all versions except version 6 are
+supported. It supports sound via the SDL media library (see subsection
+\[lq]Sound Support\[rq]) and implements basic Blorb support.
+.SS Starting a new game by providing a filename
+This is the most direct way to get a game running. Just give the filename
+of the story file at the end of the command line.
+.SS Starting a new game by providing it's title
+If the game you want to play is stored in the list of known games, you can
+simply start it by providing the title instead of the full filename.
+Example: "fizmo sorcerer" will run the game \[lq]Sorcerer\[rq], no matter if
+it is stored in the current directory or somewhere else.
+.SS Starting a game from the list of story files
+Without any filename given, fizmo will display the list of the currently
+known story files it has indexed so far. Everytime fizmo is started and no
+story-name is provided, fizmo will update the list of stories by indexing
+the directories listed in \fCZCODE_PATH\fP or \fCINFOCOM_PATH\fP.
+.SS Restoring a game from the command line
+If you give the name of a quetzal save-game file at the end of the command
+line, fizmo will use it's story file list to locate the story file the
+saved game originates from to directly restore the game.
+
+.SS Sound Support
+Fizmo supports sound via the SDL multimedia library which is available for
+most unix flavors and Windows. Sound files are either read from a blorb file,
+or, old-infocom-style-wise, from separate *.snd files which have to be
+stored in the same directory as the game file. At the moment, only AIFF sounds
+can be read from a blorb file.
+When the game requests a sound, fizmo uses the sound from the current blorb
+file. If no blorb file is given or the sound cannot be found in it, fizmo
+tries to locate a file with the format \[lq]GAMFIL00.SND\[rq] where GAMEFIL
+symbolizes the game filename shortened to a maximum of six characters, the
+sound number\[em]eventually padded by a leading zero so it has always a
+length of two characters\[em]and a \[lq].SND\[rq] suffix. Both upper-
+and lowercase filenames are attempted. That means you can directly use the
+sounds from the IF-archive at \fC\[lq]/if-archive/infocom/media/sound\[rq]\fP.
+
+.SS Story-Metadata / IF Bibliography
+Fizmo is able to read metadata-files as defined in the \[lq]Treaty of
+Babel\[rq]. It will try to read the metadata from all files ending with
+\fC.iFiction\fP which are found in the \fC$HOME/.config/fizmo\fP directory.
+Fizmo will re-build the story list once the metadata files have been changed.
+For this purpose, the timestamps for the metadata-files are stored in the file
+\fC$HOME/.config/fizmo/babel-timestamps\fP.
+For more information about the treaty, see
+\fChttp://babel.ifarchive.org/\fP.
+
+.SH OPTIONS
+.TP
+.B -h, --help
+Show help message and exit.
+.TP
+.B -b, --background-color \fI<color-name>\fP
+Set background color. Valid color names are \fIblack\fP, \fIred\fP,
+\fIgreen\fP, \fIyellow\fP, \fIblue\fP, \fImagenta\fP, \fIcyan\fP and
+\fIwhite\fP.
+.TP
+.B -bb, --blink-for-bright-background
+Use blink for bright background colors.
+.TP
+.B -bf, --bold-for-bright-foreground
+Use bold for bright foreground colors.
+.TP
+.B -ds, --disable-sound
+Disable sound alltogether. May be useful when playing on remote machines.
+.TP
+.B -ec, --enable-colors
+Force using colors.
+.TP
+.B -f, --foreground-color \fI<color-name>\fP
+Set foreground color. Valid color names are \fIblack\fP, \fIred\fP,
+\fIgreen\fP, \fIyellow\fP, \fIblue\fP, \fImagenta\fP, \fIcyan\fP and
+\fIwhite\fP.
+.TP
+.B -if, --input-file
+When the story starts, read input directly from a file.
+.TP
+.B -l, --set-locale \fI<locale-code>\fP
+Set locale name for interpreter messages. Currently valid locale codes are
+\fIen_US\fP and \fIde_DE\fP.
+.TP
+.B -lm, --left-margin \fI<width>\fP
+Set left margin width, requires a numeric argument.
+.TP
+.B -nc, --dont-use-colors
+Don't use colors.
+.TP
+.B -p, --predictable
+Start with random generator in predictable mode.
+.TP
+.B -fp, --force-predictable
+Start with random generator in predictable mode. The random generator will
+ignore all seed commands and always deliver predictable number (which might
+make games unsolvable).
+.TP
+.B -rc, --record-commands
+Activate recording of commands as soon as the game starts.
+.TP
+.B -rm, --right-margin \fI<width>\fP
+Set right margin width, requires a numeric argument.
+.TP
+.B -rs, --recursively-search \fI<directory-name>\fP
+Search a directory recursively, meaning including subdirectories, for
+Z-Machine files.
+.TP
+.B -s, --search \fI<directory-name>\fP
+Search a single directory for Z-Machine files.
+.TP
+.B -s8, --force-8bit-sound
+Never use 16-bit resolution, always convert to 8bit (some systems may not
+be capable of 16-bit sound output).
+.TP
+.B -st, --start-transcript
+Start game with scripting already enabled.
+.TP
+.B -t, --set-tandy-flag
+Sets the tandy flag, which emulates a game sold by the Tandy Corporation
+and slightly alters the game behaviour. See
+\fChttp://www.ifarchive.org/if-archive/infocom/info/tandy_bits.html\fP
+for detailed information on what the tandy flag does.
+.TP
+.B -um, --umem
+Use UMem instead of CMem for saving.
+.TP
+.B -sy, --sync-transcript
+When a transcript is active, write data directly into the file as soon
+as possible.
+.TP
+.B -x, -enable-xterm-graphics
+Enable XTerm graphics. This will make fizmo try to display graphics into
+an X11-XTerminal using Gtk 2.0 and Gdk-Pixbuf. Since this represents a
+rather ugly hack\[em]and may not work at all for some installations\[em]it is
+not enabled by default.
+.TP
+.B -xt, --enable-xterm-title
+Use the XTerminal title bar to display the game name.
+
+.SH IN-GAME COMMANDS
+.TP
+.B /help
+Displays the list of available in-game commands.
+.TP
+.B /info
+Displays general version about the interpreter and it's status, such as the
+version number, story release and serial number, stack, memory and random
+generator status.
+.TP
+.B /predictable
+Switches the random generator from \[lq]random\[rq] in \[lq]predictable\[rq]
+state and vice-versa.
+.TP
+.B /recstart
+Records all user input in a command-file.
+.TP
+.B /recstop
+Stop recording user input.
+.TP
+.B /fileinput
+Start reading commands from a file.
+
+.SH ENVIRONMENT
+.TP
+\fC ZCODE_PATH
+Default list of path names\[em]separated by colons\[em]to search for Z-Machine
+games.
+.TP
+\fC INFOCOM_PATH
+Alternate list of pathnames which is used when \fCZCODE_PATH\fP is not set.
+.TP
+\fC ZCODE_ROOT_PATH
+List of colon-separated path names which are recursively searched for
+Z-Machine games.
+
+.SH FILES
+.SS List of files
+.TP
+\fC$HOME/.config/fizmo/config\fP
+May contain user configuration parameters. In case \fC$XDG_CONFIG_HOME\fP is
+defined and contains an absolute path, \fC$XDG_CONFIG_HOME/fizmo/config\fP is
+used, in case of a relative path \fC$HOME/$XDG_CONFIG_HOME/fizmo/confg\fP is
+read.
+.TP
+\fC($XDG_CONFIG_DIRS)/fizmo/config\fP
+$XDG_CONFIG_DIRS may contain a colon separated list of config directories to
+search. In case $XDG_CONFIG_DIRS is not set or empty \fC/etc/xdg\fP is
+used instead. Every directory is searched for a subdirectory named \fCfizmo\fP
+containing a file \fCconfig\fP, which will be searched for configuration
+parameters.
+.TP
+\fC/etc/fizmo.conf\fP
+Global configuration parameters.
+.TP
+\fC$HOME/.config/fizmo/story\-list.txt\fP
+Contains the current list of story files known. In case $XDG_CONFIG_HOME is
+set the path is altered as described above.
+.TP
+\fC$HOME/.config/fizmo/*.iFiction\fP
+Fizmo treats all files with a suffix of \fC.iFiction\fP in the
+\fC$HOME/.config/fizmo\fP directory as sources for story metadata. For more
+info, see section \[lq]Story-Metadata / IF Bibliography\[rq] above. In case
+$XDG_CONFIG_HOME is defined, see above.
+.TP
+\fC$HOME/.config/fizmo/babel\-timestamps\fP
+A list of .iFiction-files and their respective timestamps as they were found
+when the story list was last built (knowing if the babel info has changed
+speeds up the update process). $XDG_CONFIG_HOME will alter the directory
+as described before.
+.SS Option names for config files
+The following section lists the config-file's equivalents for the command
+lines options. For a detailed description of these options, see the
+\[lq]Options\[rq] section. Options have to start at the beginning of the
+line without any leading whitespace. Comments start with a '#' at the
+beginning of the line.
+
+\fC background-color = <color-name>
+\fC foreground-color = <color-name>
+\fC transscript-filename = <filename>
+\fC command-filename = <filename>
+\fC langauage = <language-code>
+\fC bold-for-bright-foreground = <any value means yes, empty no>
+\fC blink-for-bright-background = <any value means yes, empty no>
+\fC dont-use-colors = <any value means yes, empty no>
+\fC savegame-path = <directory-name>
+\fC enable-xterm-graphics = <any value means yes, empty no>
+\fC enable-xterm-title = <any value means yes, empty no>
+\fC left-margin = <number-of-columns>
+\fC right-margin = <number-of-columns>
+\fC dont-udpate-story-list = <any value means yes, empty no>
+
+.SH MISCELLANEOUS
+.SS Scrolling back
+You can use the \fCPageUp\fP and \fCPageDown\fP keys (some terminals require
+to hold down shift) anytime to review text which was scrolled above the
+current window border.
+.SS Refreshing the screen
+\fCCTRL-L\fP will redraw the current display.
+.SS Resizing the screen
+In general, resizing the screen works best for game versions 3 and before,
+which is unfortunate since this encompasses only a part of the old Infocom
+games and none of the modern ones. For all others\[em]including
+Seastalker\[em]the upper window (which means mostly the status bar) cannot
+be resized and will remain fixed.
+.SS Undocumented Infocom commands
+Here is a list of commands that some of Infocom's games seem to support,
+although I never saw them menitioned in a manual or reference card.
+.TP
+\fC$verify, $ve, $ver\fP
+Verifies if the game file is correct (essentially executes the
+\[lq]verify\[rq] opcode). \[lq]$ve\[rq] works in almost all original Infocom
+games, \[lq]$ver\[rq] works in AMFV, Beyond Zork, Bureaucracy, Nord
+and Bert, Sherlock, Trinity and Zork Zero.
+.TP
+\fC$refre\fP
+Refreshes the screen. Works in AMFV, Arthur, Bureaucracy, Nord and Bert,
+Sherlock, Shogun, Trinity and Zork Zero.
+.TP
+\fC$id\fP
+The \[lq]$id\[rq] command gives information about the interpreter. Works in
+Border Zone, Bureaucracy and Trinity.
+.TP
+\fC$credi\fP
+Shows a credit screen in Trinity and Beyond Zork.
+.TP
+\fC#comm, #command\fP
+This will read your input from a file. Works in AMFV, Ballyhoo,
+Bureaucracy, Enchanter, Hollywood Hjinx, Leather Goddesses, Lurking Horror,
+Plundered Hearts, Shogun, Sorcerer, Spellbreaker, Stationfall, Trinity
+and Zork Zero.
+.TP
+\fC#rand <int>\fP
+Seeds the random generator with the given value. May be used in AMFV,
+Ballyhoo, Border Zone, Bureaucracy, Enchanter, Hollywood Hijinx,
+Leather Goddesses, Lurking Horror, Plundered Hearts, Shogun, Sorcerer,
+Spellbreaker, Stationfall and Zork Zero.
+.TP
+\fC#reco, #record\fP
+This will record your commands into a file. Works in AMFV, Ballyhoo,
+Bureaucracy, Enchanter, Hollywood Hjinx, Leather Goddesses, Lurking Horror,
+Plundered Hearts, Shogun, Sorcerer, Spellbreaker, Stationfall and Zork Zero.
+.TP
+\fC#unre, #unrecord\fP
+Stops recording commands into a file. Used in AMFV, Ballyhoo, Bureaucracy,
+Enchanter, Hollywood Hijinx, Leather Goddesses, Lurking Horror, Plundered
+Hearts, Shogun, Sorcerer, Spellbreaker, Stationfall and Zork Zero.
+
+.SH CREDITS
+.SS ITF \[em] The InfoTaskForce
+All the people who drew up the Z-Machine Specification. In alphabetical order
+(as far as I could find):
+Chris Tham,
+David Beazley,
+George Janczuk,
+Graham Nelson,
+Mark Howell,
+Matthias Pfaller,
+Mike Threepoint,
+Paul David Doherty,
+Peter Lisle,
+Russell Hoare
+and
+Stefan Jokisch.
+See \fChttp://en.wikipedia.org/wiki/InfoTaskForce\fP for more information.
+.SS The Frotz authors
+When I really got stuck I peeked into the frotz source. Thanks to
+Stefan Jokisch,
+Galen Hazelwood
+and
+David Griffith.
+.SS Mark Howell
+For the pix2gif code which is used in fizmo/drilbo to parse the original
+infocom .mg1 image files.
+
+.SH SEE ALSO
+.BR frotz(6),
+.BR xzip(6),
+.BR jzip(6),
+.BR inform(1)
+
+.SH AUTHOR
+Fizmo was written in 2005\[en]2010 by Christoph Ender.
+
+.SH BUGS
+Fizmo is still in beta stage and I couldn't test all the games out there, so
+there will be some for sure. If you find them, please send an e-mail to
+fizmo@spellbreaker.org.
+

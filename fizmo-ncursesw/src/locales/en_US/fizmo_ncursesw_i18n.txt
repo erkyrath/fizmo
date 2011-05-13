@@ -1,0 +1,51 @@
+Set foreground color.
+Set background color.
+Set left margin size.
+Set right margin size.
+Invalid configuration value "\{0s}" for option "\{1s}".
+Usage: fizmo [options] [storyfile | quetzal-savefile] [blorbfile]
+Valid options are:
+Set locale name for interpreter messages.
+Start with random generator in predictable mode.
+Start game with scripting already enabled.
+libfizmo version \{0s}.
+Locales availiable:
+More
+Score
+Turns
+Number of color combinations available: \{0d}.
+Colors available
+Invalid color name.
+Show help message and exit.
+Use bold for bright foreground colors.
+Use blink for bright background colors.
+Don't use colors.
+Force using colors.
+No story files are currently known. If you would like to start a specific\nstory file, just append it to the command line (like "fizmo mystory.z5"). If\nyou would like to search a directory you can type "fizmo -s mydirectoryname".\nand run "fizmo" again. There are many more options for finding and updating\nstory data, just take a look at the manual page or type "fizmo -h".
+Space for next page
+b for last page
+Use UMem instead of CMem for saving.
+Disable X11 graphics.
+Use XTerm title.
+Force 8-bit sound output.
+Disable sound.
+Set tandy flag.
+Don't update story-list on startup.
+Search directory for story files.
+Recursively search directory for story files.
+Start recording commands when game starts.
+Start game with input from file.
+Update story list.
+Start with random generator in random mode.
+Always write transcript directly through to disk.
+Function call "\{0s}" aborted due to error.
+Function call "\{0s}" resulted in error \{1d}: "\{2s}".
+Error \{0d} occured before read: "\{1s}".
+Unknown error case.
+Function call malloc(\{0d}) returned null, probably out of memory.
+fizmo-ncursesw version \{0s}.
+libcellinterface version \{0s}.
+Locale search path
+Filename to read commands from.
+Enable X11 inline graphics.
+libdrilbo version \{0s}.

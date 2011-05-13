@@ -1,0 +1,25 @@
+
+  --- libfizmo Installation ---
+
+
+ Before building libfizmo you want might to take look at the configuration
+ settings.  Configuration is done by providing a config.mk file, which is
+ easiest by copying a template like "config.default.mk" to "config.mk" and
+ then modifying values.
+
+ The DEFAULT_PREFIX, DEFAULT_LIB_PREFIX and DEFAULT_INC_PREFIX defined
+ where the standard includes and libraries should be read from and can
+ usually be left on default settings. LIBXML2_INC_DIR and LIBXML2_LIB_DIR
+ defined the locations for libxml2 files which can usually also be left
+ on default. The "INSTALL_PREFIX" defines the standard prefix where installed
+ files should be written to.
+
+ To start the acutal build, simply invoke "make". If successful, this will
+ create the "libfizmo.a" library as well as the make-configuration-files
+ "libfizmo.mk" and "libcellif.mk".
+
+ To install the files, invoke "make install" to copy these to the location
+ indicated using "INSTALL_PREFIX" in the config.mk file. This will create
+ "include", "lib" and "share" directories at the destination location.
+
+

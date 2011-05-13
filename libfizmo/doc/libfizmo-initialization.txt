@@ -1,0 +1,35 @@
+
+
+
+
+ libfizmo initialization
+ 2010-11-22
+
+
+
+
+
+ Overview
+
+ There are six initialization steps:
+
+  1. fizmo_register_screen_interface
+  2. fizmo_register_sound_interface
+ [3. optional: parse_fizmo_config_files]
+  4. fizmo_start
+  5. (parse_fizmo_config_files if not happened before)
+ [6. implicit: link_active_interface_to_story]
+
+
+ fizmo config files:
+
+ 1. /etc/fizmo.conf, always parsed.
+ 2. All "fizmo/config" files in all directories from colon-spearated
+    XDG_CONFIG_DIRS path.
+ 3. $HOME/.config.fizmo
+
+
+ ---------
+
+ CVS-Id: $Id: libfizmo-initialization.txt,v 1.2 2010-11-29 08:30:53 chrender Exp $
+ CVS-Revision: $Revision: 1.2 $

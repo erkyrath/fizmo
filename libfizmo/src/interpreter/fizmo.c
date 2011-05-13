@@ -3,7 +3,7 @@
  *
  * This file is part of fizmo.
  *
- * Copyright (c) 2009-2010 Christoph Ender.
+ * Copyright (c) 2009-2011 Christoph Ender.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -68,7 +68,7 @@
 #include "blockbuf.h"
 #endif // DISABLE_BLOCKBUFFER
 
-#define MAX_CONFIG_OPTION_LENGTH 240
+#define MAX_CONFIG_OPTION_LENGTH 512
 
 
 struct z_story *active_z_story;

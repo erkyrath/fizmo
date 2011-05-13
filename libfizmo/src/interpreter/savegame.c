@@ -3,7 +3,7 @@
  *
  * This file is part of fizmo.
  *
- * Copyright (c) 2009-2010 Christoph Ender.
+ * Copyright (c) 2009-2011 Christoph Ender.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -425,8 +425,13 @@ static int _handle_save_or_restore_failure(bool evaluate_result,
 
 int get_paragraph_save_amount()
 {
-  return strtol(
-      get_configuration_value("save-text-history-paragraphs"), NULL, 10);
+  char *nof_paragraphs_as_string
+    = get_configuration_value("save-text-history-paragraphs");
+
+  if (nof_paragraphs_as_string == NULL)
+    return -1;
+  else
+    return strtol(nof_paragraphs_as_string, NULL, 10);
 }
 
 

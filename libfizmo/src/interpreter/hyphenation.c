@@ -3,7 +3,7 @@
  *
  * This file is part of fizmo.
  *
- * Copyright (c) 2009-2010 Christoph Ender.
+ * Copyright (c) 2009-2011 Christoph Ender.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -165,6 +165,7 @@ static int load_patterns()
   z_ucs input;
   char in_char;
   z_ucs *data;
+  size_t nof_comments;
 #ifdef ENABLE_TRACING
   int i;
 #endif
@@ -256,9 +257,37 @@ static int load_patterns()
   {
     TRACE_LOG("File found.\n");
 
+    // We'll now measure the filesize in order to be able to allocate a
+    // single block of memory before reading data. This is necessary, since
+    // we're storing pattern indexes while reading and a realloc might
+    // invalidate these.
+
     nof_zucs_chars = 0;
-    while ((parse_utf8_char_from_file(patternfile)) != UEOF)
-      nof_zucs_chars++;
+    for(;;)
+    {
+      // Parse line.
+      input = parse_utf8_char_from_file(patternfile);
+      if (input == UEOF)
+        break;
+
+      if (input == (z_ucs)'%')
+      {
+        do
+        {
+          input = parse_utf8_char_from_file(patternfile);
+        }
+        while (input != Z_UCS_NEWLINE);
+      }
+      else
+      {
+        nof_zucs_chars++;
+        while (input != Z_UCS_NEWLINE)
+        {
+          nof_zucs_chars++;
+          input = parse_utf8_char_from_file(patternfile);
+        }
+      }
+    }
 
     if (fseek(patternfile, 0, SEEK_SET) == -1)
     {
@@ -279,42 +308,58 @@ static int load_patterns()
       return -7;
     }
 
+    nof_comments = 0;
     lines = create_list();
     //printf("new list created: %p\n", lines);
 
     in_char = fgetc(patternfile);
     while (in_char != EOF)
     {
-      linestart = data;
-
-      // Found a new line.
-      ungetc(in_char, patternfile);
-
-      for (;;)
+      if (in_char == '%')
       {
-        input = input_char(patternfile);
+        TRACE_LOG("Start comment.\n");
+        do
+        {
+          input = input_char(patternfile);
+        }
+        while (input != Z_UCS_NEWLINE);
+        nof_comments++;
+      }
+      else
+      {
+        // Found a new line.
+        ungetc(in_char, patternfile);
 
-        if (input == Z_UCS_NEWLINE)
+        linestart = data;
+
+        TRACE_LOG("Start pattern.\n");
+        for (;;)
         {
-          *data ++ = 0;
-          TRACE_LOG("New line at %p.\n", linestart);
-          add_list_element(lines, (void*)linestart);
-          break;
+          input = input_char(patternfile);
+
+          if (input == Z_UCS_NEWLINE)
+          {
+            *data ++ = 0;
+            TRACE_LOG("New line at %p.\n", linestart);
+            add_list_element(lines, (void*)linestart);
+            break;
+          }
+          else
+          {
+            // Here we've found some "normal" output.
+            *data++ = (z_ucs)input;
+          }
         }
-        else
-        {
-          // Here we've found some "normal" output.
-          *data++ = (z_ucs)input;
-        }
+
+        //messages_processed++;
       }
 
-      //messages_processed++;
       in_char = fgetc(patternfile);
     }
     fclose(patternfile);
     nof_patterns = get_list_size(lines);
     patterns = (z_ucs**)delete_list_and_get_ptrs(lines);
-    TRACE_LOG("Read %d patterns.\n", nof_patterns);
+    TRACE_LOG("Read %d patterns, %ld comments.\n", nof_patterns, nof_comments);
     pattern_data = data;
 
     sort_patterndata(0, nof_patterns - 1);

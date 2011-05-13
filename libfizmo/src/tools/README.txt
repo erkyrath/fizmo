@@ -9,11 +9,11 @@
 
  - i18n: Modularizable localization-tools.
  - stringmap: A simple mapping associating *void indexed by *z_ucs.
- - types: All types related to fizmo, essentially provoding Z-machine types.
+ - types: All types related to fizmo, essentially providing Z-machine types.
  - z_ucs: Support for wide characters requiring no wchar-C-Compiler support.
  - list: A simple set of *void pointers for easier list managment.
- - tracelog: A set of macros allowing to trace very detailed code execution.
- - unused: A simple macro provoding the "UNUSED(<parameter>)" expression.
+ - tracelog: A simple set of macros allowing to trace code execution.
+ - unused: A macro provoding the "UNUSED(<parameter>)" expression.
 
  The Makefile supports the folloing targets:
 
@@ -21,6 +21,5 @@
  clean: Will remove all objects, test code and "tracelog.txt".
  distclean: Will execute "clean" and also remove "libtools.a".
  test: Will build and execute a tiny tools-test program.
-
 
 

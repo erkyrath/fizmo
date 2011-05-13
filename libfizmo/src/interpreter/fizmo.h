@@ -3,7 +3,7 @@
  *
  * This file is part of fizmo.
  *
- * Copyright (c) 2009-2010 Christoph Ender.
+ * Copyright (c) 2009-2011 Christoph Ender.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@
 #include "../sound_interface/sound_interface.h"
 #include "blockbuf.h"
 
-#define FIZMO_VERSION "0.7.0-b9"
+#define FIZMO_VERSION "0.7.0-b10"
 
 #define FIZMO_INTERPRETER_NUMBER 6
 /*

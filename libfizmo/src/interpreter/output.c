@@ -3,7 +3,7 @@
  *
  * This file is part of fizmo.
  *
- * Copyright (c) 2009-2010 Christoph Ender.
+ * Copyright (c) 2009-2011 Christoph Ender.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -183,6 +183,17 @@ void opcode_erase_line_pixels(void)
 
 void process_set_cursor(int16_t y, int16_t x, int16_t window)
 {
+  /*
+   * From zmach06e.ps:
+   * Flush the buffer and set the cursor for the given window (i.e., window
+   * properties 4 and 5) at position (s, x). It is an error in V4-5 to use
+   * this instruction when window 0 is selected. [Question: Is the window
+   * operand optional or not?] Exception: The first argument can be negative.
+   * If it is − 2 (and the second argument is 0), the screen cursor is turned
+   * on. If it is − 1, it is turned off; the second argument is ignored in
+   * that case.
+   */
+
   TRACE_LOG("Processing set cursor to %d, %d, %d.\n", y, x, window);
   if (ver == 6)
   {

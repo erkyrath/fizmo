@@ -1,11 +1,10 @@
 
    From 0.6.9 to 0.7.0
  + 0.7.0 was finished at about (?).
- - Module name change: The ncursesw- and console-interface, the sdl-sound
-   interface and the X11-specific code have been moved into separate modules
-   named "fizmo-ncursesw", "fizmo-console", "libsndifsdl" and "libdrilbo".
-   This module has been renamed from "fizmo" to "libfizmo", providing only
-   the base interpreter functionality without any interface.
+ - Restructured fizmo: The interpreter core, ncursesw- and console-interface,
+   the sdl-sound interface and the X11-specific code have been moved into
+   separate modules named "libfizmo", "fizmo-ncursesw", "fizmo-console",
+   "libsndifsdl" and "libdrilbo".
  - Implemented Frank Liangs TeX hy-phen-a-tion algorithm into the
    wordwrapper. Patterns were taken from the "Object For Formatting
    Objects" project at http://offo.sourceforge.net. Re-implemented the
@@ -19,31 +18,32 @@
    i18n calls to new method.
  - Rebuilt output history storage. This has been reimplemented using a
    single memory stream instead of storing text and metadata separately.
- - Moved "i18n", "tracelog", "z_ucs" and "types" into a new "tools"
-   package adding "stringmap", "list" and "tools_test" on the way. The
-   tools package is supposed to be used by interpreter-related tools
-   which don't require the interpreter itself.
- - Rebuilt the interpreter core of fizmo into a set of static libraries.
+ - Implemented a cell-screen meta-interface. This translates the output
+   from fizmo's screen interface into simple goto-xy and print commands,
+   allowing implementation of interfaces using fixed-width fonts with a
+   minimum of work. This is also used by the new "fizmo-ncursesw" interface,
+   which has also been entirely rewritten.
+ - Added "cellif" meta-interface. This will translate the Z-Machine specific
+   output into simple "goto-xy" and "print" instructions for fixed-width-font
+   displays.
+ - libdrilbo ("drilbo represents an imaging libary not only for blorb
+   objects") now handles all graphical related tasks. It also makes fizmo's
+   version 0.6 requirement for GTK to load images obsolete, it directly
+   uses libjpg and libpng to load images and provides its own Xlib
+   implementation for X11 output.
+ - X11 frontispiece display is now by default in a separate window, which,
+   contrary to the older implementation that simply invoked a XCopyArea
+   directly into the terminal's X window, should work reliably. For
+   terminals which by chance support it, the old behaviour is still
+   available by using the "display-x11-inline-image" config option. This
+   inline display has been changed to no longer write directly into the
+   terminal window, but instead to use a subwindow instead.
  - Implemented saving of text history into chunk "TxHs" in quetzal savegames.
  - Added configuration variable "save-text-history-paragraphs" which defines
    the maximum number of paragraphs to store in a savegame.
  - Added variable interpretation -- so far, only $(HOME) is implemented --
    for config files.
- - Adapted to new build process.
-
-   From 0.6.8 to 0.6.9
- + 0.6.9 was finished at about Sun Apr 24 22:26:18 CEST 2011.
- - Bugfix release: Fixed negative count for unsorted dictionaries in the
-   tokenise opcode. This fixed the crash in "Beyond Zork" which occurred
-   while executing "i" after an item was name, thanks to irb.
- - Fixed "get_utf8_code_length". This fixes output of non-latin1 output
-   codes in the transcript file, thanks to Lewis Gentry, closes debian
-   issue #617714.
- - Increased maximum allowed option size to 512 to allow for longer
-   filenames.
- - Added NCURSESW_INCLUDE_FROM_W_DIRNAME to configs to allow usage of
-   Apple's ncurses implementation, added GDKPIXBUF_INC_DIR configuration
-   variable.
+ - Re-implemented almost the entire build process.
 
    From 0.6.7 to 0.6.8
  + 0.6.8 was finished at about Tue Jan 12 09:53:42 CET 2010.

@@ -1771,12 +1771,14 @@ bool detect_saved_game(char *file_to_check, char **story_file_to_load)
     serial_number[6] = 0;
     checksum = (checksum_buf[0] << 8) | checksum_buf[1];
 
+#ifndef DISABLE_FILE_LIST
     if ((story_entry = get_z_story_entry_from_list(
             serial_number, release_number, checksum)) != NULL)
     {
       *story_file_to_load = fizmo_strdup(story_entry->filename);
       free_z_story_list_entry(story_entry);
     }
+#endif /* DISABLE_FILE_LIST */
 
     return true;
   }

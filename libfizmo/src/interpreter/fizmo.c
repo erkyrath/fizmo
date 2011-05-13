@@ -735,6 +735,9 @@ static struct z_story *load_z_story(char *input_filename, char *blorb_filename)
   else
     result->max_nof_color_pairs = 0;
 
+  result->title = NULL;
+
+#ifndef DISABLE_FILE_LIST
   /*
   if ((story_data = get_z_story_entry_from_list(
         result->serial_code,
@@ -768,10 +771,7 @@ static struct z_story *load_z_story(char *input_filename, char *blorb_filename)
     result->title = fizmo_strdup(story_data->title);
     free_z_story_list_entry(story_data);
   }
-  else
-  {
-    result->title = NULL;
-  }
+#endif /* DISABLE_FILE_LIST */
 
   return result;
 }
@@ -1530,6 +1530,7 @@ void fizmo_start(char* input_filename, char *blorb_filename,
   }
   else
   {
+#ifndef DISABLE_FILE_LIST
     // File does not exist. We'll ask the story list to locate a suitable
     // entry.
     story_list = get_z_story_list();
@@ -1542,10 +1543,11 @@ void fizmo_start(char* input_filename, char *blorb_filename,
         break;
       }
     }
+    free_z_story_list(story_list);
+#endif /* DISABLE_FILE_LIST */
 
     if (assumed_filename == NULL)
     {
-      free_z_story_list(story_list);
 
       i18n_translate_and_exit(
           libfizmo_module_name,

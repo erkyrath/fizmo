@@ -282,7 +282,9 @@ static int ask_for_filename(char *filename_suggestion)
 
   TRACE_LOG("Removing %d chars from history.\n", length);
 #ifndef DISABLE_COMMAND_HISTORY
+#ifndef DISABLE_OUTPUT_HISTORY
   remove_chars_from_history(outputhistory[active_window_number], length);
+#endif /* DISABLE_OUTPUT_HISTORY */
 #endif /* DISABLE_COMMAND_HISTORY */
 
   // Prompt for filename

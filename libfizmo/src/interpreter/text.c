@@ -1459,11 +1459,13 @@ static bool process_interpreter_command()
     (void)streams_latin1_output("\n");
 
 #ifndef DISABLE_COMMAND_HISTORY
+#ifndef DISABLE_OUTPUT_HISTORY
     (void)i18n_translate(
         libfizmo_module_name,
         i18n_libfizmo_P0D_BYTES_USED_BY_TEXT_HISTORY,
         (long)get_allocated_text_history_size(outputhistory[0]));
     (void)streams_latin1_output("\n");
+#endif /* DISABLE_OUTPUT_HISTORY */
 #endif /* DISABLE_COMMAND_HISTORY */
 
     ptr = get_configuration_value("random-mode");

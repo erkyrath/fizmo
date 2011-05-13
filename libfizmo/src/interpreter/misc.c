@@ -47,9 +47,9 @@
 #include "variable.h"
 #include "../locales/libfizmo_locales.h"
 
-
+#ifndef DISABLE_SIGNAL_HANDLING
 static struct sigaction fizmo_sigactions;
-
+#endif /* DISABLE_SIGNAL_HANDLING */
 
 void opcode_restart(void)
 {
@@ -158,6 +158,7 @@ void abort_interpreter(int exit_code, z_ucs *error_message)
   exit(exit_code);
 }
 
+#ifndef DISABLE_SIGNAL_HANDLING
 
 static void catch_signal_and_abort(int sig_num)
 {
@@ -169,7 +170,6 @@ static void catch_signal_and_abort(int sig_num)
       -1,
       (long)sig_num);
 }
-
 
 void init_signal_handlers(void)
 {
@@ -186,4 +186,11 @@ void init_signal_handlers(void)
   sigaction(SIGBUS, &fizmo_sigactions, NULL);
   sigaction(SIGILL, &fizmo_sigactions, NULL);
 }
+
+#else /* DISABLE_SIGNAL_HANDLING */
+
+void init_signal_handlers(void)
+{ }
+
+#endif /* DISABLE_SIGNAL_HANDLING */
 

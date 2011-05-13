@@ -23,6 +23,10 @@ ifneq ($(ENABLE_STRICT_Z),)
 override CFLAGS += -DSTRICT_Z=
 endif
 
+ifneq ($(DISABLE_SIGNAL_HANDLING),)
+override CFLAGS += -DDISABLE_SIGNAL_HANDLING=
+endif
+
 ifneq ($(THROW_SIGFAULT_ON_ERROR),)
 override CFLAGS += -DTHROW_SIGFAULT_ON_ERROR=
 endif

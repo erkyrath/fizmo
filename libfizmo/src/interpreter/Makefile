@@ -48,15 +48,22 @@ else
 override CFLAGS += -DDISABLE_OUTPUT_HISTORY
 endif
 
+ifeq ($(DISABLE_FILE_LIST),)
+FILELIST_DEP_H = filelist.h
+FILELIST_DEP_O = filelist.o
+else
+override CFLAGS += -DDISABLE_FILE_LIST=
+endif
+
 
 .PHONY : clean
 
 all: libinterpreter.a
 
-libinterpreter.a: fizmo.o zpu.o stack.o streams.o routine.o variable.o object.o property.o text.o savegame.o iff.o misc.o mt19937ar.o math.o output.o sound.o wordwrap.o table.o config.o undo.o filelist.o babel.o hyphenation.o $(BLOCKBUF_DEP_O) $(CMD_HST_DEP_O) $(OUTPUT_HST_DEP_O)
-	$(AR) rcs libinterpreter.a fizmo.o zpu.o stack.o streams.o routine.o variable.o object.o property.o text.o savegame.o iff.o misc.o mt19937ar.o math.o output.o sound.o wordwrap.o table.o config.o undo.o filelist.o babel.o hyphenation.o $(BLOCKBUF_DEP_O) $(CMD_HST_DEP_O) $(OUTPUT_HST_DEP_O)
+libinterpreter.a: fizmo.o zpu.o stack.o streams.o routine.o variable.o object.o property.o text.o savegame.o iff.o misc.o mt19937ar.o math.o output.o sound.o wordwrap.o table.o config.o undo.o babel.o hyphenation.o $(BLOCKBUF_DEP_O) $(CMD_HST_DEP_O) $(OUTPUT_HST_DEP_O) $(FILELIST_DEP_O)
+	$(AR) rcs libinterpreter.a fizmo.o zpu.o stack.o streams.o routine.o variable.o object.o property.o text.o savegame.o iff.o misc.o mt19937ar.o math.o output.o sound.o wordwrap.o table.o config.o undo.o babel.o hyphenation.o $(BLOCKBUF_DEP_O) $(CMD_HST_DEP_O) $(OUTPUT_HST_DEP_O) $(FILELIST_DEP_O)
 
-fizmo.o: ../tools/tracelog.h fizmo.h zpu.h text.h math.h stack.h ../tools/i18n.h misc.h streams.h config.h savegame.h output.h ../tools/z_ucs.h fizmo.c $(BLOCKBUF_DEP_H) $(OUTPUT_HST_DEP_H)
+fizmo.o: ../tools/tracelog.h fizmo.h zpu.h text.h math.h stack.h ../tools/i18n.h misc.h streams.h config.h savegame.h output.h ../tools/z_ucs.h fizmo.c $(BLOCKBUF_DEP_H) $(OUTPUT_HST_DEP_H) $(FILELIST_DEP_H)
 	$(CC) $(CFLAGS) -c fizmo.c
 
 fizmo.h: ../screen_interface/screen_interface.h
@@ -86,7 +93,7 @@ property.o: ../tools/tracelog.h fizmo.h variable.h object.h zpu.h ../tools/i18n.
 text.o: text.h ../tools/tracelog.h fizmo.h routine.h object.h zpu.h ../tools/i18n.h variable.h misc.h streams.h ../tools/types.h history.h fizmo.h math.h stack.h config.h output.h undo.h $(CMD_HST_DEP_H) text.c
 	$(CC) $(CFLAGS) -c text.c
 
-savegame.o: savegame.h ../tools/tracelog.h streams.h fizmo.h iff.h stack.h zpu.h ../tools/i18n.h variable.h text.h ../tools/z_ucs.h routine.h savegame.c
+savegame.o: savegame.h ../tools/tracelog.h streams.h fizmo.h iff.h stack.h zpu.h ../tools/i18n.h variable.h text.h ../tools/z_ucs.h routine.h savegame.c $(FILELIST_DEP_H)
 	$(CC) $(CFLAGS) -c savegame.c
 
 iff.o: iff.h ../tools/tracelog.h ../tools/i18n.h ../tools/types.h iff.c

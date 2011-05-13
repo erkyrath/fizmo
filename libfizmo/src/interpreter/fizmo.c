@@ -880,6 +880,7 @@ int ensure_mem_size(char **ptr, int *current_size, int size)
   return 0;
 }
 
+#ifndef INTERFACE_SUPPLIES_CONFIG
 
 char *get_xdg_config_dir_name()
 {
@@ -972,6 +973,7 @@ void ensure_dot_fizmo_dir_exists()
   mkdir(dir_name, S_IRWXU);
 }
 
+#endif /* INTERFACE_SUPPLIES_CONFIG */
 
 /*@external@*/ void fizmo_new_screen_size(uint8_t width, uint8_t height)
 {
@@ -1127,6 +1129,7 @@ void fizmo_register_sound_interface(
   active_sound_interface = sound_interface;
 }
 
+#ifndef INTERFACE_SUPPLIES_CONFIG
 
 static int parse_fizmo_config_file(char *filename)
 {
@@ -1320,6 +1323,7 @@ int parse_fizmo_config_files()
   return 0;
 }
 
+#endif /* INTERFACE_SUPPLIES_CONFIG */
 
 // This will quote all newlines, TABs and backslashes which must not appear
 // in a config-file. Returns a new malloced string which should be freed after
@@ -1462,7 +1466,9 @@ void fizmo_start(char* input_filename, char *blorb_filename,
   register_i18n_abort_function(
       abort_interpreter);
 
+#ifndef INTERFACE_SUPPLIES_CONFIG
   ensure_dot_fizmo_dir_exists();
+#endif /* INTERFACE_SUPPLIES_CONFIG */
 
   /*
   if (bool_equal(story_list_was_updated, false))
@@ -1477,7 +1483,9 @@ void fizmo_start(char* input_filename, char *blorb_filename,
   if ((str = getenv("ZCODE_ROOT_PATH")) != NULL)
     append_path_value("z-code-root-path", str);
 
+#ifndef INTERFACE_SUPPLIES_CONFIG
   parse_fizmo_config_files();
+#endif /* INTERFACE_SUPPLIES_CONFIG */
 
   /*
   if (get_configuration_value("locale") == NULL)

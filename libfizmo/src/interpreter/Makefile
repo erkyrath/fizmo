@@ -31,6 +31,10 @@ ifneq ($(THROW_SIGFAULT_ON_ERROR),)
 override CFLAGS += -DTHROW_SIGFAULT_ON_ERROR=
 endif
 
+ifneq ($(INTERFACE_SUPPLIES_CONFIG),)
+override CFLAGS += -DINTERFACE_SUPPLIES_CONFIG=
+endif
+
 ifeq ($(DISABLE_BLOCKBUFFER),)
 BLOCKBUF_DEP_H = blockbuf.h
 BLOCKBUF_DEP_O = blockbuf.o

@@ -851,9 +851,9 @@ void save_game(uint16_t address, uint16_t length, char *filename,
       return;
     }
 
+#ifndef DISABLE_OUTPUT_HISTORY
     nof_paragraphs_to_save = get_paragraph_save_amount();
 
-#ifndef DISABLE_OUTPUT_HISTORY
     if (
         (nof_paragraphs_to_save > 0)
         &&
@@ -1530,9 +1530,9 @@ int restore_game(uint16_t address, uint16_t length, char *filename,
     number_of_stack_frames++;
   }
   TRACE_LOG("Number of stack frames: %d.\n", number_of_stack_frames);
+#ifndef DISABLE_OUTPUT_HISTORY
   nof_paragraphs_to_save = get_paragraph_save_amount();
 
-#ifndef DISABLE_OUTPUT_HISTORY
   if (
       (nof_paragraphs_to_save > 0)
       &&

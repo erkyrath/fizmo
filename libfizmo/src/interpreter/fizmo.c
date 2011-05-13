@@ -1539,7 +1539,6 @@ void fizmo_start(char* input_filename, char *blorb_filename,
       if (strcasecmp(story_list->entries[i]->title, story_file_to_load) == 0)
       {
         assumed_filename = fizmo_strdup(story_list->entries[i]->filename);
-        free_z_story_list(story_list);
         break;
       }
     }

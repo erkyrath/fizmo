@@ -281,8 +281,16 @@ void glkint_set_window(int16_t window_number)
     }    
 }
 
-void glkint_erase_window(int16_t UNUSED(window_number))
-{ }
+void glkint_erase_window(int16_t window_number)
+{
+    if (!window_number) {
+        glk_window_clear(mainwin);
+    }
+    else {
+        if (statuswin)
+            glk_window_clear(statuswin);
+    }
+}
 
 void glkint_set_cursor(int16_t line, int16_t column,
     int16_t window)
@@ -317,16 +325,16 @@ void glkint_game_was_restored_and_history_modified()
 struct z_screen_interface glkint_interface =
 {
     &glkint_get_interface_name,
-    &glkint_return_false, /* is_status_line_available */
-    &glkint_return_false, /* is_split_screen_available */
-    &glkint_return_false, /* is_variable_pitch_font_default */
+    &glkint_return_true, /* is_status_line_available */
+    &glkint_return_true, /* is_split_screen_available */
+    &glkint_return_true, /* is_variable_pitch_font_default */
     &glkint_return_false, /* is_colour_available */
     &glkint_return_false, /* is_picture_displaying_available */
-    &glkint_return_false, /* is_bold_face_available */
-    &glkint_return_false, /* is_italic_available */
+    &glkint_return_true, /* is_bold_face_available */
+    &glkint_return_true, /* is_italic_available */
     &glkint_return_true, /* is_fixed_space_font_available */
-    &glkint_return_false, /* is_timed_keyboard_input_available */
-    &glkint_return_false, /* is_preloaded_input_available */
+    &glkint_return_true, /* is_timed_keyboard_input_available */
+    &glkint_return_true, /* is_preloaded_input_available */
     &glkint_return_false, /* is_character_graphics_font_availiable */
     &glkint_return_false, /* is_picture_font_availiable */
     &glkint_get_screen_height,

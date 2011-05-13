@@ -83,7 +83,7 @@ void glk_main(void)
 #endif // ENABLE_TRACING
 
     if (init_err) {
-        fatal_error_handler(init_err, init_err2, FALSE, 0);
+        fatal_error_handler(init_err, NULL, init_err2, FALSE, 0);
         return;
     }
 
@@ -121,13 +121,16 @@ static winid_t get_error_win()
 /* fatal_error_handler():
    Display an error in the error window, and then exit.
 */
-void fatal_error_handler(char *str, char *arg, int useval, glsi32 val)
+void fatal_error_handler(char *str, glui32 *ustr, char *arg, int useval, glsi32 val)
 {
     winid_t win = get_error_win();
     if (win) {
         glk_set_window(win);
         glk_put_string("Fizmo fatal error: ");
-        glk_put_string(str);
+        if (str)
+            glk_put_string(str);
+        if (ustr)
+            glk_put_string_uni(ustr);
         if (arg || useval) {
             glk_put_string(" (");
             if (arg)

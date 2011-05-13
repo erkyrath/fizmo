@@ -117,7 +117,7 @@ void glkint_reset_interface()
 int glkint_close_interface(z_ucs *error_message)
 { 
     if (error_message)
-        fatal_error_handler(error_message, NULL, 0, 0);
+        fatal_error_handler(NULL, error_message, NULL, 0, 0);
     return 0;
 }
 
@@ -126,18 +126,8 @@ void glkint_set_buffer_mode(uint8_t UNUSED(new_buffer_mode))
 
 void glkint_interface_output_z_ucs(z_ucs *z_ucs_output)
 {
-    while (*z_ucs_output != 0) {
-        //### change this to put_string_uni
-        glui32 ch = *z_ucs_output;
-        z_ucs_output++;
-        if (ch == 10 || ch == 13) {
-            glk_put_char(10);
-            continue;
-        }
-        if (ch < 32)
-            continue;
-        glk_put_char_uni(ch);
-    }
+    /* Conveniently, z_ucs is the same as glui32. */
+    glk_put_string_uni(z_ucs_output);
 }
 
 int16_t glkint_interface_read_line(zscii *dest, uint16_t maximum_length,

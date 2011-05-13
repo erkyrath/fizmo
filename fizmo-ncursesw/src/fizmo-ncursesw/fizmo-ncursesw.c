@@ -633,6 +633,7 @@ static int parse_config_parameter(char *key, char *value)
       use_xterm_title = false;
     return 0;
   }
+#ifdef ENABLE_X11_IMAGES
   else if (strcmp(key, "disable-x11-graphics") == 0)
   {
     if (
@@ -661,6 +662,7 @@ static int parse_config_parameter(char *key, char *value)
       enable_x11_inline_graphics = false;
     return 0;
   }
+#endif /* ENABLE_X11_IMAGES */
   else if (strcmp(key, "dont-update-story-list") == 0)
   {
     if (

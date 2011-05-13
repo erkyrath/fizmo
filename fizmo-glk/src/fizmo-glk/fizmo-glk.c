@@ -99,14 +99,26 @@ int glkint_parse_config_parameter(char *UNUSED(key), char *UNUSED(value))
 void glkint_link_interface_to_story(struct z_story *UNUSED(story))
 { }
 
+/* Called at @restart time. */
 void glkint_reset_interface()
 {
-    //###
+    if (statuswin) {
+        glk_window_close(statuswin, NULL);
+        statuswin = NULL;
+    }
+
+    instatuswin = false;
+    glk_set_window(mainwin);    
+    glk_set_style(style_Normal);
+    glk_window_clear(mainwin);
 }
 
-int glkint_close_interface(z_ucs *UNUSED(error_message))
+/* Called at @quit time, or if the interpreter hits a fatal error. */
+int glkint_close_interface(z_ucs *error_message)
 { 
-    return 0; //###
+    if (error_message)
+        fatal_error_handler(error_message, NULL, 0, 0);
+    return 0;
 }
 
 void glkint_set_buffer_mode(uint8_t UNUSED(new_buffer_mode))
@@ -299,9 +311,11 @@ void glkint_set_cursor(int16_t line, int16_t column,
         glk_window_move_cursor(statuswin, column-1, line-1);
 }
 
+/* Glk doesn't support this. */
 uint16_t glkint_get_cursor_row()
 { return 0; }
 
+/* Glk doesn't support this. */
 uint16_t glkint_get_cursor_column()
 { return 0;}
 

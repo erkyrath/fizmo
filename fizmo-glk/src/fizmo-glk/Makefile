@@ -25,12 +25,12 @@ override CFLAGS += $(shell pkg-config --cflags libfizmo)
 LIBS = -L$(GLKLIBDIR) $(GLKLIB) $(LINKLIBS) -lm
 LIBS += $(shell pkg-config --libs libfizmo)
 
-fizmo-glk: fizmo-glk.o unixstrt.o
-	$(CC) $(CFLAGS) fizmo-glk.o unixstrt.o -o fizmo-glk $(LIBS)
+fizmo-glk: interface.o unixstrt.o
+	$(CC) $(CFLAGS) interface.o unixstrt.o -o fizmo-glk $(LIBS)
 	#strip fizmo
 
-fizmo-glk.o: fizmo-glk.c
-	$(CC) $(CFLAGS) -c fizmo-glk.c
+interface.o: interface.c
+	$(CC) $(CFLAGS) -c interface.c
 
 unixstrt.o: unixstrt.c
 	$(CC) $(CFLAGS) -c unixstrt.c

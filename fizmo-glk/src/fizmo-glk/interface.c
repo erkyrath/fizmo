@@ -1,5 +1,5 @@
 
-/* fizmo-glk.c
+/* interface.c
  *
  * This file is part of fizmo.
  *

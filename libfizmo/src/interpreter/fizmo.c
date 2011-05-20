@@ -1603,6 +1603,8 @@ void fizmo_start(char* input_filename, char *blorb_filename,
   init_opcode_functions();
   init_streams(DEFAULT_SAVEGAME_FILENAME);
 
+#ifndef NO_FILESYSTEM_ACCESS
+
   (void)latin1_string_to_zucs_string(
       last_savegame_filename,
       DEFAULT_SAVEGAME_FILENAME,
@@ -1611,6 +1613,8 @@ void fizmo_start(char* input_filename, char *blorb_filename,
   TRACE_LOG("Converted savegame default filename: '");
   TRACE_LOG_Z_UCS(last_savegame_filename);
   TRACE_LOG("'.\n");
+
+#endif /* NO_FILESYSTEM_ACCESS */
 
   active_interface->link_interface_to_story(active_z_story);
 

@@ -91,6 +91,7 @@ char *fizmo_config_dir_name = NULL;
 char *xdg_config_home = NULL;
 static char *default_xdg_config_home = DEFAULT_XDG_CONFIG_HOME;
 static char *default_xdg_config_dirs = DEFAULT_XDG_CONFIG_DIRS;
+static char *interface_config_file = NULL;
 static bool fizmo_config_dir_name_initialized = false;
 static bool xdg_config_dir_name_initialized = false;
 static bool config_files_were_parsed = false;
@@ -975,6 +976,11 @@ void ensure_dot_fizmo_dir_exists()
 
 #endif /* INTERFACE_SUPPLIES_CONFIG */
 
+/*@external@*/ void set_interface_config_file(char *filename)
+{
+  interface_config_file = fizmo_strdup(filename);
+}
+
 /*@external@*/ void fizmo_new_screen_size(uint8_t width, uint8_t height)
 {
   if (ver >= 4)
@@ -1129,8 +1135,6 @@ void fizmo_register_sound_interface(
   active_sound_interface = sound_interface;
 }
 
-#ifndef INTERFACE_SUPPLIES_CONFIG
-
 static int parse_fizmo_config_file(char *filename)
 {
   char key[MAX_CONFIG_OPTION_LENGTH];
@@ -1267,7 +1271,6 @@ static int parse_fizmo_config_file(char *filename)
   return 0;
 }
 
-
 int parse_fizmo_config_files()
 {
   char *config_dirs, *dir;
@@ -1277,6 +1280,12 @@ int parse_fizmo_config_files()
 
   if (bool_equal(config_files_were_parsed, true))
     return 0;
+
+  if (interface_config_file) {
+    parse_fizmo_config_file(interface_config_file);
+  }
+
+#ifndef INTERFACE_SUPPLIES_CONFIG
 
   parse_fizmo_config_file(SYSTEM_FIZMO_CONF_FILE_NAME);
 
@@ -1315,6 +1324,8 @@ int parse_fizmo_config_files()
     parse_fizmo_config_file(filename);
   }
 
+#endif /* INTERFACE_SUPPLIES_CONFIG */
+
   config_files_were_parsed = true;
 
   if (filename != NULL)
@@ -1322,8 +1333,6 @@ int parse_fizmo_config_files()
 
   return 0;
 }
-
-#endif /* INTERFACE_SUPPLIES_CONFIG */
 
 // This will quote all newlines, TABs and backslashes which must not appear
 // in a config-file. Returns a new malloced string which should be freed after
@@ -1483,9 +1492,7 @@ void fizmo_start(char* input_filename, char *blorb_filename,
   if ((str = getenv("ZCODE_ROOT_PATH")) != NULL)
     append_path_value("z-code-root-path", str);
 
-#ifndef INTERFACE_SUPPLIES_CONFIG
   parse_fizmo_config_files();
-#endif /* INTERFACE_SUPPLIES_CONFIG */
 
   /*
   if (get_configuration_value("locale") == NULL)

@@ -76,7 +76,7 @@ void fizmo_register_sound_interface(
 void write_interpreter_info_into_header();
 void fizmo_start(char* z_story_filename, char *blorb_filename,
     char *restore_on_start_filename);
-void set_interface_config_file(char *filename);
+void fizmo_set_interface_config_file(char *filename);
 void fizmo_new_screen_size(uint8_t width, uint8_t height);
 int close_interface(z_ucs /*@null@*/ *error_message);
 void *fizmo_malloc(size_t size);

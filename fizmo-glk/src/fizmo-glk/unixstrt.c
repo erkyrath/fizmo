@@ -87,6 +87,7 @@ void glk_main(void)
         return;
     }
 
+    /* fizmo_set_interface_config_file(...); */
     fizmo_register_screen_interface(&glkint_interface);
 
     glkint_open_interface();

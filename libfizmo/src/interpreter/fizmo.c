@@ -881,7 +881,7 @@ int ensure_mem_size(char **ptr, int *current_size, int size)
   return 0;
 }
 
-#ifndef INTERFACE_SUPPLIES_CONFIG
+#ifndef NO_FILESYSTEM_ACCESS
 
 char *get_xdg_config_dir_name()
 {
@@ -974,9 +974,9 @@ void ensure_dot_fizmo_dir_exists()
   mkdir(dir_name, S_IRWXU);
 }
 
-#endif /* INTERFACE_SUPPLIES_CONFIG */
+#endif /* NO_FILESYSTEM_ACCESS */
 
-/*@external@*/ void set_interface_config_file(char *filename)
+/*@external@*/ void fizmo_set_interface_config_file(char *filename)
 {
   interface_config_file = fizmo_strdup(filename);
 }
@@ -1285,7 +1285,7 @@ int parse_fizmo_config_files()
     parse_fizmo_config_file(interface_config_file);
   }
 
-#ifndef INTERFACE_SUPPLIES_CONFIG
+#ifndef NO_FILESYSTEM_ACCESS
 
   parse_fizmo_config_file(SYSTEM_FIZMO_CONF_FILE_NAME);
 
@@ -1324,7 +1324,7 @@ int parse_fizmo_config_files()
     parse_fizmo_config_file(filename);
   }
 
-#endif /* INTERFACE_SUPPLIES_CONFIG */
+#endif /* NO_FILESYSTEM_ACCESS */
 
   config_files_were_parsed = true;
 
@@ -1475,9 +1475,9 @@ void fizmo_start(char* input_filename, char *blorb_filename,
   register_i18n_abort_function(
       abort_interpreter);
 
-#ifndef INTERFACE_SUPPLIES_CONFIG
+#ifndef NO_FILESYSTEM_ACCESS
   ensure_dot_fizmo_dir_exists();
-#endif /* INTERFACE_SUPPLIES_CONFIG */
+#endif /* NO_FILESYSTEM_ACCESS */
 
   /*
   if (bool_equal(story_list_was_updated, false))

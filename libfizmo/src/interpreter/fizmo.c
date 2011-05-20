@@ -76,6 +76,7 @@ struct z_story *active_z_story;
 /*@-nullassign@*/
 struct z_screen_interface *active_interface = NULL;
 struct z_sound_interface *active_sound_interface = NULL;
+struct z_filesys_interface *active_filesys_interface = NULL;
 /*@+nullassign@*/
 
 uint8_t ver = 0;
@@ -1124,6 +1125,16 @@ void fizmo_register_screen_interface(struct z_screen_interface
     active_interface = screen_interface;
     register_i18n_stream_output_function(streams_z_ucs_output);
     register_i18n_abort_function(abort_interpreter);
+  }
+}
+
+
+void fizmo_register_filesys_interface(struct z_filesys_interface
+    *filesys_interface)
+{
+  if (active_filesys_interface == NULL)
+  {
+    active_filesys_interface = filesys_interface;
   }
 }
 

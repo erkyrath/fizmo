@@ -58,11 +58,11 @@
 
 #define HISTORY_BUFFER_INPUT_SIZE 1024
 
-
+#ifndef NO_FILESYSTEM_ACCESS
 z_ucs last_savegame_filename[MAXIMUM_SAVEGAME_NAME_LENGTH + 1];
 static zscii current_savegame_filename_buffer[MAXIMUM_SAVEGAME_NAME_LENGTH + 1];
 //static z_ucs savegame_output_buffer[MAXIMUM_SAVEGAME_NAME_LENGTH + 1];
-
+#endif /* NO_FILESYSTEM_ACCESS */
 
 static int save_stack_frame(uint16_t *current_frame_index,
     uint16_t current_frame_stack_usage, uint8_t current_frame_number_of_locals,
@@ -184,6 +184,7 @@ static int save_stack_frame(uint16_t *current_frame_index,
   return 0;
 }
 
+#ifndef NO_FILESYSTEM_ACCESS
 
 static int ask_for_filename(char *filename_suggestion)
 {
@@ -372,6 +373,7 @@ static int ask_for_filename(char *filename_suggestion)
   return 0;
 }
 
+#endif /* NO_FILESYSTEM_ACCESS */
 
 // Returns the supplied result code.
 static int _store_save_or_restore_result(uint16_t result_code)
@@ -441,7 +443,11 @@ void save_game(uint16_t address, uint16_t length, char *filename,
     bool skip_asking_for_filename, bool evaluate_result, char *directory)
 {
   uint32_t pc_on_restore = (uint32_t)(pc - z_mem);
+#ifndef NO_FILESYSTEM_ACCESS
   FILE *save_file;
+#else /* NO_FILESYSTEM_ACCESS */
+  void *save_file;
+#endif /* NO_FILESYSTEM_ACCESS */
   uint8_t *dynamic_index;
   uint16_t consecutive_zeros;
   int data;
@@ -458,6 +464,8 @@ void save_game(uint16_t address, uint16_t length, char *filename,
 
   TRACE_LOG("Save %d bytes from address %d.\n", length, address);
   TRACE_LOG("PC at: %x.\n", pc_on_restore);
+
+#ifndef NO_FILESYSTEM_ACCESS
 
   if (filename != NULL)
   {
@@ -504,6 +512,19 @@ void save_game(uint16_t address, uint16_t length, char *filename,
     save_file = fopen(str, "w");
   else
     save_file = open_simple_iff_file(str, IFF_MODE_WRITE);
+
+#else /* NO_FILESYSTEM_ACCESS */
+
+  save_file = active_filesys_interface->request_savegame_fileref((skip_asking_for_filename ? filename : NULL), true);
+
+  if (!save_file)
+  {
+    if (bool_equal(evaluate_result, true))
+      _store_save_or_restore_result(0);
+    return;
+  }
+
+#endif /* NO_FILESYSTEM_ACCESS */
 
   if (save_file == NULL)
   {
@@ -1022,7 +1043,11 @@ int restore_game(uint16_t address, uint16_t length, char *filename,
   uint8_t checksum[2];
   uint8_t pc_on_restore_data[3];
   uint32_t pc_on_restore;
+#ifndef NO_FILESYSTEM_ACCESS
   FILE *iff_file;
+#else /* NO_FILESYSTEM_ACCESS */
+  void *iff_file;
+#endif /* NO_FILESYSTEM_ACCESS */
   uint8_t *dynamic_index;
   int bytes_read;
   int chunk_length;
@@ -1057,6 +1082,8 @@ int restore_game(uint16_t address, uint16_t length, char *filename,
 #endif // DISABLE_OUTPUT_HISTORY
 
   TRACE_LOG("Restore %d bytes to address %d.\n", length, address);
+
+#ifndef NO_FILESYSTEM_ACCESS
 
   if (filename != NULL)
   {
@@ -1097,6 +1124,18 @@ int restore_game(uint16_t address, uint16_t length, char *filename,
   iff_file = open_simple_iff_file(
       str,
       IFF_MODE_READ);
+
+#else /* NO_FILESYSTEM_ACCESS */
+
+  iff_file = active_filesys_interface->request_savegame_fileref((skip_asking_for_filename ? filename : NULL), false);
+
+  if (!iff_file)
+  {
+    if (bool_equal(evaluate_result, true))
+      return _store_save_or_restore_result(0);
+  }
+
+#endif /* NO_FILESYSTEM_ACCESS */
 
   if (iff_file == NULL)
   {

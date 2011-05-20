@@ -36,6 +36,7 @@ install-dev:: libfizmo.a
 	cp src/screen_interface/*.cpp \
 	  $(DEV_INSTALL_PREFIX)/include/fizmo/screen_interface
 	cp -r src/sound_interface $(DEV_INSTALL_PREFIX)/include/fizmo/
+	cp -r src/filesys_interface $(DEV_INSTALL_PREFIX)/include/fizmo/
 	mkdir -p $(PKG_DIR)
 	echo 'prefix=$(DEV_INSTALL_PREFIX)' >$(PKGFILE)
 	echo 'exec_prefix=$${prefix}' >>$(PKGFILE)

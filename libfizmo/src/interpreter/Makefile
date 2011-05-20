@@ -74,7 +74,7 @@ libinterpreter.a: fizmo.o zpu.o stack.o streams.o routine.o variable.o object.o 
 fizmo.o: ../tools/tracelog.h fizmo.h zpu.h text.h math.h stack.h ../tools/i18n.h misc.h streams.h config.h savegame.h output.h ../tools/z_ucs.h fizmo.c $(BLOCKBUF_DEP_H) $(OUTPUT_HST_DEP_H) $(FILELIST_DEP_H)
 	$(CC) $(CFLAGS) -c fizmo.c
 
-fizmo.h: ../screen_interface/screen_interface.h
+fizmo.h: ../screen_interface/screen_interface.h ../filesys_interface/filesys_interface.h
 	touch fizmo.h
 
 zpu.o: zpu.h ../tools/tracelog.h fizmo.h savegame.h misc.h routine.h variable.h property.h object.h math.h text.h ../tools/i18n.h streams.h output.h sound.h stack.h table.h undo.h zpu.c

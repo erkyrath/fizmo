@@ -88,7 +88,8 @@ void glk_main(void)
     }
 
     /* fizmo_set_interface_config_file(...); */
-    fizmo_register_screen_interface(&glkint_interface);
+    fizmo_register_screen_interface(&glkint_screen_interface);
+    fizmo_register_filesys_interface(&glkint_filesys_interface);
 
     glkint_open_interface();
     fizmo_start(game_filename, NULL, NULL);

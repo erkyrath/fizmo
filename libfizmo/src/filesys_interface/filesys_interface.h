@@ -1,5 +1,5 @@
 
-/* glkint.h
+/* filesys_interface.h
  *
  * This file is part of fizmo.
  *
@@ -30,9 +30,16 @@
  */
 
 
-extern struct z_screen_interface glkint_screen_interface;
-extern struct z_filesys_interface glkint_filesys_interface;
+#ifndef filesys_interface_h_INCLUDED
+#define filesys_interface_h_INCLUDED
 
-extern void glkint_open_interface(void);
+#include <inttypes.h>
+#include "../tools/types.h"
 
-extern void fatal_error_handler(char *str, glui32 *ustr, char *arg, int useval, glsi32 val);
+struct z_filesys_interface
+{
+  void* (*request_savegame_fileref)(char *, bool);
+};
+
+#endif /* filesys_interface_h_INCLUDED */
+

@@ -39,6 +39,7 @@
 
 #include "../screen_interface/screen_interface.h"
 #include "../sound_interface/sound_interface.h"
+#include "../filesys_interface/filesys_interface.h"
 #include "blockbuf.h"
 
 #define FIZMO_VERSION "0.7.0-b10"
@@ -73,6 +74,8 @@ void fizmo_register_screen_interface(
     struct z_screen_interface *screen_interface);
 void fizmo_register_sound_interface(
     struct z_sound_interface *sound_interface);
+void fizmo_register_filesys_interface(
+    struct z_filesys_interface *filesys_interface);
 void write_interpreter_info_into_header();
 void fizmo_start(char* z_story_filename, char *blorb_filename,
     char *restore_on_start_filename);
@@ -97,6 +100,7 @@ struct z_story_blorb_sound *get_sound_blorb_index(struct z_story *story,
 extern struct commandline_parameter *interpreter_commandline_parameters[];
 extern struct z_screen_interface *active_interface;
 extern struct z_sound_interface *active_sound_interface;
+extern struct z_filesys_interface *active_filesys_interface;
 extern struct z_story *active_z_story;
 extern uint8_t ver;
 extern uint8_t *header_extension_table;

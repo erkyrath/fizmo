@@ -326,7 +326,13 @@ void glkint_output_interface_info()
 void glkint_game_was_restored_and_history_modified()
 { }
 
-struct z_screen_interface glkint_interface =
+void *glkint_request_savegame_fileref(char *filename, bool tosave) 
+{
+    //###
+    return NULL;
+}
+
+struct z_screen_interface glkint_screen_interface =
 {
     &glkint_get_interface_name,
     &glkint_return_true, /* is_status_line_available */
@@ -375,3 +381,7 @@ struct z_screen_interface glkint_interface =
     &glkint_game_was_restored_and_history_modified
 };
 
+struct z_filesys_interface glkint_filesys_interface =
+{
+    &glkint_request_savegame_fileref,
+};

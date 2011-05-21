@@ -40,17 +40,17 @@
 #define IFF_MODE_READ 0
 #define IFF_MODE_WRITE 1
 
-/*@null@*/ /*@dependent@*/ FILE *open_simple_iff_file(char *filename, int mode);
-int start_new_chunk(char *id, FILE *iff_file);
-int end_current_chunk(FILE *iff_file);
-int close_simple_iff_file(FILE *iff_file);
-int find_chunk(char *id, FILE *iff_file);
-int read_chunk_length(FILE *iff_file);
+/*@null@*/ /*@dependent@*/ void *open_simple_iff_file(char *filename, int mode);
+int start_new_chunk(char *id, void *iff_file);
+int end_current_chunk(void *iff_file);
+int close_simple_iff_file(void *iff_file);
+int find_chunk(char *id, void *iff_file);
+int read_chunk_length(void *iff_file);
 int get_last_chunk_length();
-int write_four_byte_number(uint32_t number, FILE *iff_file);
-uint32_t read_four_byte_number(FILE *iff_file);
-char *read_form_type(FILE *iff_file);
-bool is_form_type(FILE *iff_file, char* form_type);
+int write_four_byte_number(uint32_t number, void *iff_file);
+uint32_t read_four_byte_number(void *iff_file);
+char *read_form_type(void *iff_file);
+bool is_form_type(void *iff_file, char* form_type);
 
 #endif /* iff_h_INCLUDED */
 

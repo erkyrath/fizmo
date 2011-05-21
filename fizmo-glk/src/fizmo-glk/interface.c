@@ -328,9 +328,74 @@ void glkint_game_was_restored_and_history_modified()
 
 void *glkint_request_savegame_fileref(char *filename, bool tosave) 
 {
-    //###
-    return NULL;
+    frefid_t fileref = NULL;
+    strid_t str = NULL;
+
+    if (filename) {
+        fileref = glk_fileref_create_by_name(
+            fileusage_SavedGame|fileusage_BinaryMode, 
+            filename, 0);
+    }
+    else {
+        fileref = glk_fileref_create_by_prompt(
+            fileusage_SavedGame|fileusage_BinaryMode, 
+            (tosave ? filemode_Write : filemode_Read), 0);
+    }
+
+    if (!fileref)
+        return NULL;
+
+    str = glk_stream_open_file(fileref, (tosave ? filemode_Write : filemode_Read), 0);
+    /* Dispose of the fileref, whether the stream opened successfully or not. */
+    glk_fileref_destroy(fileref);
+
+    return str;
 }
+
+int glkint_closefile(void *file)
+{
+    glk_stream_close(file, NULL);
+    return 0;
+}
+int glkint_getchar(void *file)
+{
+    int ch = glk_get_char_stream(file);
+    if (ch < 0)
+        return EOF;
+    return ch;
+}
+size_t glkint_getchars(char *ptr, size_t len, void *file)
+{
+    return glk_get_buffer_stream(file, ptr, len);
+}
+int glkint_putchar(int ch, void *file)
+{
+    glk_put_char_stream(file, ch);
+    return ch;
+}
+size_t glkint_putchars(char *ptr, size_t len, void *file)
+{
+    glk_put_buffer_stream(file, ptr, len);
+    return len;
+}
+off_t glkint_getfilepos(void *file)
+{
+    return glk_stream_get_position(file);
+}
+int glkint_setfilepos(void *file, off_t seek, int whence)
+{
+    if (whence == SEEK_SET)
+        glk_stream_set_position(file, seek, seekmode_Start);
+    else if (whence == SEEK_CUR)
+        glk_stream_set_position(file, seek, seekmode_Current);
+    else if (whence == SEEK_END)
+        glk_stream_set_position(file, seek, seekmode_End);
+    return 0;
+}
+
+/* The two top-level data structures. These are installed by code
+   in unixstrt.c.
+*/
 
 struct z_screen_interface glkint_screen_interface =
 {
@@ -384,4 +449,11 @@ struct z_screen_interface glkint_screen_interface =
 struct z_filesys_interface glkint_filesys_interface =
 {
     &glkint_request_savegame_fileref,
+    &glkint_closefile,
+    &glkint_getchar,
+    &glkint_getchars,
+    &glkint_putchar,
+    &glkint_putchars,
+    &glkint_getfilepos,
+    &glkint_setfilepos,
 };

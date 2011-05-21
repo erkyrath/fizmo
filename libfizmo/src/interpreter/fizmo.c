@@ -1345,6 +1345,59 @@ int parse_fizmo_config_files()
   return 0;
 }
 
+#ifndef NO_FILESYSTEM_ACCESS
+
+static struct z_filesys_interface unix_filesys_interface;
+
+static int unix_func_closefile(void *file)
+{
+  return fclose(file);
+}
+static int unix_func_getchar(void *file)
+{
+  return fgetc(file);
+}
+static size_t unix_func_getchars(char *ptr, size_t len, void *file)
+{
+  return fread(ptr, len, 1, file);
+}
+static int unix_func_putchar(int ch, void *file)
+{
+  return fputc(ch, file);
+}
+static size_t unix_func_putchars(char *ptr, size_t len, void *file)
+{
+  return fwrite(ptr, len, 1, file);
+}
+static off_t unix_func_getfilepos(void *file)
+{
+  return ftell(file);
+}
+static int unix_func_setfilepos(void *file, off_t seek, int whence)
+{
+  return fseek(file, seek, whence);
+}
+
+static void set_unix_filesystem_interface()
+{
+  if (active_filesys_interface) {
+    /* Someone must have already set this up. */
+    return;
+  }
+
+  active_filesys_interface = &unix_filesys_interface;
+  memset(&unix_filesys_interface, 0, sizeof(unix_filesys_interface));
+  unix_filesys_interface.closefile = &unix_func_closefile;
+  unix_filesys_interface.getchar = &unix_func_getchar;
+  unix_filesys_interface.getchars = &unix_func_getchars;
+  unix_filesys_interface.putchar = &unix_func_putchar;
+  unix_filesys_interface.putchars = &unix_func_putchars;
+  unix_filesys_interface.getfilepos = &unix_func_getfilepos;
+  unix_filesys_interface.setfilepos = &unix_func_setfilepos;
+}
+
+#endif /* NO_FILESYSTEM_ACCESS */
+
 // This will quote all newlines, TABs and backslashes which must not appear
 // in a config-file. Returns a new malloced string which should be freed after
 // use.
@@ -1487,6 +1540,7 @@ void fizmo_start(char* input_filename, char *blorb_filename,
       abort_interpreter);
 
 #ifndef NO_FILESYSTEM_ACCESS
+  set_unix_filesystem_interface();
   ensure_dot_fizmo_dir_exists();
 #endif /* NO_FILESYSTEM_ACCESS */
 

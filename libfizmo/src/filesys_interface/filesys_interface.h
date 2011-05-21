@@ -38,7 +38,16 @@
 
 struct z_filesys_interface
 {
-  void* (*request_savegame_fileref)(char *, bool);
+    void* (*request_savegame_fileref)(char *, bool);
+    int (*closefile)(void *);
+
+    int (*getchar)(void *);
+    size_t (*getchars)(char *, size_t, void *);
+    int (*putchar)(int, void *);
+    size_t (*putchars)(char *, size_t, void *);
+
+    off_t (*getfilepos)(void *);
+    int (*setfilepos)(void *, off_t, int);
 };
 
 #endif /* filesys_interface_h_INCLUDED */

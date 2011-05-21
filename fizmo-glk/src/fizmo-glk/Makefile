@@ -13,6 +13,14 @@ include $(GLKINCLUDEDIR)/$(GLKMAKEFILE)
 
 CFLAGS += -I$(GLKINCLUDEDIR)
 
+ifneq ($(ENABLE_GDB_SYMBOLS),)
+override CFLAGS += -g
+endif
+
+ifneq ($(ENABLE_OPTIMIZATION),)
+override CFLAGS += -O2
+endif
+
 ifneq ($(ENABLE_TRACING),)
 override CFLAGS += -DENABLE_TRACING=
 endif

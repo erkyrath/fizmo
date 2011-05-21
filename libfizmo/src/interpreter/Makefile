@@ -104,7 +104,7 @@ text.o: text.h ../tools/tracelog.h fizmo.h routine.h object.h zpu.h ../tools/i18
 savegame.o: savegame.h ../tools/tracelog.h streams.h fizmo.h iff.h stack.h zpu.h ../tools/i18n.h variable.h text.h ../tools/z_ucs.h routine.h savegame.c $(FILELIST_DEP_H)
 	$(CC) $(CFLAGS) -c savegame.c
 
-iff.o: iff.h ../tools/tracelog.h ../tools/i18n.h ../tools/types.h iff.c
+iff.o: iff.h fizmo.h ../tools/tracelog.h ../tools/i18n.h ../tools/types.h iff.c
 	$(CC) $(CFLAGS) -c iff.c
 
 misc.o: misc.h ../tools/tracelog.h fizmo.h streams.h stack.h zpu.h ../tools/i18n.h routine.h misc.c

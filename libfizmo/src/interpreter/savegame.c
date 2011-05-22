@@ -455,7 +455,7 @@ void save_game(uint16_t address, uint16_t length, char *filename,
   char *system_filename = NULL;
   uint8_t *ptr;
   int data2; // removeme
-  char *str;
+  char *str = NULL;
 #ifndef DISABLE_OUTPUT_HISTORY
   z_ucs *hst_ptr;
   int nof_paragraphs_to_save;
@@ -691,7 +691,7 @@ void save_game(uint16_t address, uint16_t length, char *filename,
     if (
         (active_z_story->z_file != NULL)
         &&
-        ((fseek(
+        (((active_filesys_interface->setfilepos)(
                 active_z_story->z_file,
                 active_z_story->story_file_exec_offset,
                 SEEK_SET)) == 0)
@@ -1075,7 +1075,7 @@ int restore_game(uint16_t address, uint16_t length, char *filename,
   uint8_t last_stack_frame_nof_locals = 0;
   uint16_t current_stack_frame_nof_functions_stack_words = 0;
   uint16_t last_stack_frame_nof_functions_stack_words = 0;
-  char *str;
+  char *str = NULL;
   int i;
 #ifndef DISABLE_OUTPUT_HISTORY
   z_ucs history_buffer[HISTORY_BUFFER_INPUT_SIZE];
@@ -1183,7 +1183,7 @@ int restore_game(uint16_t address, uint16_t length, char *filename,
         i18n_libfizmo_CANT_FIND_CHUNK_IFHD, iff_file);
 
   // Skip length code
-  if (fseek(iff_file, 4, SEEK_CUR) != 0)
+  if ((active_filesys_interface->setfilepos)(iff_file, 4, SEEK_CUR) != 0)
     return _handle_save_or_restore_failure(evaluate_result,
         i18n_libfizmo_ERROR_READING_SAVE_FILE, iff_file);
 
@@ -1246,7 +1246,7 @@ int restore_game(uint16_t address, uint16_t length, char *filename,
     if (
         (active_z_story->z_file == NULL)
         ||
-        (fseek(
+        ((active_filesys_interface->setfilepos)(
                 active_z_story->z_file,
                 active_z_story->story_file_exec_offset,
                 SEEK_SET)
@@ -1789,7 +1789,7 @@ bool detect_saved_game(char *file_to_check, char **story_file_to_load)
     }
 
     // Skip length code
-    if (fseek(iff_file, 4, SEEK_CUR) != 0)
+    if ((active_filesys_interface->setfilepos)(iff_file, 4, SEEK_CUR) != 0)
     {
       (active_filesys_interface->closefile)(iff_file);
       return false;

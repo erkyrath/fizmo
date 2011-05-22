@@ -1349,6 +1349,10 @@ int parse_fizmo_config_files()
 
 static struct z_filesys_interface unix_filesys_interface;
 
+static void *unix_open_datafile(char *filename, bool willsave)
+{
+  return fopen(filename, (willsave ? "w" : "r"));
+}
 static int unix_func_closefile(void *file)
 {
   return fclose(file);
@@ -1387,6 +1391,7 @@ static void set_unix_filesystem_interface()
 
   active_filesys_interface = &unix_filesys_interface;
   memset(&unix_filesys_interface, 0, sizeof(unix_filesys_interface));
+  unix_filesys_interface.open_datafile = &unix_open_datafile;
   unix_filesys_interface.closefile = &unix_func_closefile;
   unix_filesys_interface.getchar = &unix_func_getchar;
   unix_filesys_interface.getchars = &unix_func_getchars;

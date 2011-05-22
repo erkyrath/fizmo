@@ -352,6 +352,32 @@ void *glkint_request_savegame_fileref(char *filename, bool tosave)
     return str;
 }
 
+void *glkint_open_datafile(char *filename, bool tosave) 
+{
+    frefid_t fileref = NULL;
+    strid_t str = NULL;
+
+    if (filename) {
+        fileref = glk_fileref_create_by_name(
+            fileusage_Data|fileusage_BinaryMode, 
+            filename, 0);
+    }
+    else {
+        fileref = glk_fileref_create_by_prompt(
+            fileusage_SavedGame|fileusage_BinaryMode, 
+            (tosave ? filemode_Write : filemode_Read), 0);
+    }
+
+    if (!fileref)
+        return NULL;
+
+    str = glk_stream_open_file(fileref, (tosave ? filemode_Write : filemode_Read), 0);
+    /* Dispose of the fileref, whether the stream opened successfully or not. */
+    glk_fileref_destroy(fileref);
+
+    return str;
+}
+
 int glkint_closefile(void *file)
 {
     glk_stream_close(file, NULL);
@@ -449,6 +475,7 @@ struct z_screen_interface glkint_screen_interface =
 struct z_filesys_interface glkint_filesys_interface =
 {
     &glkint_request_savegame_fileref,
+    &glkint_open_datafile,
     &glkint_closefile,
     &glkint_getchar,
     &glkint_getchars,

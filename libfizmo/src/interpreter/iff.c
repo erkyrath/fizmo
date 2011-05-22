@@ -90,7 +90,7 @@ static int read_four_chars(void *iff_file)
 
   if (mode == IFF_MODE_READ)
   {
-    if ((iff_file = fopen(filename, "r")) == NULL)
+    if ((iff_file = (active_filesys_interface->open_datafile)(filename, false)) == NULL)
       return NULL;
 
     if (read_four_chars(iff_file) != 0)
@@ -131,7 +131,7 @@ static int read_four_chars(void *iff_file)
   }
   else if (mode == IFF_MODE_WRITE)
   {
-    if ((iff_file = fopen(filename, "w")) == NULL)
+    if ((iff_file = (active_filesys_interface->open_datafile)(filename, true)) == NULL)
       return NULL;
 
     if ((active_filesys_interface->putchars)("FORM\0\0\0\0IFZS", 12, iff_file) < 12)

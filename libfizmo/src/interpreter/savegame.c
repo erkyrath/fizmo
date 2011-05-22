@@ -77,6 +77,7 @@ static int save_stack_frame(uint16_t *current_frame_index,
   uint8_t flags;
   uint16_t *data_index = current_frame_index;
   uint8_t i;
+  int (*putchar)(int, void *) = active_filesys_interface->putchar;
 
   TRACE_LOG("Saving stack frame.\n");
   TRACE_LOG("Z-Stack at %p.\n", z_stack);
@@ -138,28 +139,28 @@ static int save_stack_frame(uint16_t *current_frame_index,
 
   TRACE_LOG("Flags: %x.\n", flags);
 
-  if (fputc((int)(previous_pc >> 16), out_file) == EOF)
+  if (putchar((int)(previous_pc >> 16), out_file) == EOF)
     return -1;
 
-  if (fputc((int)(previous_pc >>  8), out_file) == EOF)
+  if (putchar((int)(previous_pc >>  8), out_file) == EOF)
     return -1;
 
-  if (fputc((int)(previous_pc      ), out_file) == EOF)
+  if (putchar((int)(previous_pc      ), out_file) == EOF)
     return -1;
 
-  if (fputc((int)flags, out_file) == EOF)
+  if (putchar((int)flags, out_file) == EOF)
     return -1;
 
-  if (fputc((int)previous_result_var, out_file) == EOF)
+  if (putchar((int)previous_result_var, out_file) == EOF)
     return -1;
 
-  if (fputc((int)previous_argument_mask, out_file) == EOF)
+  if (putchar((int)previous_argument_mask, out_file) == EOF)
     return -1;
 
-  if (fputc((int)(current_frame_stack_usage >> 8), out_file) == EOF)
+  if (putchar((int)(current_frame_stack_usage >> 8), out_file) == EOF)
     return -1;
 
-  if (fputc((int)(current_frame_stack_usage & 0xff), out_file) == EOF)
+  if (putchar((int)(current_frame_stack_usage & 0xff), out_file) == EOF)
     return -1;
 
   TRACE_LOG("Data: (");
@@ -171,10 +172,10 @@ static int save_stack_frame(uint16_t *current_frame_index,
     }
     TRACE_LOG("$%x", data_index[i]);
 
-    if (fputc((int)(data_index[i] >> 8), out_file) == EOF)
+    if (putchar((int)(data_index[i] >> 8), out_file) == EOF)
       return -1;
 
-    if (fputc((int)(data_index[i]     ), out_file) == EOF)
+    if (putchar((int)(data_index[i]     ), out_file) == EOF)
       return -1;
   }
   TRACE_LOG(")\n");
@@ -413,7 +414,7 @@ static int _handle_save_or_restore_failure(bool evaluate_result,
         -0x0100,
         "streams_latin1_output");
 
-  if (fclose(iff_file) != 0)
+  if ((active_filesys_interface->closefile)(iff_file) != 0)
     i18n_translate_and_exit(
         libfizmo_module_name,
         i18n_libfizmo_FUNCTION_CALL_P0S_ABORTED_DUE_TO_ERROR,
@@ -451,7 +452,7 @@ void save_game(uint16_t address, uint16_t length, char *filename,
   uint8_t *dynamic_index;
   uint16_t consecutive_zeros;
   int data;
-  char *system_filename;
+  char *system_filename = NULL;
   uint8_t *ptr;
   int data2; // removeme
   char *str;
@@ -461,6 +462,8 @@ void save_game(uint16_t address, uint16_t length, char *filename,
   history_output *history;
   int return_code;
 #endif // DISABLE_OUTPUT_HISTORY
+  int (*getchar)(void *) = active_filesys_interface->getchar;
+  int (*putchar)(int, void *) = active_filesys_interface->putchar;
 
   TRACE_LOG("Save %d bytes from address %d.\n", length, address);
   TRACE_LOG("PC at: %x.\n", pc_on_restore);
@@ -557,7 +560,7 @@ void save_game(uint16_t address, uint16_t length, char *filename,
 
   if (address != 0)
   {
-    if ((fwrite(z_mem + address, 1, length, save_file)) != length)
+    if (((active_filesys_interface->putchars)(z_mem + address, length, save_file)) != length)
     {
       _handle_save_or_restore_failure(
           evaluate_result,
@@ -566,7 +569,7 @@ void save_game(uint16_t address, uint16_t length, char *filename,
       return;
     }
 
-    if ((fclose(save_file)) != 0)
+    if (((active_filesys_interface->closefile)(save_file)) != 0)
     {
       _handle_save_or_restore_failure(
           evaluate_result,
@@ -589,13 +592,13 @@ void save_game(uint16_t address, uint16_t length, char *filename,
     }
 
     // Save release number
-    if ((fputc((int)z_mem[0x2], save_file)) == EOF)
+    if ((putchar((int)z_mem[0x2], save_file)) == EOF)
     {
       _handle_save_or_restore_failure(evaluate_result,
           i18n_libfizmo_ERROR_WRITING_SAVE_FILE, save_file);
       return;
     }
-    if ((fputc((int)z_mem[0x3], save_file)) == EOF)
+    if ((putchar((int)z_mem[0x3], save_file)) == EOF)
     {
       _handle_save_or_restore_failure(evaluate_result,
           i18n_libfizmo_ERROR_WRITING_SAVE_FILE, save_file);
@@ -603,37 +606,37 @@ void save_game(uint16_t address, uint16_t length, char *filename,
     }
 
     // Save serial number
-    if ((fputc((int)z_mem[0x12], save_file)) == EOF)
+    if ((putchar((int)z_mem[0x12], save_file)) == EOF)
     {
       _handle_save_or_restore_failure(evaluate_result,
           i18n_libfizmo_ERROR_WRITING_SAVE_FILE, save_file);
       return;
     }
-    if ((fputc((int)z_mem[0x13], save_file)) == EOF)
+    if ((putchar((int)z_mem[0x13], save_file)) == EOF)
     {
       _handle_save_or_restore_failure(evaluate_result,
           i18n_libfizmo_ERROR_WRITING_SAVE_FILE, save_file);
       return;
     }
-    if ((fputc((int)z_mem[0x14], save_file)) == EOF)
+    if ((putchar((int)z_mem[0x14], save_file)) == EOF)
     {
       _handle_save_or_restore_failure(evaluate_result,
           i18n_libfizmo_ERROR_WRITING_SAVE_FILE, save_file);
       return;
     }
-    if ((fputc((int)z_mem[0x15], save_file)) == EOF)
+    if ((putchar((int)z_mem[0x15], save_file)) == EOF)
     {
       _handle_save_or_restore_failure(evaluate_result,
           i18n_libfizmo_ERROR_WRITING_SAVE_FILE, save_file);
       return;
     }
-    if ((fputc((int)z_mem[0x16], save_file)) == EOF)
+    if ((putchar((int)z_mem[0x16], save_file)) == EOF)
     {
       _handle_save_or_restore_failure(evaluate_result,
           i18n_libfizmo_ERROR_WRITING_SAVE_FILE, save_file);
       return;
     }
-    if ((fputc((int)z_mem[0x17], save_file)) == EOF)
+    if ((putchar((int)z_mem[0x17], save_file)) == EOF)
     {
       _handle_save_or_restore_failure(evaluate_result,
           i18n_libfizmo_ERROR_WRITING_SAVE_FILE, save_file);
@@ -641,13 +644,13 @@ void save_game(uint16_t address, uint16_t length, char *filename,
     }
 
     // Save checksum
-    if ((fputc((int)z_mem[0x1c], save_file)) == EOF)
+    if ((putchar((int)z_mem[0x1c], save_file)) == EOF)
     {
       _handle_save_or_restore_failure(evaluate_result,
           i18n_libfizmo_ERROR_WRITING_SAVE_FILE, save_file);
       return;
     }
-    if ((fputc((int)z_mem[0x1d], save_file)) == EOF)
+    if ((putchar((int)z_mem[0x1d], save_file)) == EOF)
     {
       _handle_save_or_restore_failure(evaluate_result,
           i18n_libfizmo_ERROR_WRITING_SAVE_FILE, save_file);
@@ -655,19 +658,19 @@ void save_game(uint16_t address, uint16_t length, char *filename,
     }
 
     // Save initial PC on restore
-    if ((fputc((int)(pc_on_restore >> 16), save_file)) == EOF)
+    if ((putchar((int)(pc_on_restore >> 16), save_file)) == EOF)
     {
       _handle_save_or_restore_failure(evaluate_result,
           i18n_libfizmo_ERROR_WRITING_SAVE_FILE, save_file);
       return;
     }
-    if ((fputc((int)(pc_on_restore >>  8), save_file)) == EOF)
+    if ((putchar((int)(pc_on_restore >>  8), save_file)) == EOF)
     {
       _handle_save_or_restore_failure(evaluate_result,
           i18n_libfizmo_ERROR_WRITING_SAVE_FILE, save_file);
       return;
     }
-    if ((fputc((int)(pc_on_restore      ), save_file)) == EOF)
+    if ((putchar((int)(pc_on_restore      ), save_file)) == EOF)
     {
       _handle_save_or_restore_failure(evaluate_result,
           i18n_libfizmo_ERROR_WRITING_SAVE_FILE, save_file);
@@ -709,7 +712,7 @@ void save_game(uint16_t address, uint16_t length, char *filename,
 
       while (dynamic_index != ptr)
       {
-        if ((data = fgetc(active_z_story->z_file)) == EOF)
+        if ((data = getchar(active_z_story->z_file)) == EOF)
         {
           _handle_save_or_restore_failure(evaluate_result,
               i18n_libfizmo_ERROR_WRITING_SAVE_FILE, save_file);
@@ -734,7 +737,7 @@ void save_game(uint16_t address, uint16_t length, char *filename,
           //TRACE_LOG("Skipping %d equal bytes.\n", consecutive_zeros);
           while (consecutive_zeros != 0)
           {
-            if (fputc(0, save_file) == EOF)
+            if (putchar(0, save_file) == EOF)
             {
               _handle_save_or_restore_failure(evaluate_result,
                   i18n_libfizmo_ERROR_WRITING_SAVE_FILE, save_file);
@@ -743,7 +746,7 @@ void save_game(uint16_t address, uint16_t length, char *filename,
 
             if (consecutive_zeros > 256)
             {
-              if (fputc(0xff, save_file) == EOF)
+              if (putchar(0xff, save_file) == EOF)
               {
                 _handle_save_or_restore_failure(evaluate_result,
                     i18n_libfizmo_ERROR_WRITING_SAVE_FILE,
@@ -755,7 +758,7 @@ void save_game(uint16_t address, uint16_t length, char *filename,
             }
             else
             {
-              if (fputc((int)(consecutive_zeros - 1), save_file) == EOF)
+              if (putchar((int)(consecutive_zeros - 1), save_file) == EOF)
               {
                 _handle_save_or_restore_failure(evaluate_result,
                     i18n_libfizmo_ERROR_WRITING_SAVE_FILE,
@@ -767,7 +770,7 @@ void save_game(uint16_t address, uint16_t length, char *filename,
             }
           }
 
-          if (fputc(data, save_file) == EOF)
+          if (putchar(data, save_file) == EOF)
           {
             _handle_save_or_restore_failure(evaluate_result,
                 i18n_libfizmo_ERROR_WRITING_SAVE_FILE,
@@ -799,7 +802,7 @@ void save_game(uint16_t address, uint16_t length, char *filename,
 
       while (dynamic_index != active_z_story->static_memory)
       {
-        if ((fputc((int)(*dynamic_index), save_file)) == EOF)
+        if ((putchar((int)(*dynamic_index), save_file)) == EOF)
         {
           _handle_save_or_restore_failure(
               evaluate_result,
@@ -1058,7 +1061,7 @@ int restore_game(uint16_t address, uint16_t length, char *filename,
   int copylength;
   uint8_t *restored_story_mem;
   uint8_t *ptr;
-  char *system_filename;
+  char *system_filename = NULL;
   struct z_stack_container *saved_stack;
   uint32_t stack_frame_return_pc;
   bool stack_frame_discard_result;
@@ -1080,6 +1083,8 @@ int restore_game(uint16_t address, uint16_t length, char *filename,
   z_ucs zucs_char_buffer[2];
 #endif // ENABLE_TRACING
 #endif // DISABLE_OUTPUT_HISTORY
+  int (*getchar)(void *) = active_filesys_interface->getchar;
+  int (*putchar)(int, void *) = active_filesys_interface->putchar;
 
   TRACE_LOG("Restore %d bytes to address %d.\n", length, address);
 
@@ -1178,17 +1183,17 @@ int restore_game(uint16_t address, uint16_t length, char *filename,
     return _handle_save_or_restore_failure(evaluate_result,
         i18n_libfizmo_ERROR_READING_SAVE_FILE, iff_file);
 
-  if (fread(release_number, 2, 1, iff_file) != 1)
+  if ((active_filesys_interface->getchars)(release_number, 2, iff_file) != 2)
     return _handle_save_or_restore_failure(evaluate_result,
         i18n_libfizmo_COULD_NOT_READ_RELEASE_NUMBER,
         iff_file);
 
-  if (fread(serial_number, 6, 1, iff_file) != 1)
+  if ((active_filesys_interface->getchars)(serial_number, 6, iff_file) != 6)
     return _handle_save_or_restore_failure(evaluate_result,
         i18n_libfizmo_COULD_NOT_READ_SERIAL_NUMBER,
         iff_file);
 
-  if (fread(checksum, 2, 1, iff_file) != 1)
+  if ((active_filesys_interface->getchars)(checksum, 2, iff_file) != 2)
     return _handle_save_or_restore_failure(evaluate_result,
         i18n_libfizmo_COULD_NOT_READ_CHECKSUM, iff_file);
 
@@ -1203,7 +1208,7 @@ int restore_game(uint16_t address, uint16_t length, char *filename,
         i18n_libfizmo_RELEASE_NR_SERIAL_NR_OR_CHECKSUM_DOESNT_MATCH,
         iff_file);
 
-  if (fread(pc_on_restore_data, 3, 1, iff_file) != 1)
+  if ((active_filesys_interface->getchars)(pc_on_restore_data, 3, iff_file) != 3)
     return _handle_save_or_restore_failure(evaluate_result,
         i18n_libfizmo_COULD_NOT_READ_RESTORE_PC, iff_file);
 
@@ -1269,7 +1274,7 @@ int restore_game(uint16_t address, uint16_t length, char *filename,
     while (bytes_read < chunk_length)
     {
       // Read data from CMem chunk.
-      data = fgetc(iff_file);
+      data = getchar(iff_file);
       bytes_read++;
 
       if (data == EOF)
@@ -1281,7 +1286,7 @@ int restore_game(uint16_t address, uint16_t length, char *filename,
 
       if (data != 0)
       {
-        data2 = fgetc(active_z_story->z_file);
+        data2 = getchar(active_z_story->z_file);
         // Found content difference to original story file.
 
         if (data2 == EOF)
@@ -1304,7 +1309,7 @@ int restore_game(uint16_t address, uint16_t length, char *filename,
       {
         // Found block identical to story file.
 
-        data = fgetc(iff_file);
+        data = getchar(iff_file);
         bytes_read++;
         if (data == EOF)
         {
@@ -1319,7 +1324,7 @@ int restore_game(uint16_t address, uint16_t length, char *filename,
 
         for (i=0; i<copylength; i++)
         {
-          data2 = fgetc(active_z_story->z_file);
+          data2 = getchar(active_z_story->z_file);
           if (data2 == EOF)
           {
             free(restored_story_mem);
@@ -1339,7 +1344,7 @@ int restore_game(uint16_t address, uint16_t length, char *filename,
 
     while (dynamic_index != ptr)
     {
-      data = fgetc(active_z_story->z_file);
+      data = getchar(active_z_story->z_file);
       if (data == EOF)
       {
         free(restored_story_mem);
@@ -1377,7 +1382,7 @@ int restore_game(uint16_t address, uint16_t length, char *filename,
     ptr = restored_story_mem + length;
     while (dynamic_index != ptr)
     {
-      data = fgetc(iff_file);
+      data = getchar(iff_file);
       if (data == EOF)
       {
         free(restored_story_mem);
@@ -1428,7 +1433,7 @@ int restore_game(uint16_t address, uint16_t length, char *filename,
     // Each while iteration processes a single stack frame.
 
     // PC Bits 16-23
-    data = fgetc(iff_file);
+    data = getchar(iff_file);
     if (data == EOF)
     {
       free(restored_story_mem);
@@ -1439,7 +1444,7 @@ int restore_game(uint16_t address, uint16_t length, char *filename,
     stack_frame_return_pc = (data & 0xff) << 16;
 
     // PC Bits 8-15
-    data = fgetc(iff_file);
+    data = getchar(iff_file);
     if (data == EOF)
     {
       free(restored_story_mem);
@@ -1450,7 +1455,7 @@ int restore_game(uint16_t address, uint16_t length, char *filename,
     stack_frame_return_pc |= (data & 0xff) << 8;
 
     // PC Bits 0-7
-    data = fgetc(iff_file);
+    data = getchar(iff_file);
     if (data == EOF)
     {
       free(restored_story_mem);
@@ -1460,7 +1465,7 @@ int restore_game(uint16_t address, uint16_t length, char *filename,
     }
     stack_frame_return_pc |= (data & 0xff);
 
-    data = fgetc(iff_file);
+    data = getchar(iff_file);
     if (data == EOF)
     {
       free(restored_story_mem);
@@ -1471,7 +1476,7 @@ int restore_game(uint16_t address, uint16_t length, char *filename,
     stack_frame_discard_result = ((data & 0x10) != 0 ? true : false);
     current_stack_frame_nof_locals = (data & 0xf);
 
-    data = fgetc(iff_file);
+    data = getchar(iff_file);
     if (data == EOF)
     {
       free(restored_story_mem);
@@ -1481,7 +1486,7 @@ int restore_game(uint16_t address, uint16_t length, char *filename,
     }
     stack_frame_result_var = (data & 0xff);
 
-    data = fgetc(iff_file);
+    data = getchar(iff_file);
     if (data == EOF)
     {
       free(restored_story_mem);
@@ -1491,7 +1496,7 @@ int restore_game(uint16_t address, uint16_t length, char *filename,
     }
     stack_frame_argument_mask = (data & 0xff);
 
-    data = fgetc(iff_file);
+    data = getchar(iff_file);
     if (data == EOF)
     {
       free(restored_story_mem);
@@ -1501,7 +1506,7 @@ int restore_game(uint16_t address, uint16_t length, char *filename,
     }
     current_stack_frame_nof_functions_stack_words = ((data & 0xff) << 8);
 
-    data = fgetc(iff_file);
+    data = getchar(iff_file);
     if (data == EOF)
     {
       free(restored_story_mem);
@@ -1536,7 +1541,7 @@ int restore_game(uint16_t address, uint16_t length, char *filename,
     while (i < current_stack_frame_nof_locals
         + current_stack_frame_nof_functions_stack_words)
     {
-      data = fgetc(iff_file);
+      data = getchar(iff_file);
       if (data == EOF)
       {
         free(restored_story_mem);
@@ -1546,7 +1551,7 @@ int restore_game(uint16_t address, uint16_t length, char *filename,
       }
       stack_word = (data & 0xff) << 8;
 
-      data = fgetc(iff_file);
+      data = getchar(iff_file);
       if (data == EOF)
       {
         free(restored_story_mem);
@@ -1633,7 +1638,7 @@ int restore_game(uint16_t address, uint16_t length, char *filename,
   }
 #endif // DISABLE_OUTPUT_HISTORY
 
-  if (fclose(iff_file) != 0)
+  if ((active_filesys_interface->closefile)(iff_file) != 0)
     i18n_translate_and_exit(
         libfizmo_module_name,
         i18n_libfizmo_FUNCTION_CALL_P0S_ABORTED_DUE_TO_ERROR,
@@ -1768,43 +1773,43 @@ bool detect_saved_game(char *file_to_check, char **story_file_to_load)
   else if (find_chunk("RIdx", iff_file) == 0)
   {
     // We have an Blorb-IFF-file, no savegame.
-    fclose(iff_file);
+    (active_filesys_interface->closefile)(iff_file);
     return false;
   }
   else
   {
     if (find_chunk("IFhd", iff_file) == -1)
     {
-      fclose(iff_file);
+      (active_filesys_interface->closefile)(iff_file);
       return false;
     }
 
     // Skip length code
     if (fseek(iff_file, 4, SEEK_CUR) != 0)
     {
-      fclose(iff_file);
+      (active_filesys_interface->closefile)(iff_file);
       return false;
     }
 
-    if (fread(release_number_buf, 2, 1, iff_file) != 1)
+    if ((active_filesys_interface->getchars)(release_number_buf, 2, iff_file) != 2)
     {
-      fclose(iff_file);
+      (active_filesys_interface->closefile)(iff_file);
       return false;
     }
 
-    if (fread(serial_number, 6, 1, iff_file) != 1)
+    if ((active_filesys_interface->getchars)(serial_number, 6, iff_file) != 6)
     {
-      fclose(iff_file);
+      (active_filesys_interface->closefile)(iff_file);
       return false;
     }
 
-    if (fread(checksum_buf, 2, 1, iff_file) != 1)
+    if ((active_filesys_interface->getchars)(checksum_buf, 2, iff_file) != 2)
     {
-      fclose(iff_file);
+      (active_filesys_interface->closefile)(iff_file);
       return false;
     }
 
-    fclose(iff_file);
+    (active_filesys_interface->closefile)(iff_file);
 
     release_number = (release_number_buf[0] << 8) | release_number_buf[1];
     serial_number[6] = 0;

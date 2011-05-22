@@ -125,8 +125,8 @@ struct z_story
   uint16_t checksum;
   char *title;
 
-  FILE *z_file;
-  FILE *blorb_file;
+  void *z_file;
+  void *blorb_file;
   char *absolute_directory_name;
   char *absolute_file_name;
   long story_file_exec_offset;

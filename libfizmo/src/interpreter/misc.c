@@ -65,6 +65,7 @@ void opcode_verify(void)
   uint16_t header_checksum = (z_mem[0x1c] << 8) | z_mem[0x1d];
   uint16_t calculated_checksum = 0;
   int i, input, scale;
+  int (*getchar)(void *) = active_filesys_interface->getchar;
 
   TRACE_LOG("Opcode: VERIFY.\n");
 
@@ -80,7 +81,7 @@ void opcode_verify(void)
 
   if (file_length * scale - 1 >= 0x40)
   {
-    if (fseek(
+    if ((active_filesys_interface->setfilepos)(
           active_z_story->z_file,
           0x40 + active_z_story->story_file_exec_offset,
           SEEK_SET) != 0)
@@ -92,7 +93,7 @@ void opcode_verify(void)
     i = 0x40;
     while (i < file_length * scale)
     {
-      if ((input = fgetc(active_z_story->z_file)) == EOF)
+      if ((input = getchar(active_z_story->z_file)) == EOF)
         i18n_translate_and_exit(
             libfizmo_module_name,
             i18n_libfizmo_FATAL_ERROR_READING_STORY_FILE,

@@ -550,7 +550,8 @@ void save_game(uint16_t address, uint16_t length, char *filename,
 
     if (directory != NULL)
       free(str);
-    free(system_filename);
+    if (system_filename != NULL)
+      free(system_filename);
 
     if (bool_equal(evaluate_result, true))
       _store_save_or_restore_result(0);
@@ -582,7 +583,8 @@ void save_game(uint16_t address, uint16_t length, char *filename,
   {
     if (directory != NULL)
       free(str);
-    free(system_filename);
+    if (system_filename != NULL)
+      free(system_filename);
 
     if (start_new_chunk("IFhd", save_file) != 0)
     {
@@ -1163,7 +1165,8 @@ int restore_game(uint16_t address, uint16_t length, char *filename,
 
     if (directory != NULL)
       free(str);
-    free(system_filename);
+    if (system_filename != NULL)
+      free(system_filename);
     if (bool_equal(evaluate_result, true))
       return _store_save_or_restore_result(0);
   }
@@ -1172,7 +1175,8 @@ int restore_game(uint16_t address, uint16_t length, char *filename,
     free(str);
 
   if ( (filename == NULL) || (bool_equal(skip_asking_for_filename, false)) )
-    free(system_filename);
+    if (system_filename != NULL)
+      free(system_filename);
 
   if (find_chunk("IFhd", iff_file) == -1)
     return _handle_save_or_restore_failure(evaluate_result,

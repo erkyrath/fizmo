@@ -33,6 +33,7 @@
 extern struct z_screen_interface glkint_screen_interface;
 extern struct z_filesys_interface glkint_filesys_interface;
 
+extern void glkint_set_startup_params(strid_t gamefile);
 extern void glkint_open_interface(void);
 
 extern void fatal_error_handler(char *str, glui32 *ustr, char *arg, int useval, glsi32 val);

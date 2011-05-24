@@ -427,6 +427,8 @@ static struct z_story *load_z_story(char *input_filename, char *blorb_filename)
   result->blorb_file = NULL;
   result->frontispiece_image_no = -1;
 
+#ifndef NO_FILESYSTEM_ACCESS
+
   // First, check if the input file is a blorb file.
   result->z_file = open_simple_iff_file(input_filename, IFF_MODE_READ);
 
@@ -539,6 +541,12 @@ static struct z_story *load_z_story(char *input_filename, char *blorb_filename)
   if (cwd != NULL)
     chdir(cwd);
   free(cwd);
+
+#else /* NO_FILESYSTEM_ACCESS */
+
+  active_filesys_interface->game_file_stream(&result->z_file, &story_file_exec_offset, &story_size);
+
+#endif /* NO_FILESYSTEM_ACCESS */
 
   result->story_file_exec_offset = story_file_exec_offset;
 
@@ -1545,9 +1553,9 @@ void fizmo_start(char* input_filename, char *blorb_filename,
       abort_interpreter);
 
 #ifndef NO_FILESYSTEM_ACCESS
+
   set_unix_filesystem_interface();
   ensure_dot_fizmo_dir_exists();
-#endif /* NO_FILESYSTEM_ACCESS */
 
   /*
   if (bool_equal(story_list_was_updated, false))
@@ -1561,6 +1569,8 @@ void fizmo_start(char* input_filename, char *blorb_filename,
 
   if ((str = getenv("ZCODE_ROOT_PATH")) != NULL)
     append_path_value("z-code-root-path", str);
+
+#endif /* NO_FILESYSTEM_ACCESS */
 
   parse_fizmo_config_files();
 
@@ -1581,6 +1591,8 @@ void fizmo_start(char* input_filename, char *blorb_filename,
 
   open_streams();
   init_signal_handlers();
+
+#ifndef NO_FILESYSTEM_ACCESS
 
   if (
       (restore_on_start_filename == NULL)
@@ -1646,6 +1658,12 @@ void fizmo_start(char* input_filename, char *blorb_filename,
   TRACE_LOG("Story file to load: \"%s\".\n", story_file_to_load);
 
   active_z_story = load_z_story(story_file_to_load, blorb_filename);
+
+#else /* NO_FILESYSTEM_ACCESS */
+
+  active_z_story = load_z_story(NULL, NULL);
+
+#endif /* NO_FILESYSTEM_ACCESS */
 
   if (
       (active_z_story->release_code == 2)

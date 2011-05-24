@@ -44,6 +44,8 @@
 static char* interface_name = "fizmo-glk";
 static char* interface_version = "0.7.0-b5";
 
+static strid_t gamefilestream = NULL;
+
 static winid_t mainwin = NULL;
 static winid_t statuswin = NULL;
 static bool instatuswin = false;
@@ -51,6 +53,10 @@ static bool instatuswin = false;
 static int inputbuffer_size = 0;
 static glui32 *inputbuffer = NULL;
 
+void glkint_set_startup_params(strid_t gamefile)
+{
+    gamefilestream = gamefile;
+}
 
 void glkint_open_interface()
 {
@@ -326,6 +332,19 @@ void glkint_output_interface_info()
 void glkint_game_was_restored_and_history_modified()
 { }
 
+void glkint_game_file_stream(void **streamref, long *offset, long *length)
+{
+    long len;
+
+    glk_stream_set_position(gamefilestream, 0, seekmode_End);
+    len = glk_stream_get_position(gamefilestream);
+    glk_stream_set_position(gamefilestream, 0, seekmode_Start);
+
+    *streamref = gamefilestream;
+    *offset = 0;
+    *length = len;
+}
+
 void *glkint_request_savegame_fileref(char *filename, bool tosave) 
 {
     frefid_t fileref = NULL;
@@ -474,6 +493,7 @@ struct z_screen_interface glkint_screen_interface =
 
 struct z_filesys_interface glkint_filesys_interface =
 {
+    &glkint_game_file_stream,
     &glkint_request_savegame_fileref,
     &glkint_open_datafile,
     &glkint_closefile,

@@ -35,9 +35,11 @@
 
 #include <inttypes.h>
 #include "../tools/types.h"
+//### change putchars/getchars to uint8_t*
 
 struct z_filesys_interface
 {
+    void (*game_file_stream)(void **, long *, long *);
     void* (*request_savegame_fileref)(char *, bool);
     void* (*open_datafile)(char *, bool);
     int (*closefile)(void *);

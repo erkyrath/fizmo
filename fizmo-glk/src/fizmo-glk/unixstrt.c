@@ -37,7 +37,6 @@
 #include <interpreter/fizmo.h>
 #include <tools/types.h>
 
-static char *game_filename = NULL;
 static char *init_err = NULL; /*### use this */
 static char *init_err2 = NULL; /*### use this */
 
@@ -54,6 +53,7 @@ int glkunix_startup_code(glkunix_startup_t *data)
        when an error occurs, and display an error in glk_main(). */
     int ix;
     char *filename = NULL;
+    strid_t gamefile = NULL;
 
     /* Parse out the arguments. They've already been checked for validity,
        and the library-specific ones stripped out.
@@ -71,8 +71,15 @@ int glkunix_startup_code(glkunix_startup_t *data)
         return TRUE;
     }
 
-    game_filename = filename;
-    
+    gamefile = glkunix_stream_open_pathname(filename, FALSE, 1);
+    if (!gamefile) {
+        init_err = "The game file could not be opened.";
+        init_err2 = filename;
+        return TRUE;
+    }
+
+    glkint_set_startup_params(gamefile);
+
     return TRUE;
 }
 
@@ -92,7 +99,7 @@ void glk_main(void)
     fizmo_register_filesys_interface(&glkint_filesys_interface);
 
     glkint_open_interface();
-    fizmo_start(game_filename, NULL, NULL);
+    fizmo_start(NULL, NULL, NULL);
 }
 
 /* get_error_win():

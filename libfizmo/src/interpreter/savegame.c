@@ -1086,7 +1086,6 @@ int restore_game(uint16_t address, uint16_t length, char *filename,
 #endif // ENABLE_TRACING
 #endif // DISABLE_OUTPUT_HISTORY
   int (*getchar)(void *) = active_filesys_interface->getchar;
-  int (*putchar)(int, void *) = active_filesys_interface->putchar;
 
   TRACE_LOG("Restore %d bytes to address %d.\n", length, address);
 
@@ -1801,7 +1800,7 @@ bool detect_saved_game(char *file_to_check, char **story_file_to_load)
       return false;
     }
 
-    if ((active_filesys_interface->getchars)(serial_number, 6, iff_file) != 6)
+    if ((active_filesys_interface->getchars)((uint8_t*)serial_number, 6, iff_file) != 6)
     {
       (active_filesys_interface->closefile)(iff_file);
       return false;

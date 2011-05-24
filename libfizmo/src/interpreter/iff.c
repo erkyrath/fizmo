@@ -134,7 +134,7 @@ static int read_four_chars(void *iff_file)
     if ((iff_file = (active_filesys_interface->open_datafile)(filename, true)) == NULL)
       return NULL;
 
-    if ((active_filesys_interface->putchars)("FORM\0\0\0\0IFZS", 12, iff_file) < 12)
+    if ((active_filesys_interface->putchars)((uint8_t*)"FORM\0\0\0\0IFZS", 12, iff_file) < 12)
     {
       (void)(active_filesys_interface->closefile)(iff_file);
       return NULL;
@@ -172,10 +172,10 @@ int read_chunk_length(void *iff_file)
 
 int start_new_chunk(char *id, void *iff_file)
 {
-  if ((active_filesys_interface->putchars)(id, 4, iff_file) < 4)
+  if ((active_filesys_interface->putchars)((uint8_t*)id, 4, iff_file) < 4)
     return -1;
 
-  if ((active_filesys_interface->putchars)("\0\0\0\0", 4, iff_file) < 4)
+  if ((active_filesys_interface->putchars)((uint8_t*)"\0\0\0\0", 4, iff_file) < 4)
     return -1;
 
   if ((current_chunk_offset = (active_filesys_interface->getfilepos)(iff_file)) == -1)

@@ -153,7 +153,7 @@ static void load_blorb(struct z_story *result, char* blorb_input_filename)
 
   while (nof_resources > 0)
   {
-    if ((active_filesys_interface->getchars)(buf, 4, result->blorb_file) != 4)
+    if ((active_filesys_interface->getchars)((uint8_t*)buf, 4, result->blorb_file) != 4)
       i18n_translate_and_exit(
           libfizmo_module_name,
           i18n_libfizmo_ERROR_WHILE_READING_FILE_P0S,
@@ -215,7 +215,7 @@ static void load_blorb(struct z_story *result, char* blorb_input_filename)
 
   while (nof_resources > 0)
   {
-    if ((active_filesys_interface->getchars)(buf, 4, result->blorb_file) != 4)
+    if ((active_filesys_interface->getchars)((uint8_t*)buf, 4, result->blorb_file) != 4)
       i18n_translate_and_exit(
           libfizmo_module_name,
           i18n_libfizmo_ERROR_WHILE_READING_FILE_P0S,
@@ -271,7 +271,7 @@ static void load_blorb(struct z_story *result, char* blorb_input_filename)
           "fseek",
           errno);
 
-    if ((active_filesys_interface->getchars)(buf, 4, result->blorb_file) != 4)
+    if ((active_filesys_interface->getchars)((uint8_t*)buf, 4, result->blorb_file) != 4)
       i18n_translate_and_exit(
           libfizmo_module_name,
           i18n_libfizmo_ERROR_WHILE_READING_FILE_P0S,
@@ -314,7 +314,7 @@ static void load_blorb(struct z_story *result, char* blorb_input_filename)
           "fseek",
           errno);
 
-    if ((active_filesys_interface->getchars)(buf, 4, result->blorb_file) != 4)
+    if ((active_filesys_interface->getchars)((uint8_t*)buf, 4, result->blorb_file) != 4)
     {
       TRACE_LOG("%s\n", strerror(errno));
       i18n_translate_and_exit(
@@ -328,7 +328,7 @@ static void load_blorb(struct z_story *result, char* blorb_input_filename)
 
     size = read_four_byte_number(result->blorb_file);
 
-    if ((active_filesys_interface->getchars)(buf, 4, result->blorb_file) != 4)
+    if ((active_filesys_interface->getchars)((uint8_t*)buf, 4, result->blorb_file) != 4)
     {
       TRACE_LOG("%s\n", strerror(errno));
       i18n_translate_and_exit(
@@ -593,7 +593,7 @@ static struct z_story *load_z_story(char *input_filename, char *blorb_filename)
   TRACE_LOG("Loading %li bytes from \"%s\".\n", story_size, input_filename);
 
   if ((active_filesys_interface->getchars)(result->memory+1, (size_t)(story_size - 1), result->z_file)
-      != (story_size - 1))
+      != (size_t)(story_size - 1))
   {
     if ((active_filesys_interface->closefile)(result->z_file) == EOF)
       (void)i18n_translate(
@@ -1369,7 +1369,7 @@ static int unix_func_getchar(void *file)
 {
   return fgetc(file);
 }
-static size_t unix_func_getchars(char *ptr, size_t len, void *file)
+static size_t unix_func_getchars(uint8_t *ptr, size_t len, void *file)
 {
   return fread(ptr, len, 1, file);
 }
@@ -1377,7 +1377,7 @@ static int unix_func_putchar(int ch, void *file)
 {
   return fputc(ch, file);
 }
-static size_t unix_func_putchars(char *ptr, size_t len, void *file)
+static size_t unix_func_putchars(uint8_t *ptr, size_t len, void *file)
 {
   return fwrite(ptr, len, 1, file);
 }
@@ -1798,7 +1798,7 @@ void fizmo_start(char* input_filename, char *blorb_filename,
               z_mem,
               (size_t)(active_z_story->high_memory_end + 1 - z_mem),
               active_z_story->z_file)
-            != (active_z_story->high_memory_end + 1 - z_mem))
+            != (size_t)(active_z_story->high_memory_end + 1 - z_mem))
         {
           i18n_translate_and_exit(
               libfizmo_module_name,

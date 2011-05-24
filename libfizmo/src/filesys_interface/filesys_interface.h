@@ -35,7 +35,6 @@
 
 #include <inttypes.h>
 #include "../tools/types.h"
-//### change putchars/getchars to uint8_t*
 
 struct z_filesys_interface
 {
@@ -45,9 +44,9 @@ struct z_filesys_interface
     int (*closefile)(void *);
 
     int (*getchar)(void *);
-    size_t (*getchars)(char *, size_t, void *);
+    size_t (*getchars)(uint8_t *, size_t, void *);
     int (*putchar)(int, void *);
-    size_t (*putchars)(char *, size_t, void *);
+    size_t (*putchars)(uint8_t *, size_t, void *);
 
     off_t (*getfilepos)(void *);
     int (*setfilepos)(void *, off_t, int);

@@ -46,6 +46,7 @@
 #include <interpreter/fizmo.h>
 #include <interpreter/text.h>
 #include <interpreter/streams.h>
+#include <interpreter/zpu.h>
 #include <tools/unused.h>
 #include <tools/types.h>
 #include <tools/i18n.h>
@@ -208,21 +209,42 @@ int16_t glkint_interface_read_line(zscii *dest, uint16_t maximum_length,
 }
 
 
-int glkint_interface_read_char(uint16_t UNUSED(tenth_seconds),
-    uint32_t UNUSED(verification_routine), int *UNUSED(tenth_seconds_elapsed))
+int glkint_interface_read_char(uint16_t tenth_seconds,
+    uint32_t verification_routine, int *tenth_seconds_elapsed)
 {
   event_t event;
+  int timercount = 0;
+  int timed_routine_retval;
   winid_t win = (instatuswin ? statuswin : mainwin);
 
   if (win) {
-    //### use the timeout params
     glk_request_char_event_uni(win);
+  }
+
+  if (tenth_seconds) {
+    glk_request_timer_events(tenth_seconds * 100);
   }
 
   while (true) {
     glk_select(&event);
+
     if (event.type == evtype_CharInput)
       break;
+
+    if (event.type == evtype_Timer) {
+      timercount += 1;
+      timed_routine_retval = interpret_from_call(verification_routine);
+      if (timed_routine_retval) {
+        glk_request_timer_events(0);
+        if (tenth_seconds_elapsed)
+          *tenth_seconds_elapsed = (timercount * tenth_seconds);
+        return 0;
+      }
+    }
+  }
+
+  if (tenth_seconds) {
+    glk_request_timer_events(0);
   }
 
   glui32 ch = event.val1;

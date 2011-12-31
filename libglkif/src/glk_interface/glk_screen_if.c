@@ -87,12 +87,22 @@ uint8_t glkint_return_1()
 
 uint8_t glkint_get_screen_height()
 { 
-  return 24; //###
+  if (statuswin) {
+    glui32 width, height;
+    glk_window_get_size(statuswin, &width, &height);
+    return height;
+  }
+  return 24; /* Fall back if we don't have open windows */
 }
 
 uint8_t glkint_get_screen_width()
 { 
-  return 80; //###
+  if (statuswin) {
+    glui32 width, height;
+    glk_window_get_size(statuswin, &width, &height);
+    return width;
+  }
+  return 80; /* Fall back if we don't have open windows */
 }
 
 z_colour glkint_get_default_foreground_colour()

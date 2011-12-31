@@ -1338,6 +1338,14 @@ void opcode_new_line(void)
   (void)streams_latin1_output("\n");
 }
 
+#ifdef DISABLE_PREFIX_COMMANDS
+
+static bool process_interpreter_command()
+{
+  return false;
+}
+
+#else /* DISABLE_PREFIX_COMMANDS */
 
 static bool process_interpreter_command()
 {
@@ -1636,6 +1644,7 @@ static bool process_interpreter_command()
   }
 }
 
+#endif /* DISABLE_PREFIX_COMMANDS */
 
 int save_and_quit_if_required(bool force_save)
 {

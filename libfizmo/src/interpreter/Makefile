@@ -59,6 +59,10 @@ ifneq ($(DISABLE_CONFIGFILES),)
 override CFLAGS += -DDISABLE_CONFIGFILES=
 endif
 
+ifneq ($(DISABLE_PREFIX_COMMANDS),)
+override CFLAGS += -DDISABLE_PREFIX_COMMANDS=
+endif
+
 ifneq ($(ENABLE_DEBUGGER),)
 override CFLAGS += -DENABLE_DEBUGGER=
 DEBUG_DEP_H = debugger.h

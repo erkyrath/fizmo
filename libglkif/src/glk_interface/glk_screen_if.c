@@ -164,8 +164,8 @@ void glkint_interface_output_z_ucs(z_ucs *z_ucs_output)
 }
 
 int16_t glkint_interface_read_line(zscii *dest, uint16_t maximum_length,
-    uint16_t UNUSED(tenth_seconds), uint32_t UNUSED(verification_routine),
-    uint8_t preloaded_input, int *UNUSED(tenth_seconds_elapsed),
+    uint16_t tenth_seconds, uint32_t verification_routine,
+    uint8_t preloaded_input, int *tenth_seconds_elapsed,
     bool UNUSED(disable_command_history), bool UNUSED(return_on_escape))
 {
   int ix;
@@ -186,17 +186,43 @@ int16_t glkint_interface_read_line(zscii *dest, uint16_t maximum_length,
   //input_buffer[i] = 0;
 
   event_t event;
+  int timercount = 0;
+  int timed_routine_retval;
   winid_t win = (instatuswin ? statuswin : mainwin);
 
   if (win) {
-    //### use timeout params
     glk_request_line_event_uni(win, inputbuffer, maximum_length,
         preloaded_input);
   }
+
+  if (tenth_seconds) {
+    glk_request_timer_events(tenth_seconds * 100);
+  }
+
   while (true) {
     glk_select(&event);
+
     if (event.type == evtype_LineInput)
       break;
+
+    if (event.type == evtype_Timer) {
+      timercount += 1;
+      timed_routine_retval = interpret_from_call(verification_routine);
+      if (timed_routine_retval) {
+        glk_request_timer_events(0);
+        if (tenth_seconds_elapsed)
+          *tenth_seconds_elapsed = (timercount * tenth_seconds);
+
+        if (win) {
+          glk_cancel_line_event(win, &event);
+        }
+        else {
+          event.val1 = 0;
+        }
+
+        break;
+      }
+    }
   }
 
   int count = event.val1;

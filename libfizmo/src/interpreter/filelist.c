@@ -269,13 +269,10 @@ void free_z_story_list(struct z_story_list *story_list)
 
 int parse_next_story_entry()
 {
-  bool parse_error;
   int index;
   int data;
   long offset;
   long size;
-
-  parse_error = false;
 
   index = 0;
   release_input = 0;
@@ -287,7 +284,7 @@ int parse_next_story_entry()
       else { abort_entry_input(); TRACE_LOG("#0\n"); return -1; }
     }
     if (data == '\t') break;
-    if (isdigit(data) == 0) { parse_error = true; break; }
+    if (isdigit(data) == 0) { break; }
     release_input *= 10;
     release_input += (data - '0');
     index++;
@@ -320,7 +317,7 @@ int parse_next_story_entry()
     { abort_entry_input(); TRACE_LOG("#5\n"); return -1; }
     if (data != '\t')
     {
-      if (isdigit(data) == 0) { parse_error = true; break; }
+      if (isdigit(data) == 0) { break; }
       length_input *= 10;
       length_input += (data - '0');
     }
@@ -477,7 +474,7 @@ int parse_next_story_entry()
     { abort_entry_input(); TRACE_LOG("#30\n"); return -1; }
     if (data == '\n')
     { fsi->ungetchar(data, in); break; }
-    if (isdigit(data) == 0) { parse_error = true; break; }
+    if (isdigit(data) == 0) { break; }
     storyfile_timestamp_input *= 10;
     storyfile_timestamp_input += (data - '0');
     index++;

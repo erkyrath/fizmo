@@ -271,7 +271,7 @@ int init_mg1_graphics(char *mg1_filename)
 
 uint16_t get_number_of_mg1_images()
 {
-  return mg1_file == NULL ? : header.nof_images;
+  return mg1_file == NULL ? 0 : header.nof_images;
 }
 
 

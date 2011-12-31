@@ -3090,7 +3090,7 @@ void set_custom_right_cell_margin(int width)
 // This function will redraw the screen on a resize.
 void new_cell_screen_size(int newysize, int newxsize)
 {
-  int i, dx, dy, status_offset = statusline_window_id > 0 ? 1 : 0;
+  int i, dy, status_offset = statusline_window_id > 0 ? 1 : 0;
   int consecutive_lines_buffer[nof_active_z_windows];
 
   if ( (newysize < 1) || (newxsize < 1) )
@@ -3100,7 +3100,6 @@ void new_cell_screen_size(int newysize, int newxsize)
     consecutive_lines_buffer[i] = z_windows[i]->nof_consecutive_lines_output;
   disable_more_prompt = true;
 
-  dx = newxsize - screen_width;
   dy = newysize - screen_height;
 
   screen_width = newxsize;

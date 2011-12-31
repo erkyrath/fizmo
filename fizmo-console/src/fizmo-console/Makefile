@@ -15,7 +15,7 @@ LIBS = -lm
 LIBS += $(shell PKG_CONFIG_PATH="$(PKG_CONFIG_PATH)" pkg-config --libs libfizmo)
 
 fizmo-console: fizmo-console.o
-	"$(CC)" $(CFLAGS) fizmo-console.o -o fizmo-console $(LIBS)
+	"$(CC)" $(LDFLAGS) fizmo-console.o -o fizmo-console $(LIBS)
 	#strip fizmo
 
 fizmo-console.o: fizmo-console.c

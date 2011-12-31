@@ -3,14 +3,13 @@
 
 include ../../config.mk
 
-CC = gcc -Wall
 
-CFLAGS = -g -O2 $(SOUND_INTERFACE_CFLAGS)
-CFLAGS += $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config \
+override CFLAGS += -g -O2 $(SOUND_INTERFACE_CFLAGS)
+override CFLAGS += $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config \
  --cflags libfizmo)
-CFLAGS += $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config \
+override CFLAGS += $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config \
  --cflags libcellif)
-CFLAGS += $(NCURSESW_PKG_CFLAGS) $(NCURSESW_NONPKG_CFLAGS)
+override CFLAGS += $(NCURSESW_PKG_CFLAGS) $(NCURSESW_NONPKG_CFLAGS)
 
 LIBS = -lm
 LIBS += $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config --libs libfizmo)
@@ -19,11 +18,11 @@ LIBS += $(NCURSESW_PKG_LIBS) $(NCURSESW_NONPKG_LIBS)
 
 
 ifneq ($(ENABLE_GDB_SYMBOLS),)
-  CFLAGS += -g
+  override CFLAGS += -g
 endif
 
 ifneq ($(ENABLE_TRACING),)
-  CFLAGS += -DENABLE_TRACING=
+  override CFLAGS += -DENABLE_TRACING=
 endif
 
 ifneq ($(SOUND_INTERFACE_NAME),)
@@ -31,8 +30,8 @@ ifneq ($(SOUND_INTERFACE_STRUCT_NAME),)
 ifneq ($(SOUND_INTERFACE_INCLUDE_FILE),)
   SNDIF_VAR_NAME_CFLAGS_PKG = $(SOUND_INTERFACE_CONFIGNAME)_PKG_CFLAGS
   SNDIF_VAR_NAME_CFLAGS_NONPKG = $(SOUND_INTERFACE_CONFIGNAME)_NONPKG_CFLAGS
-  CFLAGS += $($(SNDIF_VAR_NAME_CFLAGS_PKG)) $($(SNDIF_VAR_NAME_CFLAGS_NONPKG))
-  CFLAGS += $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config \
+  override CFLAGS += $($(SNDIF_VAR_NAME_CFLAGS_PKG)) $($(SNDIF_VAR_NAME_CFLAGS_NONPKG))
+  override CFLAGS += $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config \
  --cflags $(SOUND_INTERFACE_NAME))
   LIBS += $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config \
  --libs $(SOUND_INTERFACE_NAME))
@@ -47,25 +46,25 @@ FLAGS =
 
 ifneq ($(ENABLE_X11_IMAGES),)
 FLAGS += -DENABLE_X11_IMAGES
-CFLAGS += $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config \
+override CFLAGS += $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config \
  --cflags libdrilbo)
 LIBS += $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config \
  --libs libdrilbo)
 endif
 
 ifneq ($(DISABLE_FILELIST),)
-CFLAGS += -DDISABLE_FILELIST=
+override CFLAGS += -DDISABLE_FILELIST=
 endif
 
 ifneq ($(DISABLE_CONFIGFILES),)
-CFLAGS += -DDISABLE_CONFIGFILES=
+override CFLAGS += -DDISABLE_CONFIGFILES=
 endif
 
 
 all: fizmo-ncursesw
 
 fizmo-ncursesw: fizmo-ncursesw.o ../locales/fizmo_ncursesw_locales.o
-	$(CC) $(CFLAGS) fizmo-ncursesw.o ../locales/fizmo_ncursesw_locales.o $(LIBS) -o fizmo-ncursesw
+	$(CC) $(LDFLAGS) fizmo-ncursesw.o ../locales/fizmo_ncursesw_locales.o $(LIBS) -o fizmo-ncursesw
 
 ../locales/fizmo_ncursesw_locales.o::
 	cd ../locales ; make

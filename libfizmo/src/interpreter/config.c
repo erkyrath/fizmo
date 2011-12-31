@@ -243,7 +243,6 @@ int set_configuration_value(char *key, char* new_unexpanded_value)
   char *new_value = NULL;
   char buf[BUFSIZE];
   short color_code;
-  long long_value;
   char *endptr;
 
 
@@ -350,7 +349,7 @@ int set_configuration_value(char *key, char* new_unexpanded_value)
       {
         if ( (new_value == NULL) || (strlen(new_value) == 0) )
           return -1;
-        long_value = strtol(new_value, &endptr, 10);
+        strtol(new_value, &endptr, 10);
         if (*endptr != 0)
         {
           free(new_value);

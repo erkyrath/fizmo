@@ -2,13 +2,13 @@
 include ../../config.mk
 
 ifneq ($(ENABLE_TRACING),)
-CFLAGS = -DENABLE_TRACING=
+override CFLAGS += -DENABLE_TRACING=
 endif
 
-CFLAGS += $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config \
+override CFLAGS += $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config \
  --cflags libfizmo)
-CFLAGS += $(NCURSESW_PKG_CFLAGS)
-CFLAGS += $(LIBGLKTERMW_NONPKG_CFLAGS)
+override CFLAGS += $(NCURSESW_PKG_CFLAGS)
+override CFLAGS += $(LIBGLKTERMW_NONPKG_CFLAGS)
 
 
 LIBS = -lm
@@ -19,7 +19,7 @@ LIBS += -lglkif -lglktermw
 
 
 fizmo-glktermw: fizmo-glktermw.o
-	$(CC) $(CFLAGS) fizmo-glktermw.o -o fizmo-glktermw $(LIBS)
+	$(CC) $(LDFLAGS) fizmo-glktermw.o -o fizmo-glktermw $(LIBS)
 	#strip fizmo
 
 fizmo-glktermw.o: fizmo-glktermw.c

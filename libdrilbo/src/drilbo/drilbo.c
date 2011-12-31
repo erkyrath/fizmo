@@ -241,7 +241,7 @@ z_image *get_blorb_image(int resource_number)
 {
   long pict_blorb_index;
   char buf[5];
-  uint32_t size;
+  //uint32_t size;
 
   if ((pict_blorb_index = active_blorb_interface->get_blorb_offset(
           active_z_story->blorb_map, Z_BLORB_TYPE_PICT, resource_number)) == -1)
@@ -254,7 +254,8 @@ z_image *get_blorb_image(int resource_number)
     return NULL;
   buf[4] = 0;
 
-  size = read_four_byte_number(active_z_story->blorb_file);
+  //size = read_four_byte_number(active_z_story->blorb_file);
+  read_four_byte_number(active_z_story->blorb_file);
 
   if (strcmp(buf, "JPEG") == 0)
   {

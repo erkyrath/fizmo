@@ -1,4 +1,13 @@
 
+   Version 0.7.1
+ + 0.7.1 was finished at about Sun Nov 6 22:44:17 CET 2011.
+ - Fixed missing "override" statments for CFLAGS in Makefiles.
+ - Fixed $(DESTDIR) evaluation in config.[default|macports].mk.
+ - Changed manpage install dir from "man" to "share/man".
+ - Adapted Makefiles and configuration to use standard GNU Makefile variables
+   instead of INSTALL_PATH and FIZMO_BIN_DIR.
+ - Respect LD_FLAGS for linking.
+
    Version 0.7.0
  + 0.7.0 was finished at about Sun Sep 18 08:41:18 CEST 2011.
  + The "simple-c" interface has been renamed to "fizmo-console" and is now

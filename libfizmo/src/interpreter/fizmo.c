@@ -66,11 +66,15 @@
 
 #ifndef DISABLE_OUTPUT_HISTORY
 #include "history.h"
-#endif /* DISABLE_OUTPUT_HISTORY */
+#endif // DISABLE_OUTPUT_HISTORY
 
 #ifndef DISABLE_BLOCKBUFFER
 #include "blockbuf.h"
 #endif // DISABLE_BLOCKBUFFER
+
+#ifdef ENABLE_DEBUGGER
+#include "debugger.h"
+#endif // ENABLE_DEBUGGER
 
 #define MAX_CONFIG_OPTION_LENGTH 512
 
@@ -1217,6 +1221,10 @@ void fizmo_start(z_file* story_stream, z_file *blorb_stream,
 
   ver = active_z_story->version;
 
+#ifdef ENABLE_DEBUGGER
+  debugger_story_has_been_loaded();
+#endif // ENABLE_DEBUGGER
+
   init_opcode_functions();
 
   if ((str = get_configuration_value("savegame-default-filename")) != NULL)
@@ -1392,6 +1400,10 @@ void fizmo_start(z_file* story_stream, z_file *blorb_stream,
         libfizmo_module_name,
         i18n_libfizmo_NOT_YET_IMPLEMENTED,
         -0x010d);
+
+#ifdef ENABLE_DEBUGGER
+  debugger_interpreter_stopped();
+#endif // ENABLE_DEBUGGER
 
   if (active_sound_interface != NULL)
     active_sound_interface->close_sound();

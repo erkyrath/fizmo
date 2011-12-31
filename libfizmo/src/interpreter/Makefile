@@ -59,21 +59,28 @@ ifneq ($(DISABLE_CONFIGFILES),)
 override CFLAGS += -DDISABLE_CONFIGFILES=
 endif
 
+ifneq ($(ENABLE_DEBUGGER),)
+override CFLAGS += -DENABLE_DEBUGGER=
+DEBUG_DEP_H = debugger.h
+DEBUG_DEP_O = debugger.o
+endif
+
+
 
 .PHONY : clean
 
 all: libinterpreter.a
 
-libinterpreter.a: fizmo.o zpu.o stack.o streams.o routine.o variable.o object.o property.o text.o savegame.o iff.o misc.o mt19937ar.o math.o output.o sound.o wordwrap.o table.o config.o undo.o babel.o hyphenation.o blorb.o $(BLOCKBUF_DEP_O) $(CMD_HST_DEP_O) $(OUTPUT_HST_DEP_O) $(FILELIST_DEP_O)
-	"$(AR)" rcs libinterpreter.a fizmo.o zpu.o stack.o streams.o routine.o variable.o object.o property.o text.o savegame.o iff.o misc.o mt19937ar.o math.o output.o sound.o wordwrap.o table.o config.o undo.o babel.o hyphenation.o blorb.o $(BLOCKBUF_DEP_O) $(CMD_HST_DEP_O) $(OUTPUT_HST_DEP_O) $(FILELIST_DEP_O)
+libinterpreter.a: fizmo.o zpu.o stack.o streams.o routine.o variable.o object.o property.o text.o savegame.o iff.o misc.o mt19937ar.o math.o output.o sound.o wordwrap.o table.o config.o undo.o babel.o hyphenation.o blorb.o $(BLOCKBUF_DEP_O) $(CMD_HST_DEP_O) $(OUTPUT_HST_DEP_O) $(FILELIST_DEP_O) $(DEBUG_DEP_O)
+	"$(AR)" rcs libinterpreter.a fizmo.o zpu.o stack.o streams.o routine.o variable.o object.o property.o text.o savegame.o iff.o misc.o mt19937ar.o math.o output.o sound.o wordwrap.o table.o config.o undo.o babel.o hyphenation.o blorb.o $(BLOCKBUF_DEP_O) $(CMD_HST_DEP_O) $(OUTPUT_HST_DEP_O) $(FILELIST_DEP_O) $(DEBUG_DEP_O)
 
-fizmo.o: ../tools/tracelog.h fizmo.h zpu.h text.h math.h stack.h ../tools/i18n.h misc.h streams.h config.h savegame.h output.h ../tools/z_ucs.h fizmo.c $(BLOCKBUF_DEP_H) $(OUTPUT_HST_DEP_H) $(FILELIST_DEP_H)
+fizmo.o: ../tools/tracelog.h fizmo.h zpu.h text.h math.h stack.h ../tools/i18n.h misc.h streams.h config.h savegame.h output.h ../tools/z_ucs.h fizmo.c $(BLOCKBUF_DEP_H) $(OUTPUT_HST_DEP_H) $(FILELIST_DEP_H) $(DEBUG_DEP_H)
 	"$(CC)" $(CFLAGS) -c fizmo.c
 
 fizmo.h: ../screen_interface/screen_interface.h
 	touch fizmo.h
 
-zpu.o: zpu.h ../tools/tracelog.h fizmo.h savegame.h misc.h routine.h variable.h property.h object.h math.h text.h ../tools/i18n.h streams.h output.h sound.h stack.h table.h undo.h zpu.c
+zpu.o: zpu.h ../tools/tracelog.h fizmo.h savegame.h misc.h routine.h variable.h property.h object.h math.h text.h ../tools/i18n.h streams.h output.h sound.h stack.h table.h undo.h zpu.c $(DEBUG_DEP_H)
 	"$(CC)" $(CFLAGS) -c zpu.c
 
 stack.o: stack.h ../tools/tracelog.h config.h ../tools/i18n.h routine.h stack.c
@@ -94,7 +101,7 @@ object.o: object.h ../tools/tracelog.h fizmo.h variable.h zpu.h ../tools/i18n.h 
 property.o: ../tools/tracelog.h fizmo.h variable.h object.h zpu.h ../tools/i18n.h property.c
 	"$(CC)" $(CFLAGS) -c property.c
 
-text.o: text.h ../tools/tracelog.h fizmo.h routine.h object.h zpu.h ../tools/i18n.h variable.h misc.h streams.h ../tools/types.h history.h fizmo.h math.h stack.h config.h output.h undo.h $(CMD_HST_DEP_H) text.c
+text.o: text.h ../tools/tracelog.h fizmo.h routine.h object.h zpu.h ../tools/i18n.h variable.h misc.h streams.h ../tools/types.h history.h fizmo.h math.h stack.h config.h output.h undo.h $(CMD_HST_DEP_H) text.c $(DEBUG_DEP_H)
 	"$(CC)" $(CFLAGS) -c text.c
 
 savegame.o: savegame.h ../tools/tracelog.h streams.h fizmo.h iff.h stack.h zpu.h ../tools/i18n.h variable.h text.h ../tools/z_ucs.h routine.h savegame.c
@@ -103,7 +110,7 @@ savegame.o: savegame.h ../tools/tracelog.h streams.h fizmo.h iff.h stack.h zpu.h
 iff.o: iff.h ../tools/tracelog.h ../tools/i18n.h ../tools/types.h iff.c
 	"$(CC)" $(CFLAGS) -c iff.c
 
-misc.o: misc.h ../tools/tracelog.h fizmo.h streams.h stack.h zpu.h ../tools/i18n.h routine.h misc.c
+misc.o: misc.h ../tools/tracelog.h fizmo.h streams.h stack.h zpu.h ../tools/i18n.h routine.h misc.c $(DEBUG_DEP_H)
 	"$(CC)" $(CFLAGS) -c misc.c
 
 mt19937ar.o: mt19937ar.h mt19937ar.c
@@ -153,6 +160,9 @@ hyphenation.o: hyphenation.h ../tools/tracelog.h hyphenation.c
 
 blorb.o: blorb.h ../tools/tracelog.h blorb.c
 	"$(CC)" $(CFLAGS) -c blorb.c
+
+debugger.o: debugger.h debugger.c
+	"$(CC)" $(CFLAGS) -c debugger.c
 
 clean:
 	rm -f *.o

@@ -74,8 +74,12 @@ static void resize_z_stack(int32_t added_capacity)
   // will allow us to create a corrent pointer to a possibly new location.
   index_position = z_stack_index - z_stack;
 
+  TRACE_LOG("current stack size: %d.\n", current_z_stack_size);
   current_z_stack_size += added_capacity;
   offset = local_variable_storage_index - z_stack;
+
+  TRACE_LOG("z_stack: %p, z_stack_index: %p, behind_z_stack: %p.\n",
+      z_stack, z_stack_index, behind_z_stack);
 
   // Initially, z_stack is NULL. If realloc() is called with a pointer to
   // null it works like malloc() which suits just fine.
@@ -86,22 +90,15 @@ static void resize_z_stack(int32_t added_capacity)
   behind_z_stack = z_stack + current_z_stack_size;
   local_variable_storage_index = z_stack + offset;
 
-  TRACE_LOG("Z-Stack now at %p (element behind: %p).\n",
-      z_stack, behind_z_stack);
-
-  if (added_capacity < 0)
+  if ((z_stack_index = z_stack + index_position) >= behind_z_stack)
   {
-    // In (the unlikely) case we're shrinking the stack, we'll have to
-    // re-adjust the stack pointer.
+    // In case the stack has been shrunk the index may have to be re-adjusted.
     z_stack_index = behind_z_stack - 1;
   }
-  else
-  {
-    // If the new stack has at least the size of the the old, we still
-    // have to readjust the stack pointer for re-location of the stack
-    // memory.
-    z_stack_index = z_stack + index_position;
-  }
+
+  TRACE_LOG("Z-Stack now at %p (element behind: %p, z_stack_index: %p).\n",
+      z_stack, behind_z_stack, z_stack_index);
+  TRACE_LOG("new stack size: %d.\n", current_z_stack_size);
 }
 
 
@@ -168,8 +165,15 @@ void drop_z_stack_words(int word_counter)
 {
   uint16_t *result;
 
+  TRACE_LOG("Allocating %d stack words.\n", word_counter);
+
   while (z_stack_index + word_counter >= behind_z_stack)
+  {
+    TRACE_LOG("Space on stack: %d.\n", behind_z_stack - z_stack_index);
     resize_z_stack(Z_STACK_INCREMENT_SIZE);
+  }
+
+  TRACE_LOG("Space on stack: %d.\n", behind_z_stack - z_stack_index);
 
   // z_stack_index can't be null, if it was the resize_z_stac would have
   // quit, so -nullpass and -nullret are okay.

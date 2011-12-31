@@ -1,7 +1,7 @@
 
 CC = gcc
 AR = ar
-CFLAGS = -Wall -Wextra
+override CFLAGS += -Wall -Wextra
 
 # Since the "fizmo-all" metapackage will install all modules into a separate
 # "build" directory -- in order not to install dev-files into the installation
@@ -10,14 +10,11 @@ CFLAGS = -Wall -Wextra
 PKG_CONFIG_PATH \
  := $(PKG_CONFIG_PATH):$(dir $(lastword $(MAKEFILE_LIST)))../build/lib/pkgconfig
 
-ifneq ($(DESTDIR),)
-INSTALL_PREFIX = $(DESTDIR)
-else
-INSTALL_PREFIX = /opt/local
-endif
-
-# Uncomment to install binaries to $(INSTALL_PREFIX)/$(FIZMO_BIN_DIR).
-FIZMO_BIN_DIR = bin
+prefix = /opt/local
+bindir = $(prefix)/bin
+datarootdir = $(prefix)/share
+mandir = $(datarootdir)/man
+localedir = $(datarootdir)/fizmo/locales
 
 
 # -----
@@ -31,7 +28,7 @@ ENABLE_OPTIMIZATION = 1
 
 # -----
 # Settings for libfizmo:
-LOCALE_SEARCH_PATH = $(INSTALL_PREFIX)/share/fizmo/locales
+LOCALE_SEARCH_PATH = $(localedir)
 #ENABLE_STRICT_Z = 1
 #THROW_SIGFAULT_ON_ERROR = 1
 #DISABLE_BABEL = 1
@@ -88,14 +85,12 @@ DRILBO_ENABLE_X11 = 1
 DRILBO_ENABLE_JPG = 1
 DRILBO_ENABLE_PNG = 1
 
-# In case X11/Xext, libpng and/or libjpeg may be found using pkg-config,
+# In case X11, libpng and/or libjpeg may be found using pkg-config,
 # using the following lines will make fizmo locate the required files
 # automatically:
-DRILBO_PKG_REQS = x11, xext, libpng #,libjpeg
-DRILBO_PKG_X11_CFLAGS = $(shell pkg-config --cflags x11) \
-                         $(shell pkg-config --cflags xext)
-DRILBO_PKG_X11_LIBS = $(shell pkg-config --libs x11) \
-                         $(shell pkg-config --libs xext)
+DRILBO_PKG_REQS = x11, libpng #,libjpeg
+DRILBO_PKG_X11_CFLAGS = $(shell pkg-config --cflags x11)
+DRILBO_PKG_X11_LIBS = $(shell pkg-config --libs x11)
 #DRILBO_PKG_LIBJPEG_CFLAGS = $(shell pkg-config --cflags libjpg)
 #DRILBO_PKG_LIBJPEG_LIBS = $(shell pkg-config --libs libjpeg)
 DRILBO_PKG_LIBPNG_CFLAGS = $(shell pkg-config --cflags libpng)

@@ -60,6 +60,7 @@ list *create_list();
 int add_list_element(list *l, void *value);
 int get_list_size(list *l);
 void *get_list_element(list *l, int list_index);
+bool list_contains_element(list *haystack, void *needle);
 void delete_list(list *l);
 void **delete_list_and_get_ptrs(list *l);
 void **delete_list_and_get_null_terminated_ptrs(list *l);

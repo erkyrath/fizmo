@@ -68,7 +68,7 @@
 
 #include "../locales/fizmo_ncursesw_locales.h"
 
-#define FIZMO_NCURSESW_VERSION "0.7.0"
+#define FIZMO_NCURSESW_VERSION "0.7.1"
 
 #ifdef ENABLE_X11_IMAGES
 #include <drilbo/drilbo.h>
@@ -204,7 +204,12 @@ static void infowin_z_ucs_output_wordwrap_destination(z_ucs *z_ucs_output,
     void *UNUSED(dummyparameter))
 {
   z_ucs *ptr;
-  int y,x;
+  int y;
+#ifdef __GNUC__
+  int __attribute__ ((unused)) x;
+#else
+  int x;
+#endif // __GNU_CC
 #ifdef ENABLE_TRACING
   z_ucs buf;
 #endif // ENABLE_TRACING
@@ -351,7 +356,7 @@ static void ncursesw_fputws(wchar_t *str, FILE *out)
 static void z_ucs_output(z_ucs *output)
 {
   cchar_t wcval;
-  int errorcode;
+  //int errorcode;
 
   TRACE_LOG("Interface-Output(%d): \"", ncursesw_interface_open);
   TRACE_LOG_Z_UCS(output);
@@ -379,7 +384,8 @@ static void z_ucs_output(z_ucs *output)
       ncursesw_setcchar_init_string[0] = *output;
       //TRACE_LOG("%c/%d\n", *output, *output);
 
-      errorcode = setcchar(
+      //errorcode =
+      setcchar(
           &wcval,
           ncursesw_setcchar_init_string,
           ncursesw_no_attrs,

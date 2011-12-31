@@ -63,7 +63,7 @@ void opcode_save_undo(void)
   size_t dynamic_memory_size;
   struct undo_frame *new_undo_frame;
   int result;
-  size_t stack_size_in_bytes;
+  size_t nof_stack_bytes_in_use;
 
   TRACE_LOG("Opcode: SAVE_UNDO.\n");
 
@@ -89,10 +89,10 @@ void opcode_save_undo(void)
     }
     else
     {
-      stack_size_in_bytes = (z_stack_index - z_stack) * sizeof(uint16_t);
+      nof_stack_bytes_in_use = (z_stack_index - z_stack) * sizeof(uint16_t);
 
       if ((new_undo_frame->stack
-            = (uint16_t*)malloc(stack_size_in_bytes)) == NULL)
+            = (uint16_t*)malloc(nof_stack_bytes_in_use)) == NULL)
       {
         free(new_undo_frame->dynamic_memory);
         free(new_undo_frame);
@@ -117,7 +117,7 @@ void opcode_save_undo(void)
         memcpy(
             new_undo_frame->stack,
             z_stack, // non-null when size > 0
-            stack_size_in_bytes);
+            nof_stack_bytes_in_use);
 
         memcpy(
             new_undo_frame->dynamic_memory,
@@ -164,7 +164,8 @@ void opcode_restore_undo(void)
     ensure_z_stack_size(frame_to_restore->z_stack_size);
 
     pc =  frame_to_restore->pc;
-    current_z_stack_size = frame_to_restore->z_stack_size;
+    //current_z_stack_size = frame_to_restore->z_stack_size;
+    //behind_z_stack = z_stack + current_z_stack_size;
     z_stack_index = z_stack + frame_to_restore->z_stack_size;
     stack_words_from_active_routine
       = frame_to_restore->stack_words_from_active_routine;
@@ -178,7 +179,8 @@ void opcode_restore_undo(void)
     memcpy(
         z_stack, // non-null when size > 0
         frame_to_restore->stack,
-        current_z_stack_size * sizeof(uint16_t));
+        frame_to_restore->z_stack_size * sizeof(uint16_t));
+        //current_z_stack_size * sizeof(uint16_t));
 
     memcpy(
         z_mem,

@@ -53,7 +53,7 @@
 #include <tools/tracelog.h>
 
 static char* interface_name = "glk-screen";
-static char* interface_version = "0.1.0";
+static char* interface_version = "0.1.1";
 
 static winid_t mainwin = NULL;
 static winid_t statusline = NULL;

@@ -1,4 +1,17 @@
 
+   Version 0.7.1
+ + 0.7.1 was finished at about Sun Nov 6 22:44:17 CET 2011.
+ - Fixed missing "override" statments for CFLAGS in Makefiles.
+ - Fixed $(DESTDIR) evaluation in config.[default|macports].mk.
+ - Adapted Makefiles and configuration to use standard GNU Makefile variables
+   instead of INSTALL_PATH and FIZMO_BIN_DIR.
+ - Fixed an error in the stack restoration in "opcode_restore_undo". Thanks
+   to Lewis Gentry for reporting this bug.
+ - Implemented first debugger stubs. The debugger is available via network
+   socket and will currently only dump PC, locals and stack contents.
+ - Removed "drilbo-x11.c" requirement for "Xatom.h".
+ - Respect LD_FLAGS for linking.
+
    From 0.6.10 to 0.7.0
  + 0.7.0 was finished at about Sun Sep 18 08:41:18 CEST 2011.
  + From the user's perspective, version 0.7 adds hyphenation, saving of the
@@ -30,7 +43,7 @@
    allowing implementation of interfaces using fixed-width fonts with a
    minimum of work. This is also used by the new "fizmo-ncursesw" interface,
    which has also been entirely rewritten.
- - libdrilbo ("drilbo represents an imaging libary not only for blorb
+ - libdrilbo ("drilbo represents an imaging library not only for blorb
    objects") now handles all graphical related tasks. It also makes fizmo's
    version 0.6 requirement for GTK to load images obsolete, it directly
    uses libjpg and libpng to load images and provides its own Xlib

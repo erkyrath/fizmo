@@ -191,7 +191,8 @@ static void flush_input_buffer(WORDWRAP *wrapper, bool force_flush)
   z_ucs *input = wrapper->input_buffer;
   bool minus_found;
   int metadata_offset = 0;
-  int i, hyphen_offset, chars_left_on_line;
+  int i, chars_left_on_line;
+  //int hyphen_offset;
   struct wordwrap_metadata *metadata_entry;
 
   input[wrapper->input_index] = 0;
@@ -408,7 +409,7 @@ static void flush_input_buffer(WORDWRAP *wrapper, bool force_flush)
           chars_left_on_line = wrapper->line_length - (index - input);
           TRACE_LOG("chars left on line: %d\n", chars_left_on_line);
 
-          hyphen_offset = index - input;
+          //hyphen_offset = index - input;
 
           ptr = hyphenated_word;
           while (chars_left_on_line > 0)

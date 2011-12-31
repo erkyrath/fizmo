@@ -60,6 +60,10 @@
 #include "undo.h"
 #include "../locales/libfizmo_locales.h"
 
+#ifdef ENABLE_DEBUGGER
+#include "debugger.h"
+#endif // ENABLE_DEBUGGER
+
 #ifndef DISABLE_COMMAND_HISTORY
 #include "cmd_hst.h"
 #endif /* DISABLE_COMMAND_HISTORY */
@@ -1371,6 +1375,10 @@ static bool process_interpreter_command()
     (void)streams_latin1_output("fileinput\n");
     (void)streams_latin1_output(fizmo_command_prefix_string);
     (void)streams_latin1_output("config\n");
+#ifdef ENABLE_DEBUGGER
+    (void)streams_latin1_output(fizmo_command_prefix_string);
+    (void)streams_latin1_output("debug\n");
+#endif // ENABLE_DEBUGGER
     //(void)streams_latin1_output("\n");
     return true;
   }
@@ -1615,6 +1623,13 @@ static bool process_interpreter_command()
 
     return true;
   }
+#ifdef ENABLE_DEBUGGER
+  else if (z_ucs_cmp_latin1(prefixed_command, "debug") == 0)
+  {
+    debugger();
+    return true;
+  }
+#endif // ENABLE_DEBUGGER
   else
   {
     return false;

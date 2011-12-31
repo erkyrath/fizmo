@@ -2,18 +2,18 @@
 include ../../config.mk
 
 # "-std=c99" is required to avoid trouble with the built-in round function.
-CFLAGS += -std=c99 $(SOUNDSDL_PKG_CFLAGS) $(SOUNDSDL_NONPKG_CFLAGS)
+override CFLAGS += -std=c99 $(SOUNDSDL_PKG_CFLAGS) $(SOUNDSDL_NONPKG_CFLAGS)
 
 ifneq ($(ENABLE_TRACING),)
-CFLAGS += -DENABLE_TRACING=
+override CFLAGS += -DENABLE_TRACING=
 endif
 
 ifneq ($(ENABLE_OPTIMIZATION),)
-CFLAGS += -O2
+override CFLAGS += -O2
 endif
 
 ifneq ($(ENABLE_AIFF_FOR_SOUND_SDL),)
-CFLAGS += -DENABLE_AIFF_FOR_SOUND_SDL=
+override CFLAGS += -DENABLE_AIFF_FOR_SOUND_SDL=
 endif
 
 ifneq ($(ENABLE_GDB_SYMBOLS),)

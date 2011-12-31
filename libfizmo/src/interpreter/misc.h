@@ -38,9 +38,9 @@
 void opcode_restart(void);
 void opcode_verify(void);
 void opcode_piracy(void);
-/*@noreturn@*/ void abort_interpreter(int exit_code,
-    /*@null@*/ z_ucs *error_message);
+void abort_interpreter(int exit_code,  z_ucs *error_message);
 void init_signal_handlers(void);
+void deactivate_signal_handlers(void);
 
 #endif /* misc_h_INCLUDED */
 

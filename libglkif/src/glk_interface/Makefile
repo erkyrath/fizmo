@@ -4,22 +4,22 @@
 include ../../config.mk
 
 ifneq ($(ENABLE_GDB_SYMBOLS),)
-CFLAGS += -g
+override CFLAGS += -g
 endif
 
 ifneq ($(ENABLE_OPTIMIZATION),)
-CFLAGS += -O2
+override CFLAGS += -O2
 endif
 
 ifneq ($(ENABLE_TRACING),)
-CFLAGS += -DENABLE_TRACING=
+override CFLAGS += -DENABLE_TRACING=
 endif
 
 LIBFIZMO_CFLAGS = $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config  \
  --cflags libfizmo)
 
-CFLAGS += $(LIBFIZMO_CFLAGS)
-CFLAGS += $(LIBGLK_NONPKG_CFLAGS)
+override CFLAGS += $(LIBFIZMO_CFLAGS)
+override CFLAGS += $(LIBGLK_NONPKG_CFLAGS)
 
 libglkif.a: glk_interface.o glk_screen_if.o glk_filesys_if.o glk_blorb_if.o ../locales/libglkif_locales.o
 	$(AR) rcs libglkif.a glk_interface.o glk_screen_if.o glk_filesys_if.o glk_blorb_if.o ../locales/libglkif_locales.o

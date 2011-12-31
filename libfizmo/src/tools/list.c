@@ -91,6 +91,19 @@ void *get_list_element(list *l, int list_index)
 }
 
 
+bool list_contains_element(list *haystack, void *needle)
+{
+  size_t index = 0;
+  while (index < haystack->nof_elements_stored)
+  {
+    if (haystack->elements[index] == needle)
+      return true;
+    index++;
+  }
+  return false;
+}
+
+
 void delete_list(list *l)
 {
   free(l->elements);

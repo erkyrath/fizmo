@@ -1,9 +1,9 @@
 
-/* drilbo.h
+/* debugger.h
  *
  * This file is part of fizmo.
  *
- * Copyright (c) 2010-2011 Christoph Ender.
+ * Copyright (c) 2009-2011 Christoph Ender.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,40 +30,20 @@
  */
 
 
-#ifndef drilbo_h_INCLUDED 
-#define drilbo_h_INCLUDED
-
-#define DRILBO_VERSION "0.2.1"
-
-#ifdef UNUSED 
-#elif defined(__GNUC__) 
-# define UNUSED(x) UNUSED_ ## x __attribute__((unused)) 
-#elif defined(__LCLINT__) 
-# define UNUSED(x) /*@unused@*/ x 
-#else 
-# define UNUSED(x) x 
-#endif
+#ifndef debugger_h_INCLUDED 
+#define debugger_h_INCLUDED
 
 #include <inttypes.h>
+#include <stdbool.h>
 
-#define DRILBO_IMAGE_TYPE_RGB 1
-#define DRILBO_IMAGE_TYPE_GRAYSCALE 2
+#define DEBUGGER_PORT 2048
+#define DEBUGGER_IP_ADDRESS "127.0.0.1"
 
-typedef struct
-{
-  uint32_t width;
-  uint32_t height;
-  int image_type;
-  uint8_t *data;
-  int bits_per_sample;
-} z_image;
+void add_breakpoint(uint32_t breakpoint_pc);
+void debugger_story_has_been_loaded();
+void do_breakpoint_actions();
+void debugger();
+void debugger_interpreter_stopped();
 
-z_image *scale_zimage(z_image *image, int dest_width, int dest_height);
-z_image *scale_zimage_to_width(z_image *image, int dest_width);
-z_image *zimage_dup(z_image *image);
-z_image *get_blorb_image(int res_no);
-void free_zimage(z_image *image);
-char *get_drilbo_version();
-
-#endif /* drilbo_h_INCLUDED */
+#endif /* debugger_h_INCLUDED */
 

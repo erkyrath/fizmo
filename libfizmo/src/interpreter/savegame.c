@@ -453,7 +453,6 @@ void save_game(uint16_t address, uint16_t length, char *filename,
   int data;
   char *system_filename;
   uint8_t *ptr;
-  int data2; // removeme
   char *str;
 #ifndef DISABLE_OUTPUT_HISTORY
   z_ucs *hst_ptr;
@@ -672,7 +671,6 @@ void save_game(uint16_t address, uint16_t length, char *filename,
           return;
         }
 
-        data2 = data; // removeme
         data ^= *dynamic_index;
 
         if (data == 0)
@@ -684,8 +682,7 @@ void save_game(uint16_t address, uint16_t length, char *filename,
           TRACE_LOG("Altered byte at offset %ld.\n",
               (long int)(dynamic_index - z_mem));
 
-          TRACE_LOG("Memory-Data: %x, Story-Data: %x.\n",
-              *dynamic_index, data2);
+          TRACE_LOG("Memory-Data: %x.\n", *dynamic_index);
 
           //TRACE_LOG("Skipping %d equal bytes.\n", consecutive_zeros);
           while (consecutive_zeros != 0)
@@ -1004,8 +1001,6 @@ int restore_game_from_stream(uint16_t address, uint16_t length,
   int bytes_read;
   int chunk_length;
   uint16_t stack_word;
-  uint8_t previous_number_of_locals;
-  uint16_t previous_stack_usage;
   int data, data2;
   int copylength;
   uint8_t *restored_story_mem;
@@ -1291,8 +1286,6 @@ int restore_game_from_stream(uint16_t address, uint16_t length,
   saved_stack = create_new_stack();
 
   bytes_read = 0;
-  previous_number_of_locals = 0;
-  previous_stack_usage = 0;
   number_of_stack_frames = 0;
 
   while (bytes_read < chunk_length)

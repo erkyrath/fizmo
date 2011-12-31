@@ -53,6 +53,10 @@
 #include "undo.h"
 #include "../locales/libfizmo_locales.h"
 
+#ifdef ENABLE_DEBUGGER
+#include "debugger.h"
+#endif // ENABLE_DEBUGGER
+
 
 uint8_t *z_mem;
 /*@dependent@*/ uint8_t *pc;
@@ -205,11 +209,16 @@ static void interpret(/*@null@*/ int frame_index_to_quit_on)
 
     TRACE_LOG("\nPC: %lx.\n", (unsigned long int)(pc - z_mem));
 
+#ifdef ENABLE_DEBUGGER
+    do_breakpoint_actions();
+#endif // ENABLE_DEBUGGER
+
 #ifdef ENABLE_TRACING
     TRACE_LOG("Step #%d.\n", zpu_step_number);
 
     dump_locals();
     dump_stack();
+    //dump_stack_to_tracelog();
 #endif /* ENABLE_TRACING */
     zpu_step_number++;
 

@@ -47,6 +47,9 @@
 #include "variable.h"
 #include "../locales/libfizmo_locales.h"
 
+#ifdef ENABLE_DEBUGGER
+#include "debugger.h"
+#endif // ENABLE_DEBUGGER
 
 #if !defined(__WIN32__)
 static struct sigaction fizmo_sigactions;
@@ -122,7 +125,17 @@ void abort_interpreter(int exit_code, z_ucs *error_message)
 {
 #ifdef THROW_SIGFAULT_ON_ERROR
   int x;
-#endif
+#endif // THROW_SIGFAULT_ON_ERROR
+
+  deactivate_signal_handlers();
+
+#ifdef ENABLE_DEBUGGER
+  streams_latin1_output("\nAborting due to:\n");
+  streams_z_ucs_output(error_message);
+  streams_latin1_output("\n");
+  debugger();
+  debugger_interpreter_stopped();
+#endif // ENABLE_DEBUGGER
 
   TRACE_LOG("Aborting interpreter.\n");
   if (error_message != NULL)
@@ -187,6 +200,25 @@ void init_signal_handlers(void)
   sigemptyset(&fizmo_sigactions.sa_mask);
   fizmo_sigactions.sa_flags = 0;
   fizmo_sigactions.sa_handler = &catch_signal_and_abort;
+
+  sigaction(SIGSEGV, &fizmo_sigactions, NULL);
+  sigaction(SIGTERM, &fizmo_sigactions, NULL);
+  sigaction(SIGINT, &fizmo_sigactions, NULL);
+  sigaction(SIGQUIT, &fizmo_sigactions, NULL);
+  sigaction(SIGBUS, &fizmo_sigactions, NULL);
+  sigaction(SIGILL, &fizmo_sigactions, NULL);
+#endif // !defined(__WIN32__)
+}
+
+
+void deactivate_signal_handlers(void)
+{
+#if !defined(__WIN32__)
+  TRACE_LOG("Deactivating signal handlers.\n");
+
+  sigemptyset(&fizmo_sigactions.sa_mask);
+  fizmo_sigactions.sa_flags = 0;
+  fizmo_sigactions.sa_handler = NULL;
 
   sigaction(SIGSEGV, &fizmo_sigactions, NULL);
   sigaction(SIGTERM, &fizmo_sigactions, NULL);

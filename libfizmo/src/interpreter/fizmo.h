@@ -41,7 +41,7 @@
 #include "../blorb_interface/blorb_interface.h"
 #include "blockbuf.h"
 
-#define FIZMO_VERSION "0.7.0"
+#define FIZMO_VERSION "0.7.1"
 
 #define FIZMO_INTERPRETER_NUMBER 6
 /*

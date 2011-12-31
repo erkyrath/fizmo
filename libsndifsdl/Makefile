@@ -3,10 +3,10 @@
 
 include config.mk
 
-ifeq ($(DEV_INSTALL_PREFIX),)
-  DEV_INSTALL_PREFIX=$(INSTALL_PREFIX)
+ifeq ($(fizmo_build_prefix),)
+  fizmo_build_prefix="$(prefix)"
 endif
-PKG_DIR = $(DEV_INSTALL_PREFIX)/lib/pkgconfig
+PKG_DIR = $(fizmo_build_prefix)/lib/pkgconfig
 PKGFILE = $(PKG_DIR)/libsndifsdl.pc
 
 
@@ -21,28 +21,28 @@ src/sound_sdl/libsndifsdl.a::
 install:: install-locales
 
 install-dev:: libsndifsdl.a
-	mkdir -p $(DEV_INSTALL_PREFIX)/lib/fizmo
-	cp libsndifsdl.a $(DEV_INSTALL_PREFIX)/lib/fizmo
-	mkdir -p $(DEV_INSTALL_PREFIX)/include/fizmo/sound_sdl
+	mkdir -p $(fizmo_build_prefix)/lib/fizmo
+	cp libsndifsdl.a $(fizmo_build_prefix)/lib/fizmo
+	mkdir -p $(fizmo_build_prefix)/include/fizmo/sound_sdl
 	cp src/sound_sdl/sound_sdl.h \
-	  $(DEV_INSTALL_PREFIX)/include/fizmo/sound_sdl
+	  $(fizmo_build_prefix)/include/fizmo/sound_sdl
 	mkdir -p $(PKG_DIR)
-	echo 'prefix=$(DEV_INSTALL_PREFIX)' >$(PKGFILE)
+	echo 'prefix=$(fizmo_build_prefix)' >$(PKGFILE)
 	echo 'exec_prefix=$${prefix}' >>$(PKGFILE)
 	echo 'libdir=$${exec_prefix}/lib/fizmo' >>$(PKGFILE)
 	echo 'includedir=$${prefix}/include/fizmo' >>$(PKGFILE)
 	echo >>$(PKGFILE)
 	echo 'Name: libsndifsdl' >>$(PKGFILE)
 	echo 'Description: libsndifsdl' >>$(PKGFILE)
-	echo 'Version: 0.7.0' >>$(PKGFILE)
+	echo 'Version: 0.7.1' >>$(PKGFILE)
 ifeq ($(SOUNDSDL_PKG_REQS),)
 	echo 'Requires: libfizmo >= 0.7' >>$(PKGFILE)
 else
 	echo 'Requires: libfizmo >= 0.7, $(SOUNDSDL_PKG_REQS)' >>$(PKGFILE)
 endif
 	echo 'Requires.private:' >>$(PKGFILE)
-	echo 'Cflags: -I$(DEV_INSTALL_PREFIX)/include/fizmo $(SOUNDSDL_NONPKG_CFLAGS)' >>$(PKGFILE)
-	echo 'Libs: -L$(DEV_INSTALL_PREFIX)/lib/fizmo -lsndifsdl $(SOUNDSDL_PKG_LIBS)'  >>$(PKGFILE)
+	echo 'Cflags: -I$(fizmo_build_prefix)/include/fizmo $(SOUNDSDL_NONPKG_CFLAGS)' >>$(PKGFILE)
+	echo 'Libs: -L$(fizmo_build_prefix)/lib/fizmo -lsndifsdl $(SOUNDSDL_PKG_LIBS)'  >>$(PKGFILE)
 	echo >>$(PKGFILE)
 
 install-locales:

@@ -52,8 +52,9 @@
 #define DEFAULT_SAVEGAME_FILENAME "savegame.qut"
 
 #define MAXIMUM_SCRIPT_FILE_NAME_LENGTH 64
-#define DEFAULT_SCRIPT_FILE_NAME "script.txt"
-#define DEFAULT_COMMAND_FILE_NAME "record.txt"
+#define DEFAULT_TRANSCRIPT_FILE_NAME "transscript.txt"
+#define DEFAULT_INPUT_COMMAND_FILE_NAME "input-script.txt"
+#define DEFAULT_RECORD_COMMAND_FILE_NAME "record.txt"
 
 #define DEFAULT_STREAM_2_LINE_WIDTH 78
 // Note that some games (Aisle may be an example) format their output
@@ -94,15 +95,19 @@ extern int system_charset;
 extern bool auto_adapt_upper_window;
 extern bool auto_open_upper_window;
 extern bool skip_active_routines_stack_check_warning;
-extern char true_value[];
-extern char false_value[];
+extern char config_true_value[];
+extern char config_false_value[];
 extern struct configuration_option configuration_options[];
+extern bool foreground_color_was_changed;
+extern bool background_color_was_changed;
 #endif /* config_c_INCLUDED */
 
 int set_configuration_value(char *key, char* new_value);
 int append_path_value(char *key, char *value_to_append);
 char *get_configuration_value(char *key);
 //char **get_valid_configuration_options(char *key, ...);
+bool is_valid_libfizmo_config_key(char *key);
+char *get_user_homedir();
 
 #endif /* config_h_INCLUDED */
 

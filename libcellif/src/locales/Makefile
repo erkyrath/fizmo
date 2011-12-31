@@ -10,7 +10,8 @@ ifneq ($(ENABLE_OPTIMIZATION),)
 override CFLAGS += -O2
 endif
 
-LIBFIZMO_CFLAGS = $(shell pkg-config --cflags libfizmo)
+LIBFIZMO_CFLAGS = $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config \
+ --cflags libfizmo)
 
 
 .PHONY : clean
@@ -18,7 +19,7 @@ LIBFIZMO_CFLAGS = $(shell pkg-config --cflags libfizmo)
 all: libcellif_locales.o
 
 libcellif_locales.o: libcellif_locales.c
-	$(CC) $(CFLAGS) $(LIBFIZMO_CFLAGS) -c libcellif_locales.c
+	"$(CC)" $(CFLAGS) $(LIBFIZMO_CFLAGS) -c libcellif_locales.c
 
 clean:
 	rm -f *.o

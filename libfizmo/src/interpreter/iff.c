@@ -35,7 +35,6 @@
 // format and thus will almost certainly not work with other iff related
 // data.
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
@@ -44,6 +43,7 @@
 #include "../tools/tracelog.h"
 #include "../tools/i18n.h"
 #include "../tools/types.h"
+#include "../tools/filesys.h"
 #include "iff.h"
 #include "../locales/libfizmo_locales.h"
 
@@ -56,7 +56,7 @@ static int last_chunk_length;
 //static int filename_utf8_size = 0;
 
 
-static int read_four_chars(FILE *iff_file)
+static int read_four_chars(z_file *iff_file)
 {
   int data;
   int i;
@@ -64,7 +64,7 @@ static int read_four_chars(FILE *iff_file)
   four_chars[4] = '\0';
   for (i=0; i<4; i++)
   {
-    data = fgetc(iff_file);
+    data = fsi->getchar(iff_file);
     if (data == EOF)
       return -1;
     four_chars[i] = (char)data;
@@ -74,9 +74,39 @@ static int read_four_chars(FILE *iff_file)
 }
 
 
-/*@null@*/ /*@dependent@*/ FILE *open_simple_iff_file(char *filename, int mode)
+bool detect_simple_iff_stream(z_file *iff_file)
 {
-  FILE *iff_file;
+  if (fsi->setfilepos(iff_file, 0, SEEK_SET) == -1)
+    return false;
+
+  if (read_four_chars(iff_file) != 0)
+    return false;
+
+  if (strcmp(four_chars, "FORM") != 0)
+    return false;
+
+  if (read_chunk_length(iff_file) != 0)
+    return false;
+
+  if (read_four_chars(iff_file) != 0)
+    return false;
+
+  return true;
+}
+
+
+int init_empty_file_for_iff_write(z_file *file_to_init)
+{
+  if ((fsi->writechars("FORM\0\0\0\0IFZS", 12, file_to_init)) != 12)
+    return -1;
+  else
+    return 0;
+}
+
+
+z_file *open_simple_iff_file(char *filename, int mode)
+{
+  z_file *iff_file;
 
   if (filename == NULL)
     return NULL;
@@ -85,55 +115,35 @@ static int read_four_chars(FILE *iff_file)
 
   current_mode = mode;
 
-  if (mode == IFF_MODE_READ)
+  if ( (mode == IFF_MODE_READ) || (mode == IFF_MODE_READ_SAVEGAME) )
   {
-    if ((iff_file = fopen(filename, "r")) == NULL)
+    iff_file
+      = mode == IFF_MODE_READ_SAVEGAME
+      ? fsi->openfile(filename, FILETYPE_SAVEGAME, FILEACCESS_READ)
+      : fsi->openfile(filename, FILETYPE_DATA, FILEACCESS_READ);
+
+    if (iff_file == NULL)
       return NULL;
 
-    if (read_four_chars(iff_file) != 0)
+    if (detect_simple_iff_stream(iff_file) == false)
     {
-      (void)fclose(iff_file);
+      (void)fsi->closefile(iff_file);
       return NULL;
     }
-
-    if (strcmp(four_chars, "FORM") != 0)
-    {
-      (void)fclose(iff_file);
-      return NULL;
-    }
-
-    if (read_chunk_length(iff_file) != 0)
-    {
-      (void)fclose(iff_file);
-      return NULL;
-    }
-
-    //current_form_length = last_chunk_length;
-
-    //TRACE_LOG("IFF FORM chunk length: %d.\n", current_form_length);
-
-    if (read_four_chars(iff_file) != 0)
-    {
-      (void)fclose(iff_file);
-      return NULL;
-    }
-
-    /*
-    if (strcmp(four_chars, "IFZS") != 0)
-    {
-      (void)fclose(iff_file);
-      return NULL;
-    }
-    */
   }
-  else if (mode == IFF_MODE_WRITE)
+  else if ( (mode == IFF_MODE_WRITE) || (mode == IFF_MODE_WRITE_SAVEGAME) )
   {
-    if ((iff_file = fopen(filename, "w")) == NULL)
+    iff_file
+      = mode == IFF_MODE_WRITE_SAVEGAME
+      ? fsi->openfile(filename, FILETYPE_SAVEGAME, FILEACCESS_WRITE)
+      : fsi->openfile(filename, FILETYPE_DATA, FILEACCESS_WRITE);
+
+    if (iff_file == NULL)
       return NULL;
 
-    if (fwrite("FORM\0\0\0\0IFZS", 4, 3, iff_file) < 3)
+    if (init_empty_file_for_iff_write(iff_file) == -1)
     {
-      (void)fclose(iff_file);
+      (void)fsi->closefile(iff_file);
       return NULL;
     }
   }
@@ -159,7 +169,7 @@ int get_last_chunk_length()
 }
 
 
-int read_chunk_length(FILE *iff_file)
+int read_chunk_length(z_file *iff_file)
 {
   last_chunk_length = read_four_byte_number(iff_file);
   TRACE_LOG("last_chunk_length set to %d.\n", last_chunk_length);
@@ -167,46 +177,46 @@ int read_chunk_length(FILE *iff_file)
 }
 
 
-int start_new_chunk(char *id, FILE *iff_file)
+int start_new_chunk(char *id, z_file *iff_file)
 {
-  if (fwrite(id, 4, 1, iff_file) < 1)
+  if (fsi->writechars(id, 4, iff_file) != 4)
     return -1;
 
-  if (fwrite("\0\0\0\0", 4, 1, iff_file) < 1)
+  if (fsi->writechars("\0\0\0\0", 4, iff_file) != 4)
     return -1;
 
-  if ((current_chunk_offset = ftell(iff_file)) == -1)
+  if ((current_chunk_offset = fsi->getfilepos(iff_file)) == -1)
     return -1;
 
   return 0;
 }
 
 
-int write_four_byte_number(uint32_t number, FILE *iff_file)
+int write_four_byte_number(uint32_t number, z_file *iff_file)
 {
-  if (fputc((int)(number >> 24), iff_file) == EOF)
+  if (fsi->writechar((int)(number >> 24), iff_file) == EOF)
     return -1;
 
-  if (fputc((int)(number >> 16), iff_file) == EOF)
+  if (fsi->writechar((int)(number >> 16), iff_file) == EOF)
     return -1;
 
-  if (fputc((int)(number >>  8), iff_file) == EOF)
+  if (fsi->writechar((int)(number >>  8), iff_file) == EOF)
     return -1;
 
-  if (fputc((int)(number      ), iff_file) == EOF)
+  if (fsi->writechar((int)(number      ), iff_file) == EOF)
     return -1;
 
   return 0;
 }
 
 
-int end_current_chunk(FILE *iff_file)
+int end_current_chunk(z_file *iff_file)
 {
   long current_offset;
   long chunk_length;
   uint32_t chunk_length_uint32_t;
 
-  if ((current_offset = ftell(iff_file)) == -1)
+  if ((current_offset = fsi->getfilepos(iff_file)) == -1)
     return -1;
 
   chunk_length = current_offset - current_chunk_offset;
@@ -221,14 +231,14 @@ int end_current_chunk(FILE *iff_file)
   {
     // 8.4.1: If length is odd, these are followed by a single zero
     // byte. This byte is *not* included in the chunk length ...
-    if (fputc(0, iff_file) == EOF)
+    if (fsi->writechar(0, iff_file) == EOF)
       return -1;
 
     TRACE_LOG("Padding with single zero byte.\n");
   }
 
   TRACE_LOG("Seeking position %ld.\n", current_chunk_offset - 4);
-  if (fseek(iff_file, current_chunk_offset - 4, SEEK_SET) == -1)
+  if (fsi->setfilepos(iff_file, current_chunk_offset - 4, SEEK_SET) == -1)
     return -1;
 
   TRACE_LOG("Writing chunk length %d.\n", chunk_length_uint32_t);
@@ -236,7 +246,7 @@ int end_current_chunk(FILE *iff_file)
     return -1;
 
   TRACE_LOG("Seeking end of file.\n");
-  if (fseek(iff_file, 0, SEEK_END) != 0)
+  if (fsi->setfilepos(iff_file, 0, SEEK_END) != 0)
     return -1;
 
   TRACE_LOG("Chunk writing finished.\n");
@@ -245,15 +255,15 @@ int end_current_chunk(FILE *iff_file)
 }
 
 
-int close_simple_iff_file(FILE *iff_file)
+int close_simple_iff_file(z_file *iff_file)
 {
   long length;
   uint32_t length_uint32_t;
 
-  if (fseek(iff_file, 0, SEEK_END) == -1)
+  if (fsi->setfilepos(iff_file, 0, SEEK_END) == -1)
     return -1;
 
-  if ((length = ftell(iff_file)) == -1)
+  if ((length = fsi->getfilepos(iff_file)) == -1)
     return -1;
 
   if ((uint32_t)length > UINT32_MAX)
@@ -263,26 +273,26 @@ int close_simple_iff_file(FILE *iff_file)
 
   length_uint32_t = (uint32_t)length;
 
-  if (fseek(iff_file, 4, SEEK_SET) == -1)
+  if (fsi->setfilepos(iff_file, 4, SEEK_SET) == -1)
     return -1;
 
   if (write_four_byte_number(length_uint32_t, iff_file) == -1)
     return -1;
 
-  if (fclose(iff_file) == EOF)
+  if (fsi->closefile(iff_file) == EOF)
     return -1;
 
   return 0;
 }
 
 
-int find_chunk(char *id, FILE *iff_file)
+int find_chunk(char *id, z_file *iff_file)
 {
   int chunk_length;
 
   TRACE_LOG("Looking for chunk \"%s\".\n", id);
 
-  if (fseek(iff_file, 12L, SEEK_SET) == -1)
+  if (fsi->setfilepos(iff_file, 12L, SEEK_SET) == -1)
   {
     TRACE_LOG("%s\n", strerror(errno));
     return -1;
@@ -315,7 +325,7 @@ int find_chunk(char *id, FILE *iff_file)
       chunk_length++;
 
     TRACE_LOG("Skipping %d bytes.\n", chunk_length);
-    if (fseek(iff_file, chunk_length, SEEK_CUR) == -1)
+    if (fsi->setfilepos(iff_file, chunk_length, SEEK_CUR) == -1)
     {
       TRACE_LOG("%s\n", strerror(errno));
       return -1;
@@ -324,7 +334,7 @@ int find_chunk(char *id, FILE *iff_file)
 }
 
 
-uint32_t read_four_byte_number(FILE *iff_file)
+uint32_t read_four_byte_number(z_file *iff_file)
 {
   int data;
   int i;
@@ -332,10 +342,10 @@ uint32_t read_four_byte_number(FILE *iff_file)
 
   for (i=0; i<4; i++)
   {
-    data = fgetc(iff_file);
+    data = fsi->getchar(iff_file);
     if (data == EOF)
     {
-      (void)fclose(iff_file);
+      (void)fsi->closefile(iff_file);
       return -1;
     }
     result |= ((uint8_t)data)
@@ -346,9 +356,9 @@ uint32_t read_four_byte_number(FILE *iff_file)
 }
 
 
-char *read_form_type(FILE *iff_file)
+char *read_form_type(z_file *iff_file)
 {
-  if (fseek(iff_file, 8L, SEEK_SET) == -1)
+  if (fsi->setfilepos(iff_file, 8L, SEEK_SET) == -1)
   {
     TRACE_LOG("%s\n", strerror(errno));
     return NULL;
@@ -364,7 +374,7 @@ char *read_form_type(FILE *iff_file)
 }
 
 
-bool is_form_type(FILE *iff_file, char* form_type)
+bool is_form_type(z_file *iff_file, char* form_type)
 {
   return strcmp(read_form_type(iff_file), form_type) == 0 ? true : false;
 }

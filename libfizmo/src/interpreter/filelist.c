@@ -30,14 +30,9 @@
  */
 
 
-#include <dirent.h>
-#include <unistd.h>
 #include <string.h>
 #include <ctype.h>
 #include <inttypes.h>
-#include <sys/stat.h>
-#include <stdio.h>
-#include <fcntl.h>
 
 #include "filelist.h"
 #include "fizmo.h"
@@ -47,6 +42,7 @@
 #include "../tools/tracelog.h"
 #include "../tools/types.h"
 #include "../tools/unused.h"
+#include "../tools/filesys.h"
 
 static int nof_files_found;
 static int nof_files_searched;
@@ -58,6 +54,8 @@ static char *title_input = NULL;
 static int title_input_size = 0;
 static char *author_input = NULL;
 static int author_input_size = 0;
+static char *language_input = NULL;
+static int language_input_size = 0;
 static char *description_input = NULL;
 static int description_input_size = 0;
 static char *filename_input = NULL;
@@ -70,6 +68,7 @@ static int filetype_input_size = 0;
 static char *unquoted_serial_input = NULL;
 static char *unquoted_title_input = NULL;
 static char *unquoted_author_input = NULL;
+static char *unquoted_language_input = NULL;
 static char *unquoted_description_input = NULL;
 static char *unquoted_filename_input = NULL;
 static char *unquoted_blorbfile_input = NULL;
@@ -83,7 +82,8 @@ static long storyfile_timestamp_input;
 static int length_input;
 static uint16_t checksum_input;
 static int version_input;
-FILE *in;
+static z_file *in;
+static bool in_zfile_open = false;
 static int nof_files_searched;
 static bool show_progress = false;
 
@@ -133,6 +133,11 @@ void free_unquote_buffers()
     free(unquoted_author_input);
     unquoted_author_input = NULL;
   }
+  if (unquoted_language_input != NULL)
+  {
+    free(unquoted_language_input);
+    unquoted_language_input = NULL;
+  }
   if (unquoted_description_input != NULL)
   {
     free(unquoted_description_input);
@@ -179,6 +184,13 @@ void abort_entry_input()
   }
   author_input_size = 0;
 
+  if (language_input != NULL)
+  {
+    free(language_input);
+    language_input = NULL;
+  }
+  language_input_size = 0;
+
   if (description_input != NULL)
   {
     free(description_input);
@@ -209,7 +221,11 @@ void abort_entry_input()
 
   free_unquote_buffers();
 
-  fclose(in);
+  if (in_zfile_open == true)
+  {
+    fsi->closefile(in);
+    in_zfile_open = false;
+  }
 }
 
 
@@ -221,6 +237,8 @@ void free_z_story_list_entry(struct z_story_list_entry *entry)
     free(entry->title);
   if (entry->author != NULL)
     free(entry->author);
+  if (entry->language != NULL)
+    free(entry->language);
   if (entry->description != NULL)
     free(entry->description);
   if (entry->filename != NULL)
@@ -263,7 +281,7 @@ int parse_next_story_entry()
   release_input = 0;
   while (index < 5)
   {
-    if ((data = fgetc(in)) == EOF)
+    if ((data = fsi->getchar(in)) == EOF)
     {
       if (index == 0) break;
       else { abort_entry_input(); TRACE_LOG("#0\n"); return -1; }
@@ -275,20 +293,20 @@ int parse_next_story_entry()
     index++;
   }
 
-  if ( (index == 5) && (fgetc(in) != '\t') )
+  if ( (index == 5) && (fsi->getchar(in) != '\t') )
   { abort_entry_input(); TRACE_LOG("#1\n"); return -1; }
 
-  offset = ftell(in);
-  while ((data = fgetc(in)) != '\t')
+  offset = fsi->getfilepos(in);
+  while ((data = fsi->getchar(in)) != '\t')
     if (data == EOF)
     { abort_entry_input(); TRACE_LOG("#2\n"); return -1; }
-  size = ftell(in) - offset - 1;
+  size = fsi->getfilepos(in) - offset - 1;
   if (ensure_mem_size(&serial_input, &serial_input_size, size + 2) == -1)
   { abort_entry_input(); TRACE_LOG("#3\n"); return -1; }
   if (size > 0)
   {
-    fseek(in, -(size+1), SEEK_CUR);
-    if (fread(serial_input, size+1, 1, in) != 1)
+    fsi->setfilepos(in, -(size+1), SEEK_CUR);
+    if (fsi->getchars(serial_input, size+1, in) != (size_t)size+1)
     { abort_entry_input(); TRACE_LOG("#4\n"); return -1; }
   }
   serial_input[size] = '\0';
@@ -298,7 +316,7 @@ int parse_next_story_entry()
   length_input = 0;
   do
   {
-    if ((data = fgetc(in)) == EOF)
+    if ((data = fsi->getchar(in)) == EOF)
     { abort_entry_input(); TRACE_LOG("#5\n"); return -1; }
     if (data != '\t')
     {
@@ -313,7 +331,7 @@ int parse_next_story_entry()
   checksum_input = 0;
   while (index < 5)
   {
-    if ((data = fgetc(in)) == EOF)
+    if ((data = fsi->getchar(in)) == EOF)
     { abort_entry_input(); TRACE_LOG("#6\n"); return -1; }
     if (data == '\t') break;
     if (isdigit(data) == 0) { TRACE_LOG("#7\n"); return -1; }
@@ -323,10 +341,10 @@ int parse_next_story_entry()
   }
   TRACE_LOG("cs:%d\n", checksum_input);
 
-  if ( (index == 5) && (fgetc(in) != '\t') )
+  if ( (index == 5) && (fsi->getchar(in) != '\t') )
   { abort_entry_input(); TRACE_LOG("#8\n"); return -1; }
 
-  if ((data = fgetc(in)) == EOF)
+  if ((data = fsi->getchar(in)) == EOF)
   { abort_entry_input(); TRACE_LOG("#9\n"); return -1; }
   TRACE_LOG("data:%c\n", data);
   if (isdigit(data) == 0)
@@ -334,102 +352,118 @@ int parse_next_story_entry()
   version_input = data - '0';
   TRACE_LOG("versioninput:%c\n", version_input);
 
-  if (fgetc(in) != '\t')
+  if (fsi->getchar(in) != '\t')
   { abort_entry_input(); TRACE_LOG("#11\n"); return -1; }
 
-  offset = ftell(in);
-  while ((data = fgetc(in)) != '\t')
+  offset = fsi->getfilepos(in);
+  while ((data = fsi->getchar(in)) != '\t')
     if (data == EOF)
     { abort_entry_input(); TRACE_LOG("#12\n"); return -1; }
-  size = ftell(in) - offset - 1;
+  size = fsi->getfilepos(in) - offset - 1;
   if (ensure_mem_size(&title_input, &title_input_size, size + 2) == -1)
   { abort_entry_input(); TRACE_LOG("#13\n"); return -1; }
   if (size > 0)
   {
-    fseek(in, -(size+1), SEEK_CUR);
-    if (fread(title_input, size+1, 1, in) != 1)
+    fsi->setfilepos(in, -(size+1), SEEK_CUR);
+    if (fsi->getchars(title_input, size+1, in) != (size_t)size+1)
     { abort_entry_input(); TRACE_LOG("#14\n"); return -1; }
   }
   title_input[size] = '\0';
   unquoted_title_input = unquote_special_chars(title_input);
   //printf("title:[%s]\n", title_input);
 
-  offset = ftell(in);
-  while ((data = fgetc(in)) != '\t')
+  offset = fsi->getfilepos(in);
+  while ((data = fsi->getchar(in)) != '\t')
     if (data == EOF) { abort_entry_input(); TRACE_LOG("#15\n"); return -1; }
-  size = ftell(in) - offset - 1;
+  size = fsi->getfilepos(in) - offset - 1;
   if (ensure_mem_size(&author_input, &author_input_size, size + 2) == -1)
   { abort_entry_input(); TRACE_LOG("#16\n"); return -1; }
   if (size > 0)
   {
-    fseek(in, -(size+1), SEEK_CUR);
-    if (fread(author_input, size+1, 1, in) != 1)
+    fsi->setfilepos(in, -(size+1), SEEK_CUR);
+    if (fsi->getchars(author_input, size+1, in) != (size_t)size+1)
     { abort_entry_input(); TRACE_LOG("#17\n"); return -1; }
   }
   author_input[size] = '\0';
   unquoted_author_input = unquote_special_chars(author_input);
   //printf("author:[%s]\n", author_input);
 
-  offset = ftell(in);
-  while ((data = fgetc(in)) != '\t')
+  offset = fsi->getfilepos(in);
+  while ((data = fsi->getchar(in)) != '\t')
+    if (data == EOF) { abort_entry_input(); TRACE_LOG("#15\n"); return -1; }
+  size = fsi->getfilepos(in) - offset - 1;
+  if (ensure_mem_size(&language_input, &language_input_size, size + 2) == -1)
+  { abort_entry_input(); TRACE_LOG("#16\n"); return -1; }
+  if (size > 0)
+  {
+    fsi->setfilepos(in, -(size+1), SEEK_CUR);
+    if (fsi->getchars(language_input, size+1, in) != (size_t)size+1)
+    { abort_entry_input(); TRACE_LOG("#17\n"); return -1; }
+  }
+  language_input[size] = '\0';
+  unquoted_language_input = unquote_special_chars(language_input);
+  //printf("language:[%s]\n", language_input);
+
+  offset = fsi->getfilepos(in);
+  while ((data = fsi->getchar(in)) != '\t')
     if (data == EOF)
     { abort_entry_input(); TRACE_LOG("#18\n"); return -1; }
-  size = ftell(in) - offset - 1;
+  size = fsi->getfilepos(in) - offset - 1;
   if (ensure_mem_size(&description_input, &description_input_size, size+2)==-1)
   { abort_entry_input(); TRACE_LOG("#19\n"); return -1; }
   if (size > 0)
   {
-    fseek(in, -(size+1), SEEK_CUR);
-    if (fread(description_input, size+1, 1, in) != 1)
+    fsi->setfilepos(in, -(size+1), SEEK_CUR);
+    if (fsi->getchars(description_input, size+1, in) != (size_t)size+1)
     { abort_entry_input(); TRACE_LOG("#20\n"); return -1; }
   }
   description_input[size] = '\0';
   unquoted_description_input = unquote_special_chars(description_input);
   //printf("desc:[%s]\n", description_input);
 
-  offset = ftell(in);
-  while ((data = fgetc(in)) != '\t')
+  offset = fsi->getfilepos(in);
+  while ((data = fsi->getchar(in)) != '\t')
     if (data == EOF)
     { abort_entry_input(); TRACE_LOG("#21\n"); return -1; }
-  size = ftell(in) - offset - 1;
+  size = fsi->getfilepos(in) - offset - 1;
   if (ensure_mem_size(&filename_input, &filename_input_size, size + 2) == -1)
   { abort_entry_input(); TRACE_LOG("#22\n"); return -1; }
   if (size > 0)
   {
-    fseek(in, -(size+1), SEEK_CUR);
-    if (fread(filename_input, size+1, 1, in) != 1)
+    fsi->setfilepos(in, -(size+1), SEEK_CUR);
+    if (fsi->getchars(filename_input, size+1, in) != (size_t)size+1)
     { abort_entry_input(); TRACE_LOG("#23\n"); return -1; }
   }
   filename_input[size] = '\0';
   unquoted_filename_input = unquote_special_chars(filename_input);
 
-  offset = ftell(in);
-  while ((data = fgetc(in)) != '\t')
+  offset = fsi->getfilepos(in);
+  while ((data = fsi->getchar(in)) != '\t')
     if (data == EOF)
     { abort_entry_input(); TRACE_LOG("#24\n"); return -1; }
-  size = ftell(in) - offset - 1;
+  size = fsi->getfilepos(in) - offset - 1;
   if (ensure_mem_size(&blorbfile_input, &blorbfile_input_size, size + 2) == -1)
   { abort_entry_input(); TRACE_LOG("#25\n"); return -1; }
   if (size > 0)
   {
-    fseek(in, -(size+1), SEEK_CUR);
-    if (fread(blorbfile_input, size+1, 1, in) != 1)
+    fsi->setfilepos(in, -(size+1), SEEK_CUR);
+    if (fsi->getchars(blorbfile_input, size+1, in) != (size_t)size+1)
     { abort_entry_input(); TRACE_LOG("#26\n"); return -1; }
   }
   blorbfile_input[size] = '\0';
   unquoted_blorbfile_input = unquote_special_chars(blorbfile_input);
 
-  offset = ftell(in);
-  while ((data = fgetc(in)) != '\t')
+  offset = fsi->getfilepos(in);
+  while ((data = fsi->getchar(in)) != '\t')
     if (data == EOF)
     { abort_entry_input(); TRACE_LOG("#27\n"); return -1; }
-  size = ftell(in) - offset - 1;
+  size = fsi->getfilepos(in) - offset - 1;
   if (ensure_mem_size(&filetype_input, &filetype_input_size, size + 2) == -1)
   { abort_entry_input(); TRACE_LOG("#28\n"); return -1; }
   if (size > 0)
   {
-    fseek(in, -(size+1), SEEK_CUR);
-    if (fread(filetype_input, size+1, 1, in) != 1)
+    fsi->setfilepos(in, -(size+1), SEEK_CUR);
+    if (fsi->getchars(filetype_input, size+1, in) != (size_t)size+1)
     { abort_entry_input(); TRACE_LOG("#29\n"); return -1; }
   }
   filetype_input[size] = '\0';
@@ -439,10 +473,10 @@ int parse_next_story_entry()
   storyfile_timestamp_input = 0;
   while (index < 16)
   {
-    if ((data = fgetc(in)) == EOF)
+    if ((data = fsi->getchar(in)) == EOF)
     { abort_entry_input(); TRACE_LOG("#30\n"); return -1; }
     if (data == '\n')
-    { ungetc(data, in); break; }
+    { fsi->ungetchar(data, in); break; }
     if (isdigit(data) == 0) { parse_error = true; break; }
     storyfile_timestamp_input *= 10;
     storyfile_timestamp_input += (data - '0');
@@ -456,7 +490,7 @@ int parse_next_story_entry()
       filename_input);
   */
 
-  while ((data = fgetc(in)) != '\n')
+  while ((data = fsi->getchar(in)) != '\n')
     if (data == EOF) break;
 
   return 0;
@@ -465,8 +499,12 @@ int parse_next_story_entry()
 
 static char *get_filelist_name()
 {
-  char *dir_name = get_fizmo_config_dir_name();
+  char *dir_name = NULL;
   char *filename;
+
+#ifndef DISABLE_CONFIGFILES
+  dir_name = get_fizmo_config_dir_name();
+#endif // DISABLE_CONFIGFILES
 
   if (dir_name == NULL)
     return NULL;
@@ -479,16 +517,16 @@ static char *get_filelist_name()
 }
 
 
-static FILE *open_story_list(char *mode)
+static z_file *open_story_list(bool write_enabled)
 {
   char *filename;
-  FILE *result;
+  z_file *result;
 
   if ((filename = get_filelist_name()) == NULL)
     return NULL;
-  //printf("%s\n", filename);
 
-  result = fopen(filename, mode);
+  result = fsi->openfile(filename, FILETYPE_DATA,
+      write_enabled == true ? FILEACCESS_WRITE : FILEACCESS_READ);
   free(filename);
   return result;
 }
@@ -510,6 +548,7 @@ struct z_story_list_entry *store_current_entry()
   result->checksum = checksum_input;
   result->title = fizmo_strdup(unquoted_title_input);
   result->author = fizmo_strdup(unquoted_author_input);
+  result->language = fizmo_strdup(unquoted_language_input);
   result->description = fizmo_strdup(unquoted_description_input);
   result->filename = fizmo_strdup(unquoted_filename_input);
   result->blorbfile = fizmo_strdup(unquoted_blorbfile_input);
@@ -522,7 +561,7 @@ struct z_story_list_entry *store_current_entry()
 
 
 struct z_story_list_entry *add_entry_to_story_list(
-    struct z_story_list *story_list, char *title, char *author,
+    struct z_story_list *story_list, char *title, char *author, char *language,
     char *description, char *serial, int version, int length,
     uint16_t checksum, uint16_t release, char *story_filename,
     char *story_blorbfile, char *story_filetype, long storyfile_timestamp)
@@ -534,7 +573,8 @@ struct z_story_list_entry *add_entry_to_story_list(
 
   //printf("Adding %d:%s\n", story_list->nof_entries, story_filename);
 
-  TRACE_LOG("New story: %s, \"%s\".\n",
+  TRACE_LOG("Adding new story entry #%d: %s, \"%s\".\n",
+      story_list->nof_entries,
       story_filename,
       description != NULL ? description : "");
 
@@ -544,14 +584,20 @@ struct z_story_list_entry *add_entry_to_story_list(
             story_list->entries,
             sizeof(struct z_story_list_entry*)
             * (story_list->nof_entries_allocated + 10))) == NULL)
-      return NULL;
+      {
+        TRACE_LOG("Cannot realloc.\n");
+        return NULL;
+      }
 
     story_list->entries = ptr;
     story_list->nof_entries_allocated += 10;
   }
 
   if ((result = malloc(sizeof(struct z_story_list_entry))) == NULL)
+  {
+    TRACE_LOG("Cannot malloc.\n");
     return NULL;
+  }
 
   result->release_number = release;
   result->serial = fizmo_strdup(serial);
@@ -560,6 +606,7 @@ struct z_story_list_entry *add_entry_to_story_list(
   result->checksum = checksum;
   result->title = fizmo_strdup(title);
   result->author = fizmo_strdup(author);
+  result->language = fizmo_strdup(language);
   result->description = fizmo_strdup(description);
   result->filename = fizmo_strdup(story_filename);
   result->blorbfile
@@ -574,9 +621,14 @@ struct z_story_list_entry *add_entry_to_story_list(
       break;
     insert_index++;
   }
+  TRACE_LOG("Insert index: %d.\n", insert_index);
 
   if (insert_index < story_list->nof_entries)
   {
+    TRACE_LOG("Move to %p from %p.\n",
+        story_list->entries + insert_index + 1,
+        story_list->entries + insert_index);
+
     memmove(
         story_list->entries + insert_index + 1,
         story_list->entries + insert_index,
@@ -611,18 +663,19 @@ struct z_story_list *get_z_story_list()
   int data;
   struct z_story_list *result = get_empty_z_story_list();
 
-  if ((in = open_story_list("r")) == NULL)
+  if ((in = open_story_list(false)) == NULL)
     return result;
+  in_zfile_open = true;
 
   for(;;)
   {
-    if ((data = fgetc(in)) == EOF)
+    if ((data = fsi->getchar(in)) == EOF)
     {
       abort_entry_input();
       return result;
     }
     else
-      ungetc(data, in);
+      fsi->ungetchar(data, in);
 
     if (parse_next_story_entry() == -1)
     {
@@ -634,6 +687,7 @@ struct z_story_list *get_z_story_list()
         result,
         unquoted_title_input,
         unquoted_author_input,
+        unquoted_language_input,
         unquoted_description_input,
         unquoted_serial_input,
         version_input,
@@ -700,18 +754,19 @@ struct z_story_list_entry *get_z_story_entry_from_list(char *serial,
   struct z_story_list_entry *result;
   int data;
 
-  if ((in = open_story_list("r")) == NULL)
+  if ((in = open_story_list(false)) == NULL)
     return NULL;
+  in_zfile_open = true;
 
   for(;;)
   {
-    if ((data = fgetc(in)) == EOF)
+    if ((data = fsi->getchar(in)) == EOF)
     {
       abort_entry_input();
       return NULL;
     }
     else
-      ungetc(data, in);
+      fsi->ungetchar(data, in);
 
     if (parse_next_story_entry() == -1)
     {
@@ -765,7 +820,7 @@ int remove_entry_from_list(struct z_story_list *story_list,
 static int detect_and_add_z_file(char *filename, char *blorb_filename,
     struct babel_info *babel, struct z_story_list *story_list)
 {
-  FILE *infile;
+  z_file *infile;
   uint8_t buf[30];
   uint32_t val;
   char serial[7];
@@ -775,12 +830,12 @@ static int detect_and_add_z_file(char *filename, char *blorb_filename,
   struct babel_story_info *b_info = NULL;
   char *title;
   char *author;
+  char *language;
   char *description;
   char *ptr, *ptr2;
   int length;
-  long storyfile_timestamp;
+  time_t storyfile_timestamp;
   char *empty_string = "";
-  struct stat stat_buf;
   struct z_story_list_entry *entry;
   int chunk_length = -1;
   struct babel_info *file_babel = NULL;
@@ -793,14 +848,15 @@ static int detect_and_add_z_file(char *filename, char *blorb_filename,
 
   if (filename[0] != '/')
   {
-    cwd = getcwd(NULL, 0);
+    cwd = fsi->get_cwd();
     abs_filename = fizmo_malloc(strlen(cwd) + strlen(filename) + 2);
     sprintf(abs_filename, "%s/%s", cwd, filename);
   }
   else
     abs_filename = filename;
 
-  if ((infile = fopen(abs_filename, "r")) == NULL)
+  if ((infile = fsi->openfile(abs_filename, FILETYPE_DATA, FILEACCESS_READ))
+      == NULL)
   {
     if (cwd != NULL)
     {
@@ -810,9 +866,9 @@ static int detect_and_add_z_file(char *filename, char *blorb_filename,
     return -1;
   }
 
-  if (fstat(fileno(infile), &stat_buf) != 0)
+  if ((storyfile_timestamp = fsi->get_last_file_mod_timestamp(infile)) < 0)
   {
-    fclose(infile);
+    fsi->closefile(infile);
     if (cwd != NULL)
     {
       free(cwd);
@@ -821,11 +877,9 @@ static int detect_and_add_z_file(char *filename, char *blorb_filename,
     return -1;
   }
 
-  storyfile_timestamp = stat_buf.st_ctime;
-
-  if (fread(buf, 30, 1, infile) != 1)
+  if (fsi->getchars(buf, 30, infile) != 30)
   {
-    fclose(infile);
+    fsi->closefile(infile);
     if (cwd != NULL)
     {
       free(cwd);
@@ -844,7 +898,7 @@ static int detect_and_add_z_file(char *filename, char *blorb_filename,
         (find_chunk("ZCOD", infile) == -1)
        )
     {
-      fclose(infile);
+      fsi->closefile(infile);
       if (cwd != NULL)
       {
         free(cwd);
@@ -860,7 +914,7 @@ static int detect_and_add_z_file(char *filename, char *blorb_filename,
       read_chunk_length(infile);
       chunk_length = get_last_chunk_length();
       file_babel = load_babel_info_from_blorb(
-          infile, chunk_length, abs_filename, &stat_buf);
+          infile, chunk_length, abs_filename, storyfile_timestamp);
       babel = file_babel;
     }
 
@@ -868,9 +922,9 @@ static int detect_and_add_z_file(char *filename, char *blorb_filename,
     read_chunk_length(infile);
     length = get_last_chunk_length();
 
-    if (fread(buf, 30, 1, infile) != 1)
+    if (fsi->getchars(buf, 30, infile) != 30)
     {
-      fclose(infile);
+      fsi->closefile(infile);
       if (cwd != NULL)
       {
         free(cwd);
@@ -881,11 +935,11 @@ static int detect_and_add_z_file(char *filename, char *blorb_filename,
   }
   else
   {
-    fseek(infile, 0, SEEK_END);
-    length = ftell(infile);
+    fsi->setfilepos(infile, 0, SEEK_END);
+    length = fsi->getfilepos(infile);
     file_is_zblorb = false;
   }
-  fclose(infile);
+  fsi->closefile(infile);
 
   val = (buf[16] << 24) | (buf[17] << 16) | (buf[18] << 8) | (buf[19]);
   if (
@@ -975,6 +1029,7 @@ static int detect_and_add_z_file(char *filename, char *blorb_filename,
   {
     title = (b_info->title == NULL ? empty_string : b_info->title);
     author = (b_info->author == NULL ? empty_string : b_info->author);
+    language = (b_info->language == NULL ? empty_string : b_info->language);
     description
       = (b_info->description != NULL)
       ? b_info->description
@@ -1007,6 +1062,7 @@ static int detect_and_add_z_file(char *filename, char *blorb_filename,
     }
 
     author = empty_string;
+    language = empty_string;
     description = empty_string;
   }
 
@@ -1014,6 +1070,7 @@ static int detect_and_add_z_file(char *filename, char *blorb_filename,
       story_list,
       title,
       author,
+      language,
       description,
       serial,
       version,
@@ -1046,47 +1103,40 @@ static int detect_and_add_z_file(char *filename, char *blorb_filename,
 
 static int count_files(char *abs_dir_name, bool recursive)
 {
-  DIR *current_dir;
-  struct dirent dir_entry;
-  struct dirent* ptr;
+  z_dir *current_dir;
+  struct z_dir_ent z_dir_entry;
   char *dirname = NULL;
   int dirname_size = 0;
   int len;
   int result = 0;
-  char *cwd = getcwd(NULL, 0);
-  int fildes;
-  int fstat_retval;
-  struct stat stat_buf;
+  char *cwd = fsi->get_cwd(NULL, 0);
 
-  if ((chdir(abs_dir_name)) == -1)
+  if ((fsi->ch_dir(abs_dir_name)) == -1)
   {
     free(cwd);
     return 0;
   }
 
-  if ((current_dir = opendir(".")) == NULL)
+  TRACE_LOG("Counting files for \"%s\".\n", abs_dir_name);
+  if ((current_dir = fsi->open_dir(".")) == NULL)
   {
     printf("\"%s\":\n", abs_dir_name);
     perror("could not opendir");
-    chdir(cwd);
+    fsi->ch_dir(cwd);
     free(cwd);
     return 0;
   }
 
-  while (
-      (readdir_r(current_dir, &dir_entry, &ptr) == 0)
-      &&
-      (ptr != NULL)
-      )
+  while (fsi->read_dir(&z_dir_entry, current_dir) == 0)
   {
     if (
-        (strcmp(dir_entry.d_name, ".") == 0)
+        (strcmp(z_dir_entry.d_name, ".") == 0)
         ||
-        (strcmp(dir_entry.d_name, "..") == 0)
+        (strcmp(z_dir_entry.d_name, "..") == 0)
        )
       continue;
 
-    len = strlen(abs_dir_name) + strlen(dir_entry.d_name) + 2;
+    len = strlen(abs_dir_name) + strlen(z_dir_entry.d_name) + 2;
     if (len > dirname_size)
     {
       dirname = (char*)fizmo_realloc(dirname, len);
@@ -1096,39 +1146,28 @@ static int count_files(char *abs_dir_name, bool recursive)
     strcpy(dirname, abs_dir_name);
     if (dirname[strlen(dirname) - 1] != '/')
       strcat(dirname, "/");
-    strcat(dirname, dir_entry.d_name);
+    strcat(dirname, z_dir_entry.d_name);
 
-    // No d_type in struct dirent in cygwin, using fstat instead.
-    // http://cygwin.com/ml/cygwin/2005-04/msg01040.html
-    if ((fildes = open(dir_entry.d_name, O_RDONLY)) != -1)
+    if (fsi->is_filename_directory(z_dir_entry.d_name) == true)
     {
-      fstat_retval = fstat(fildes, &stat_buf);
-      close(fildes);
-
-      if (fstat_retval == 0)
-      {
-        if ((stat_buf.st_mode & S_IFDIR) != 0)
-        {
-          if (recursive == true)
-            result += count_files(dirname, true);
-        }
-        else
-        {
-          result++;
-        }
-      }
+      if (recursive == true)
+        result += count_files(dirname, true);
     }
+    else
+      result++;
   }
 
   if (dirname != NULL)
     free(dirname);
 
-  closedir(current_dir);
+  fsi->close_dir(current_dir);
 
-  chdir(cwd);
+  fsi->ch_dir(cwd);
   free(cwd);
 
   //printf("result:%d\n", result);
+
+  TRACE_LOG("count-result: %d\n", result);
 
   return result;
 }
@@ -1138,26 +1177,21 @@ static int search_dir(char *abs_dir_name,
     void (*update_func)(char *filename, char *dirname),
     struct z_story_list *story_list, bool recursive, struct babel_info *babel)
 {
-  DIR *current_dir;
-  struct dirent dir_entry;
-  struct dirent* ptr;
+  z_dir *current_dir;
+  struct z_dir_ent z_dir_entry;
   char *dirname = NULL;
   int dirname_size = 0;
   int len;
-  int fildes;
-  int fstat_retval;
-  struct stat stat_buf;
-  char *cwd = getcwd(NULL, 0);
+  char *cwd = fsi->get_cwd();
 
-  //printf("Trying to readdir \"%s\".\n", abs_dir_name);
+  TRACE_LOG("Trying to readdir \"%s\".\n", abs_dir_name);
 
-  if ((chdir(abs_dir_name)) == -1)
+  if ((fsi->ch_dir(abs_dir_name)) == -1)
   {
     return -1;
   }
-  //printf("chdir %s okay.\n", abs_dir_name);
 
-  if ((current_dir = opendir(".")) == NULL)
+  if ((current_dir = fsi->open_dir(".")) == NULL)
   {
     printf("\"%s\":\n", abs_dir_name);
     perror("could not opendir");
@@ -1167,22 +1201,16 @@ static int search_dir(char *abs_dir_name,
   if ( (show_progress == true) && (update_func != NULL) )
     update_func(NULL, abs_dir_name);
 
-  while (
-      (readdir_r(current_dir, &dir_entry, &ptr) == 0)
-      &&
-      (ptr != NULL)
-      )
+  while (fsi->read_dir(&z_dir_entry, current_dir) == 0)
   {
     if (
-        (strcmp(dir_entry.d_name, ".") == 0)
+        (strcmp(z_dir_entry.d_name, ".") == 0)
         ||
-        (strcmp(dir_entry.d_name, "..") == 0)
+        (strcmp(z_dir_entry.d_name, "..") == 0)
        )
       continue;
 
-    //printf("#:%s\n", dir_entry.d_name);
-
-    len = strlen(abs_dir_name) + strlen(dir_entry.d_name) + 2;
+    len = strlen(abs_dir_name) + strlen(z_dir_entry.d_name) + 2;
     if (len > dirname_size)
     {
       dirname = (char*)fizmo_realloc(dirname, len);
@@ -1192,39 +1220,27 @@ static int search_dir(char *abs_dir_name,
     strcpy(dirname, abs_dir_name);
     if (dirname[strlen(dirname) - 1] != '/')
       strcat(dirname, "/");
-    strcat(dirname, dir_entry.d_name);
+    strcat(dirname, z_dir_entry.d_name);
 
-    // No d_type in struct dirent in cygwin, using fstat instead.
-    // http://cygwin.com/ml/cygwin/2005-04/msg01040.html
-    if ((fildes = open(dir_entry.d_name, O_RDONLY)) != -1)
+    if (fsi->is_filename_directory(z_dir_entry.d_name) == true)
     {
-      fstat_retval = fstat(fildes, &stat_buf);
-      close(fildes);
-
-      if (fstat_retval == 0)
-      {
-        if ((stat_buf.st_mode & S_IFDIR) != 0)
-	{
-	  if (recursive == true)
-	    search_dir(dirname, update_func, story_list, true, babel);
-	}
-	else
-	{
-          if ( (show_progress == true) && (update_func != NULL) )
-            update_func(dir_entry.d_name, NULL);
-	  //printf("%s\n", dir_entry.d_name);
-	  detect_and_add_z_file(dirname, NULL, babel, story_list);
-	}
-      }
+      if (recursive == true)
+        search_dir(dirname, update_func, story_list, true, babel);
     }
+    else
+    {
+      if ( (show_progress == true) && (update_func != NULL) )
+        update_func(z_dir_entry.d_name, NULL);
+      detect_and_add_z_file(dirname, NULL, babel, story_list);
+      }
   }
 
   if (dirname != NULL)
     free(dirname);
 
-  closedir(current_dir);
+  fsi->close_dir(current_dir);
 
-  chdir(cwd);
+  fsi->ch_dir(cwd);
   free(cwd);
 
   return 0;
@@ -1234,42 +1250,49 @@ static int search_dir(char *abs_dir_name,
 void build_filelist(char *root_dir, struct z_story_list *story_list,
     bool recursive, struct babel_info *babel)
 {
-  char *cwd = getcwd(NULL, 0);
+  char *cwd = fsi->get_cwd();
   char *absrootdir;
 
   if (root_dir == NULL)
+  {
+    TRACE_LOG("Building filelist for rootdir: \"/\".\n");
     search_dir("/", &new_file_searched, story_list, recursive, babel);
+  }
   else
   {
-    if ((chdir(root_dir)) == -1)
+    TRACE_LOG("Building filelist for rootdir: \"%s\".\n", root_dir);
+
+    if ((fsi->ch_dir(root_dir)) == -1)
       detect_and_add_z_file(root_dir, NULL, babel, story_list);
     else
     {
-      absrootdir = getcwd(NULL, 0); // Avoid relative names like "./zork1.z3".
+      // Avoid relative names like "./zork1.z3".
+      absrootdir = fsi->get_cwd(NULL, 0);
       search_dir(absrootdir, &new_file_searched, story_list, recursive, babel);
       free(absrootdir);
     }
   }
 
-  chdir(cwd);
+  fsi->ch_dir(cwd);
   free(cwd);
 }
 
 
 void save_story_list(struct z_story_list *story_list)
 {
-  FILE *out;
+  z_file *out;
   struct z_story_list_entry *entry;
   int i = 0;
   char *quoted_serial = NULL;
   char *quoted_title = NULL;
   char *quoted_author = NULL;
+  char *quoted_language = NULL;
   char *quoted_description = NULL;
   char *quoted_filename = NULL;
   char *quoted_blorbname = NULL;
   char *quoted_filetype= NULL;
 
-  if ((out = open_story_list("w")) == NULL)
+  if ((out = open_story_list(true)) == NULL)
     return;
 
   while (i < story_list->nof_entries)
@@ -1279,6 +1302,7 @@ void save_story_list(struct z_story_list *story_list)
     quoted_serial = quote_special_chars(entry->serial);
     quoted_title = quote_special_chars(entry->title);
     quoted_author = quote_special_chars(entry->author);
+    quoted_language = quote_special_chars(entry->language);
     quoted_description = quote_special_chars(entry->description);
     quoted_filename = quote_special_chars(entry->filename);
     quoted_blorbname = quote_special_chars(entry->blorbfile);
@@ -1286,9 +1310,9 @@ void save_story_list(struct z_story_list *story_list)
 
     //printf("%d/%d\n", i, story_list->nof_entries);
 
-    fprintf(
+    fsi->fileprintf(
         out,
-        "%d\t%s\t%d\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%ld\n",
+        "%d\t%s\t%d\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%ld\n",
         entry->release_number,
         quoted_serial,
         entry->length,
@@ -1296,6 +1320,7 @@ void save_story_list(struct z_story_list *story_list)
         entry->z_code_version,
         (quoted_title == NULL ? "" : quoted_title),
         (quoted_author == NULL ? "" : quoted_author),
+        (quoted_language == NULL ? "" : quoted_language),
         (quoted_description == NULL ? "" : quoted_description),
         quoted_filename,
         (quoted_blorbname == NULL ? "" : quoted_blorbname),
@@ -1311,6 +1336,9 @@ void save_story_list(struct z_story_list *story_list)
     if (quoted_author != NULL)
       free(quoted_author);
 
+    if (quoted_language != NULL)
+      free(quoted_language);
+
     if (quoted_description != NULL)
       free(quoted_description);
 
@@ -1324,16 +1352,19 @@ void save_story_list(struct z_story_list *story_list)
       free(quoted_filetype);
   }
 
-  fclose(out);
+  fsi->closefile(out);
 }
 
 
-struct z_story_list *update_fizmo_story_list(char *fizmo_dir)
+struct z_story_list *update_fizmo_story_list()
 {
+#ifdef DISABLE_CONFIGFILES
+  return NULL;
+#else // DISABLE_CONFIGFILES
   struct z_story_list *result;
   struct z_story_list_entry *entry;
   char *str, *path;
-  FILE *file;
+  z_file *file;
   struct babel_info *babel;
   int i;
 
@@ -1360,34 +1391,31 @@ struct z_story_list *update_fizmo_story_list(char *fizmo_dir)
     while (i < result->nof_entries)
     {
       entry = result->entries[i];
-      if ((file = fopen(entry->filename, "r")) == NULL)
+      if ((file = fsi->openfile(
+              entry->filename, FILETYPE_DATA, FILEACCESS_READ)) == NULL)
         remove_entry_from_list(result, entry);
       else
       {
-        fclose(file);
+        fsi->closefile(file);
         i++;
       }
     }
   }
 
-  //nof_files_found = count_files(".", false);
-
-  if (fizmo_dir != NULL)
-    nof_files_found += count_files(fizmo_dir, false);
-
-  /*
   if ((str = getenv("ZCODE_PATH")) == NULL)
     str = getenv("INFOCOM_PATH");
-
   if (str != NULL)
     set_configuration_value("z-code-path", str);
-    */
+
+  if ((str = getenv("ZCODE_ROOT_PATH")) != NULL)
+    set_configuration_value("z-code-root-path", str);
 
   if ((str = get_configuration_value("z-code-path")) != NULL)
   {
     path = strtok(str, ":");
     while (path != NULL)
     {
+      TRACE_LOG("Counting for token \"%s\".\n", path);
       nof_files_found += count_files(path, false);
       path = strtok(NULL, ":");
     }
@@ -1398,11 +1426,14 @@ struct z_story_list *update_fizmo_story_list(char *fizmo_dir)
     path = strtok(str, ":");
     while (path != NULL)
     {
+      TRACE_LOG("Counting for token \"%s\".\n", path);
       nof_files_found += count_files(path, true);
       path = strtok(NULL, ":");
     }
   }
 
+  TRACE_LOG("nof_files_found: %d, %d\n", nof_files_found,
+      NUMBER_OF_FILES_TO_SHOW_PROGRESS_FOR);
   if (nof_files_found >= NUMBER_OF_FILES_TO_SHOW_PROGRESS_FOR)
     show_progress = true;
   else
@@ -1411,16 +1442,6 @@ struct z_story_list *update_fizmo_story_list(char *fizmo_dir)
   //printf("\n"); // newline for \r-progress indicator
 
   //build_filelist(".", result, false, babel);
-
-  if (fizmo_dir != NULL)
-    build_filelist(fizmo_dir, result, false, babel);
-
-  /*
-  if ((str = getenv("ZCODE_PATH")) == NULL)
-    str = getenv("INFOCOM_PATH");
-
-  if (str != NULL)
-    set_configuration_value("z-code-path", str);
 
   if ((str = get_configuration_value("z-code-path")) != NULL)
   {
@@ -1432,7 +1453,7 @@ struct z_story_list *update_fizmo_story_list(char *fizmo_dir)
     }
   }
 
-  if ((str = getenv("ZCODE_ROOT_PATH")) != NULL)
+  if ((str = get_configuration_value("z-code-root-path")) != NULL)
   {
     path = strtok(str, ":");
     while (path != NULL)
@@ -1441,7 +1462,6 @@ struct z_story_list *update_fizmo_story_list(char *fizmo_dir)
       path = strtok(NULL, ":");
     }
   }
-  */
 
   if (show_progress == true)
     printf("\n");
@@ -1454,6 +1474,7 @@ struct z_story_list *update_fizmo_story_list(char *fizmo_dir)
   free_babel_info(babel);
 
   return result;
+#endif // DISABLE_CONFIGFILES
 }
 
 

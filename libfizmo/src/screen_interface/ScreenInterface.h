@@ -62,6 +62,8 @@ class ScreenInterface {
     virtual z_colour get_default_background_colour();
     virtual uint8_t get_total_width_in_pixels_of_text_sent_to_output_stream_3();
     virtual int parse_config_parameter(char *key, char *value);
+    virtual char *get_config_value(char *key);
+    virtual char **get_config_option_names();
     virtual void link_interface_to_story(struct z_story *story);
     virtual void reset_interface();
     virtual int close_interface(z_ucs *error_message);

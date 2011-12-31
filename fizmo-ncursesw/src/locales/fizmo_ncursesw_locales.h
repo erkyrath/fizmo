@@ -3,7 +3,7 @@
  *
  * This file is part of fizmo.
  *
- * Copyright (c) 2009-2010 Christoph Ender.
+ * Copyright (c) 2009-2011 Christoph Ender.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -77,13 +77,17 @@
 #define i18n_ncursesw_FUNCTION_CALL_P0S_RETURNED_ERROR_P1D_P2S 41
 #define i18n_ncursesw_ERROR_P0D_OCCURED_BEFORE_READ_P1S 42
 #define i18n_ncursesw_UNKNOWN_ERROR_CASE 43
-#define i18n_ncursesw_FUNCTION_CALL_MALLOC_P0D_RETURNED_NULL_PROBABLY_OUT_OF_MEMORY 44
+#define i18n_ncursesw_FUNCTION_CALL_MALLOC_P2D_RETURNED_NULL_PROBABLY_OUT_OF_MEMORY 44
 #define i18n_ncursesw_FIZMO_NCURSESW_VERSION_P0S 45
 #define i18n_ncursesw_LIBCELLINTERFACE_VERSION_P0S 46
 #define i18n_ncursesw_LOCALE_SEARCH_PATH 47
 #define i18n_ncursesw_FILENAME_TO_READ_COMMANDS_FROM 48
 #define i18n_ncursesw_ENABLE_X11_INLINE_GRAPHICS 49
 #define i18n_ncursesw_LIBDRILBO_VERSION_P0S 50
+#define i18n_ncursesw_DISABLE_HYPHENATION 51
+#define i18n_ncursesw_SET_TRANSCRIPT_FILENAME 52
+#define i18n_ncursesw_FILENAME_TO_RECORD_INPUT_TO 53
+#define i18n_ncursesw_COULD_NOT_OPEN_OR_FIND_P0S 54
 
 extern z_ucs fizmo_ncursesw_module_name[];
 

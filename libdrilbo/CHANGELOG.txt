@@ -1,0 +1,19 @@
+
+   Version 0.2.0
+ + 0.2.0 was finished at about Sun Sep 18 08:41:18 CEST 2011
+ + The "drilbo" library -- "Drilbo Represents an Imaging Libary not only for
+   Blorb Objects" -- is supposed to handle fizmo's graphical related tasks.
+   It makes fizmo's version 0.6 requirement for GTK obsolete, it directly
+   uses libjpg and libpng to load images and provides its own Xlib
+   implementation for X11 output (curentrly only supporting TrueColor).
+ - Implemented support for reading jpeg, png and MG1 graphics, the latter
+   one using code from Mark Howell's pix2gif tool from the ztools package.
+ - Implemented output of jpeg (RGB, Grayscale and JCS_YCbCr) and ppm files
+   in the P6 variant (usually only useful for debugging, P3 variant
+   available, see code).
+ - Implemented output to X11 displays though xlib, truecolor only.
+ - Added support for bilinear scaling.
+ - Implemented a "z_image" type which holds all the data and metadata for
+   images. A z_image may contain either an RGB or a grayscale file with a
+   depth of 8 bit per pixel.
+

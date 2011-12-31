@@ -33,8 +33,6 @@
 #ifndef zpu_c_INCLUDED
 #define zpu_c_INCLUDED
 
-#include <stdio.h>
-
 #include "../tools/tracelog.h"
 #include "../tools/i18n.h"
 #include "zpu.h"

@@ -11,11 +11,12 @@
   - Z-Machine V6 graphics, Amiga and Macintosh format
 
  The following file output formats are supported:
-   - JPEG  in RGB, Grayscale and JCS_YCbCr.
-   - PPM (for testing purposes)
+   - JPEG in RGB, Grayscale and JCS_YCbCr.
+   - PPM, P6 variant (usually for testing purposes, P3 variant available,
+     but outcommented in the code).
 
  The following screen output methods are supported:
-   - X11 display though XLib
+   - X11 display though XLib, Truecolor only.
 
  These imaging operations are implemented:
    - Bilinear scaling

@@ -1,14 +1,14 @@
 
-   From 0.6.9 to 0.7.0
- + 0.7.0 was finished at about (?).
+   Version 0.7.0
+ + 0.7.0 was finished at about Sun Sep 18 08:41:18 CEST 2011.
  - Module name change: The ncursesw- and console-interface, the sdl-sound
    interface and the X11-specific code have been moved into separate modules
    named "fizmo-ncursesw", "fizmo-console", "libsndifsdl" and "libdrilbo".
    This module has been renamed from "fizmo" to "libfizmo", providing only
    the base interpreter functionality without any interface.
  - Implemented Frank Liangs TeX hy-phen-a-tion algorithm into the
-   wordwrapper. Patterns were taken from the "Object For Formatting
-   Objects" project at http://offo.sourceforge.net. Re-implemented the
+   wordwrapper. Patterns were taken from the "hyph-utf8" project at
+   http://www.ctan.org/tex-archive/language/hyph-utf8/. Re-implemented the
    word wrapper.
  - Rebuilt locales system. So far, all available locales were directly
    compiled into the binary and stored using a rather inflexible method
@@ -24,12 +24,15 @@
    tools package is supposed to be used by interpreter-related tools
    which don't require the interpreter itself.
  - Rebuilt the interpreter core of fizmo into a set of static libraries.
- - Implemented saving of text history into chunk "TxHs" in quetzal savegames.
+ - Implemented saving of text history using a non-standard chunk type "TxHs"
+   in quetzal savegames.
  - Added configuration variable "save-text-history-paragraphs" which defines
    the maximum number of paragraphs to store in a savegame.
  - Added variable interpretation -- so far, only $(HOME) is implemented --
    for config files.
- - Adapted to new build process.
+ - Re-implemented the entire build process. Libraries may now be compiled
+   and installed on their own, pkg-config is used whereever possible to
+   ease compilation and installation.
 
    From 0.6.8 to 0.6.9
  + 0.6.9 was finished at about Sun Apr 24 22:26:18 CEST 2011.

@@ -58,7 +58,7 @@ extern bool stream_1_active;
 extern bool stream_4_active;
 extern bool input_stream_1_active;
 extern bool input_stream_1_was_already_active;
-extern FILE *input_stream_1;
+extern z_file *input_stream_1;
 extern size_t input_stream_1_filename_size;
 extern char *input_stream_1_filename;
 extern z_ucs last_script_filename[];

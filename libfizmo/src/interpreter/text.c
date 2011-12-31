@@ -34,13 +34,13 @@
 #define text_c_INCLUDED
 
 #include <string.h>
-#include <stdio.h>
 #include <ctype.h>
 
 #include "../tools/tracelog.h"
 #include "../tools/i18n.h"
 #include "../tools/types.h"
 #include "../tools/z_ucs.h"
+#include "../tools/filesys.h"
 #include "text.h"
 #include "fizmo.h"
 #include "routine.h"
@@ -570,7 +570,6 @@ static void tokenise(
   uint8_t number_of_input_codes;
   uint8_t *input_codes;
 
-  uint8_t words_parsed = 0;
   uint8_t current_char;
   uint8_t space_found = 0;
   uint8_t non_space_seperator_found = 0;
@@ -622,7 +621,7 @@ static void tokenise(
 
   end_of_line_found = 0;
   //last_token_start_index = 0;
-  while ((words_parsed < maximum_words) && (end_of_line_found == 0))
+  while ((number_of_words_found < maximum_words) && (end_of_line_found == 0))
   {
     TRACE_LOG("Looking at %c/%d.\n", z_text_buffer[z_text_buffer_offset],
         z_text_buffer[z_text_buffer_offset]);
@@ -689,7 +688,8 @@ static void tokenise(
       if (zchar_storage_symbols_stored > 0)
       {
         zchar_storage_finish();
-        number_of_words_found++;
+        if (++number_of_words_found == maximum_words)
+          break;
 
         (void)locate_dictionary_entry(tokenize_buffer,
             &parse_buffer_index,
@@ -703,7 +703,7 @@ static void tokenise(
 
       store_ZSCII_as_zchar(current_char);
       zchar_storage_finish();
-      number_of_words_found ++;
+      number_of_words_found++;
 
       (void)locate_dictionary_entry(
           tokenize_buffer,
@@ -730,7 +730,7 @@ static void tokenise(
             z_text_buffer_offset,
             last_token_start_index);
         */
-        number_of_words_found ++;
+        number_of_words_found++;
 
         (void)locate_dictionary_entry(
             tokenize_buffer,
@@ -741,7 +741,6 @@ static void tokenise(
             //z_text_buffer_offset - current_word_start);
             z_text_buffer_offset - current_word_start,
             dont_write_unrecognized_words_to_parse_buffer);
-
       }
     }
 
@@ -1341,6 +1340,7 @@ static bool process_interpreter_command()
   z_ucs *prefixed_command;
   char *ptr;
   int i;
+  char **interface_options;
 
   TRACE_LOG("Checking for interpreter-command '");
   TRACE_LOG_Z_UCS(interpreter_command_buffer);
@@ -1458,15 +1458,13 @@ static bool process_interpreter_command()
         (long)get_allocated_undo_memory_size());
     (void)streams_latin1_output("\n");
 
-#ifndef DISABLE_COMMAND_HISTORY
 #ifndef DISABLE_OUTPUT_HISTORY
     (void)i18n_translate(
         libfizmo_module_name,
         i18n_libfizmo_P0D_BYTES_USED_BY_TEXT_HISTORY,
         (long)get_allocated_text_history_size(outputhistory[0]));
     (void)streams_latin1_output("\n");
-#endif /* DISABLE_OUTPUT_HISTORY */
-#endif /* DISABLE_COMMAND_HISTORY */
+#endif // DISABLE_OUTPUT_HISTORY
 
     ptr = get_configuration_value("random-mode");
     if (ptr != NULL)
@@ -1562,11 +1560,59 @@ static bool process_interpreter_command()
     {
       streams_latin1_output(configuration_options[i].name);
       streams_latin1_output(" = ");
-      streams_latin1_output(
-          get_configuration_value(configuration_options[i].name));
+      if (strcmp(configuration_options[i].name, "background-color") == 0)
+      {
+        streams_latin1_output(
+            get_configuration_value("background-color-name"));
+      }
+      else if (strcmp(configuration_options[i].name, "foreground-color") == 0)
+      {
+        streams_latin1_output(
+            get_configuration_value("foreground-color-name"));
+      }
+      else
+      {
+        streams_latin1_output(
+            get_configuration_value(configuration_options[i].name));
+      }
       streams_latin1_output("\n");
       i++;
     }
+
+    if ((interface_options = active_interface->get_config_option_names())
+        != NULL)
+    {
+      i = 0;
+      while (interface_options[i] != NULL)
+      {
+        streams_latin1_output(interface_options[i]);
+        streams_latin1_output(" = ");
+        streams_latin1_output(
+            active_interface->get_config_value(interface_options[i]));
+        streams_latin1_output("\n");
+        i++;
+      }
+    }
+
+    if (active_sound_interface != NULL)
+    {
+      if ((interface_options
+            = active_sound_interface->get_config_option_names())
+          != NULL)
+      {
+        i = 0;
+        while (interface_options[i] != NULL)
+        {
+          streams_latin1_output(interface_options[i]);
+          streams_latin1_output(" = ");
+          streams_latin1_output(
+              active_sound_interface->get_config_value(interface_options[i]));
+          streams_latin1_output("\n");
+          i++;
+        }
+      }
+    }
+
     return true;
   }
   else
@@ -1644,9 +1690,11 @@ int read_command_from_file(zscii *input_buffer, int input_buffer_size,
   {
     if (input_stream_1_was_already_active == false)
       ask_for_input_stream_filename();
-    TRACE_LOG("Trying to open \"%s\n", input_stream_1_filename);
-    if ((input_stream_1 = fopen(input_stream_1_filename, "r")) == NULL)
+    TRACE_LOG("Trying to open \"%s\"\n", input_stream_1_filename);
+    if ((input_stream_1 = fsi->openfile(input_stream_1_filename,
+            FILETYPE_INPUTRECORD, FILEACCESS_READ)) == NULL)
     {
+      TRACE_LOG("Could not open input file for stream 1.\n");
       input_stream_1_active = false;
       input_stream_1_filename_size = 0;
       free(input_stream_1_filename);
@@ -1654,10 +1702,10 @@ int read_command_from_file(zscii *input_buffer, int input_buffer_size,
     }
   }
 
-  filepos = ftell(input_stream_1);
+  filepos = fsi->getfilepos(input_stream_1);
 
   // Parse "(Waited for <n> ms)".
-  res = fscanf(input_stream_1, "(Waited for %d ms)\n", &milliseconds);
+  res = fsi->filescanf(input_stream_1, "(Waited for %d ms)\n", &milliseconds);
   if (res == 1)
   {
     if (input_delay_tenth_seconds != NULL)
@@ -1667,12 +1715,12 @@ int read_command_from_file(zscii *input_buffer, int input_buffer_size,
   {
     if (input_delay_tenth_seconds != NULL)
       *input_delay_tenth_seconds = 0;
-    fseek(input_stream_1, filepos, SEEK_SET);
+    fsi->setfilepos(input_stream_1, filepos, SEEK_SET);
   }
 
   // FIMXE: Input conversion from latin1(?) to zscii-input.
   while (
-      ((c = fgetc(input_stream_1)) != EOF)
+      ((c = fsi->getchar(input_stream_1)) != EOF)
       &&
       (c != '\n')
       &&
@@ -1690,7 +1738,7 @@ int read_command_from_file(zscii *input_buffer, int input_buffer_size,
   {
     // Seek next '\n'.
     while (c != '\n')
-      if ((c = fgetc(input_stream_1)) == EOF)
+      if ((c = fsi->getchar(input_stream_1)) == EOF)
         break;
   }
 
@@ -1699,22 +1747,22 @@ int read_command_from_file(zscii *input_buffer, int input_buffer_size,
   // At EOF? If so, close stream and return last length.
   if (c == EOF)
   {
-    fclose(input_stream_1);
+    fsi->closefile(input_stream_1);
     input_stream_1_active = false;
     input_stream_1 = NULL;
     return input_length;
   }
 
   // Check if there's something behind the '\n'.
-  c = fgetc(input_stream_1);
+  c = fsi->getchar(input_stream_1);
   if (c == EOF)
   {
     input_stream_1_active = false;
-    fclose(input_stream_1);
+    fsi->closefile(input_stream_1);
     input_stream_1 = NULL;
   }
   else
-    ungetc(c, input_stream_1);
+    fsi->ungetchar(c, input_stream_1);
 
   return input_length;
 }

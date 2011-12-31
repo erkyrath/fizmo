@@ -3,7 +3,7 @@
  *
  * This file is part of fizmo.
  *
- * Copyright (c) 2009-2010 Christoph Ender.
+ * Copyright (c) 2010-2011 Christoph Ender.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,11 +43,11 @@
 #endif
 
 #include <inttypes.h>
-#include <stdio.h>
+#include <tools/filesys.h>
 
 #include "drilbo.h"
 
-void write_zimage_to_ppm(z_image *image, FILE *out);
+void write_zimage_to_ppm(z_image *image, z_file *out);
 
 #endif /* drilbo_ppm_h_INCLUDED */
 

@@ -6,13 +6,15 @@ include ../../config.mk
 CC = gcc -Wall
 
 CFLAGS = -g -O2 $(SOUND_INTERFACE_CFLAGS)
-CFLAGS += $(shell pkg-config --cflags libfizmo)
-CFLAGS += $(shell pkg-config --cflags libcellif)
+CFLAGS += $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config \
+ --cflags libfizmo)
+CFLAGS += $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config \
+ --cflags libcellif)
 CFLAGS += $(NCURSESW_PKG_CFLAGS) $(NCURSESW_NONPKG_CFLAGS)
 
 LIBS = -lm
-LIBS += $(shell pkg-config --libs libfizmo)
-LIBS += $(shell pkg-config --libs libcellif)
+LIBS += $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config --libs libfizmo)
+LIBS += $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config --libs libcellif)
 LIBS += $(NCURSESW_PKG_LIBS) $(NCURSESW_NONPKG_LIBS)
 
 
@@ -30,8 +32,10 @@ ifneq ($(SOUND_INTERFACE_INCLUDE_FILE),)
   SNDIF_VAR_NAME_CFLAGS_PKG = $(SOUND_INTERFACE_CONFIGNAME)_PKG_CFLAGS
   SNDIF_VAR_NAME_CFLAGS_NONPKG = $(SOUND_INTERFACE_CONFIGNAME)_NONPKG_CFLAGS
   CFLAGS += $($(SNDIF_VAR_NAME_CFLAGS_PKG)) $($(SNDIF_VAR_NAME_CFLAGS_NONPKG))
-  CFLAGS += $(shell pkg-config --cflags $(SOUND_INTERFACE_NAME))
-  LIBS += $(shell pkg-config --libs $(SOUND_INTERFACE_NAME))
+  CFLAGS += $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config \
+ --cflags $(SOUND_INTERFACE_NAME))
+  LIBS += $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config \
+ --libs $(SOUND_INTERFACE_NAME))
   SOUND_FLAGS=-DSOUND_INTERFACE_STRUCT_NAME="$(SOUND_INTERFACE_STRUCT_NAME)" \
 	-DSOUND_INTERFACE_INCLUDE_FILE="<$(SOUND_INTERFACE_INCLUDE_FILE)>"
 endif
@@ -43,8 +47,18 @@ FLAGS =
 
 ifneq ($(ENABLE_X11_IMAGES),)
 FLAGS += -DENABLE_X11_IMAGES
-CFLAGS += $(shell pkg-config --cflags libdrilbo)
-LIBS += $(shell pkg-config --libs libdrilbo)
+CFLAGS += $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config \
+ --cflags libdrilbo)
+LIBS += $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config \
+ --libs libdrilbo)
+endif
+
+ifneq ($(DISABLE_FILELIST),)
+CFLAGS += -DDISABLE_FILELIST=
+endif
+
+ifneq ($(DISABLE_CONFIGFILES),)
+CFLAGS += -DDISABLE_CONFIGFILES=
 endif
 
 

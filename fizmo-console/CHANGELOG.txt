@@ -1,0 +1,28 @@
+
+   Version 0.7.0
+ + 0.7.0 was finished at about Sun Sep 18 08:41:18 CEST 2011.
+ + The "simple-c" interface has been renamed to "fizmo-console" and is now
+   a stand-alone frontend.
+ - Re-implemented the entire build process. Libraries may now be compiled
+   and installed on their own, pkg-config is used whereever possible to
+   ease compilation and installation.
+
+   Version 0.6.3
+ + 0.6.3 was finished at about Sun Apr 26 08:26:31 CEST 2009.
+ - Added license information to every file.
+
+   Version 0.6.1
+ + 0.6.1 was finished at about Mon Mar 30 22:15:04 CEST 2009.
+ - Added FIZMO_BIN_DIR variable to Makefile.
+
+   Version 0.5.3
+ + 0.5.3 was finished at about Wed Mar 11 21:34:59 CET 2009.
+ - Re-wrote Makefile system. Releveant module defaults are now kept in
+   separate .mk-files.
+ - Added "-Wextra" flag to CFLAGS and cleaned up new warnings caused by
+   the new flag.
+
+   Version 0.4.1
+ + 0.4.1 was finished at about Wed Nov 14 08:23:19 CET 2007.
+ - Separated code in core, interface, c and cpp interfaces.
+

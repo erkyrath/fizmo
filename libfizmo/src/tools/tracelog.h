@@ -38,17 +38,19 @@
 #include <stdarg.h>
 
 #include "types.h"
+#include "filesys.h"
 
 #define DEFAULT_TRACE_FILE_NAME "tracelog.txt"
 
 #ifndef tracelog_c_INCLUDED
-extern FILE *stream_t;
+extern z_file *stream_t;
 #endif // tracelog_c_INCLUDED
  
 #ifdef ENABLE_TRACING
 
 #define TRACE_LOG(...) \
-if (stream_t != NULL) { fprintf(stream_t, __VA_ARGS__); fflush(stream_t); }
+if (stream_t != NULL) \
+{ fsi->fileprintf(stream_t, __VA_ARGS__); fsi->flushfile(stream_t); }
 #define TRACE_LOG_Z_UCS _trace_log_z_ucs
 void turn_on_trace(void);
 void turn_off_trace(void);

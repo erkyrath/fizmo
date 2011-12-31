@@ -39,7 +39,6 @@
 // as seperators.
 
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 
 #include "../tools/tracelog.h"
@@ -54,23 +53,6 @@
 static z_ucs word_split_chars[] = {
   Z_UCS_SPACE, Z_UCS_MINUS, Z_UCS_NEWLINE, Z_UCS_DOT, (z_ucs)',',
   (z_ucs)'"', 0 };
-
-
-/*
-struct wordwrap_target
-{
-  void (*wrapped_text_output_destination)(z_ucs *output, void *parameter);
-};
-
-
-struct wordwrap_metadata
-{
-  z_ucs *output_index;
-  void (*metadata_output_function)(void *ptr_parameter, uint32_t int_parameter);
-  void *ptr_parameter;
-  uint32_t int_parameter;
-};
-*/
 
 
 WORDWRAP *wordwrap_new_wrapper(size_t line_length,
@@ -141,11 +123,6 @@ static void output_buffer(WORDWRAP *wrapper, z_ucs *buffer_start,
   {
     index = buffer_start - wrapper->input_buffer;
     end_index = index + z_ucs_len(buffer_start);
-
-    /*
-       wrapper->metadata[wrapper->metadata_index].output_index
-       = wrapper->input_index;
-    */
 
     while (index < end_index)
     {
@@ -367,20 +344,6 @@ static void flush_input_buffer(WORDWRAP *wrapper, bool force_flush)
       {
         word_start = NULL;
 
-        /*
-        TRACE_LOG("examining split end:\"%c\".\n",
-            *word_end_without_split_chars);
-        while (word_end_without_split_chars > input)
-        {
-          TRACE_LOG("Checking for split-char: %c/%d.\n",
-              *word_end_without_split_chars, *word_end_without_split_chars);
-          if (z_ucs_chr(
-                word_split_chars, *(word_end_without_split_chars - 1)) == NULL)
-            break;
-          word_end_without_split_chars--;
-        }
-        */
-
         // In case we've now found a word end, check for dashes before it.
         // Example: "first-class car", where the word end we've now found is
         // between "first-class" and "car".
@@ -419,22 +382,6 @@ static void flush_input_buffer(WORDWRAP *wrapper, bool force_flush)
 
         TRACE_LOG("%p / %p\n",
             word_end_without_split_chars, input + wrapper->line_length);
-
-        /*
-           if (
-           (word_end_without_split_chars == word_end_with_split_chars + 1)
-           &&
-           (*word_end_without_split_chars == Z_UCS_MINUS)
-           &&
-           (word_end_without_split_chars < input + wrapper->line_length)
-           )
-           {
-        // We've hit a minus in the middle of a word, like "far-off".
-        TRACE_LOG("minus in word.\n");
-        index = word_end_without_split_chars+1;
-        last_hyphen = NULL;
-        }
-        */
 
         last_hyphen = NULL;
 
@@ -716,13 +663,6 @@ void wordwrap_insert_metadata(WORDWRAP *wrapper,
 
   wrapper->metadata_index++;
 }
-
-
-/*
-void wordwrap_set_line_index(WORDWRAP *wrapper, int new_line_index)
-{
-}
-*/
 
 
 void wordwrap_output_left_padding(WORDWRAP *wrapper)

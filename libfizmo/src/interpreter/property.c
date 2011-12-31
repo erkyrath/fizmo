@@ -30,8 +30,6 @@
  */
 
 
-#include <stdio.h>
-
 #include "../tools/tracelog.h"
 #include "../tools/i18n.h"
 #include "property.h"

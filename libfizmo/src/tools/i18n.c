@@ -36,7 +36,6 @@
 #include <string.h>
 #include <stdarg.h>
 #include <errno.h>
-#include <dirent.h>
 #include <stdlib.h>
 
 #include "i18n.h"
@@ -44,9 +43,18 @@
 #include "z_ucs.h"
 #include "stringmap.h"
 #include "list.h"
+#include "filesys.h"
 #include "../locales/libfizmo_locales.h"
 
 #define LATIN1_TO_Z_UCS_BUFFER_SIZE 64
+
+static char *locale_aliases[4][5] =
+{
+  { "en_US", "en-GB", "en-US", "en", NULL },
+  { "de_DE", "de", NULL },
+  { "fr_FR", "fr", NULL },
+  { NULL }
+};
 
 //z_ucs *active_locale = NULL;
 static z_ucs *current_locale_name = NULL;
@@ -115,7 +123,7 @@ static int i18n_send_output(z_ucs *z_ucs_data, int output_mode,
 }
 
 
-static z_ucs input_char(FILE *in)
+static z_ucs input_char(z_file *in)
 {
   z_ucs input;
 
@@ -133,7 +141,7 @@ static locale_module *parse_locale_file(z_ucs *module_name,
     char* locale_dir_name, char* module_name_utf8)
 {
   char *filename;
-  FILE *in;
+  z_file *in;
   z_ucs *locale_data;
   locale_module *result;
   char in_char;
@@ -165,10 +173,11 @@ static locale_module *parse_locale_file(z_ucs *module_name,
   TRACE_LOG("Parsing locale file \"%s\".\n", filename);
 
   // open-resource:
-  if ((in = fopen(filename, "r")) == NULL)
+  if ((in = fsi->openfile(filename, FILETYPE_DATA, FILEACCESS_READ))
+      == NULL)
   {
     // exit-point:
-    TRACE_LOG("fopen(\"%s\") returned NULL.\n", filename);
+    TRACE_LOG("openfile(\"%s\") returned NULL.\n", filename);
     free(filename);
     return NULL;
   }
@@ -178,11 +187,11 @@ static locale_module *parse_locale_file(z_ucs *module_name,
     nof_zucs_chars++;
   nof_zucs_chars++; // Add space for terminating zero (yes, really requried).
 
-  if (fseek(in, 0, SEEK_SET) == -1)
+  if (fsi->setfilepos(in, 0, SEEK_SET) == -1)
   {
     // exit-point:
-    TRACE_LOG("fseek() returned -1.\n");
-    fclose(in);
+    TRACE_LOG("setfilepos() returned -1.\n");
+    fsi->closefile(in);
     free(filename);
     return NULL;
   }
@@ -194,7 +203,7 @@ static locale_module *parse_locale_file(z_ucs *module_name,
   {
     // exit-point:
     TRACE_LOG("malloc(%ld) returned NULL.\n", nof_zucs_chars * sizeof(z_ucs));
-    fclose(in);
+    fsi->closefile(in);
     free(filename);
     return NULL;
   }
@@ -207,7 +216,7 @@ static locale_module *parse_locale_file(z_ucs *module_name,
   {
     // exit-point:
     free(locale_data);
-    fclose(in);
+    fsi->closefile(in);
     free(filename);
     return NULL;
   }
@@ -223,13 +232,13 @@ static locale_module *parse_locale_file(z_ucs *module_name,
   lines = create_list();
   //printf("new list created: %p\n", lines);
 
-  in_char = fgetc(in);
+  in_char = fsi->getchar(in);
   while (in_char != EOF)
   {
     linestart = locale_data;
 
     // Found a new line.
-    ungetc(in_char, in);
+    fsi->ungetchar(in_char, in);
 
     for (;;)
     {
@@ -316,7 +325,7 @@ static locale_module *parse_locale_file(z_ucs *module_name,
     }
 
     //messages_processed++;
-    in_char = fgetc(in);
+    in_char = fsi->getchar(in);
   }
 
   *locale_data = 0;
@@ -341,7 +350,7 @@ static locale_module *parse_locale_file(z_ucs *module_name,
     free(result->messages);
     free(result);
     free(locale_data);
-    fclose(in);
+    fsi->closefile(in);
     free(filename);
     return NULL;
   }
@@ -349,7 +358,7 @@ static locale_module *parse_locale_file(z_ucs *module_name,
   z_ucs_cpy(result->module_name, module_name);
 
   // close-resource:
-  fclose(in);
+  fsi->closefile(in);
 
   // close-resource:
   free(filename);
@@ -373,12 +382,12 @@ static void delete_locale_module(locale_module *module)
 
 static char *get_path_for_locale(z_ucs *locale_name)
 {
-  DIR *dir;
+  z_dir *dir;
   char *search_path;
   z_ucs *search_path_zucs, *path_ptr, *colon_index, *zucs_ptr;
   z_ucs *zucs_buf = NULL;
   size_t bufsize = 0, len, dirname_len;
-  struct dirent *dir_entry;
+  struct z_dir_ent z_dir_entry;
   char *dirname;
   char *locale_name_utf8, *locale_dir_name = NULL;
 
@@ -447,40 +456,37 @@ static char *get_path_for_locale(z_ucs *locale_name)
       TRACE_LOG("Path: '%s'\n", dirname);
 
       // open-resource:
-      if ((dir = opendir(dirname)) != NULL)
+      if ((dir = fsi->open_dir(dirname)) != NULL)
       {
-        while ((dir_entry = readdir(dir)) != NULL)
+        while (fsi->read_dir(&z_dir_entry, dir) == 0)
         {
-          TRACE_LOG("Processing \"%s\".\n", dir_entry->d_name);
-          if (strcasecmp(locale_name_utf8, dir_entry->d_name) == 0)
+          TRACE_LOG("Processing \"%s\".\n", z_dir_entry.d_name);
+          if (strcasecmp(locale_name_utf8, z_dir_entry.d_name) == 0)
           {
-            dirname_len = strlen(dirname) + strlen(dir_entry->d_name);
+            dirname_len = strlen(dirname) + strlen(z_dir_entry.d_name);
             TRACE_LOG("dirname_len: %ld.\n", (long)dirname_len);
             // open-resource:
-            TRACE_LOG("#1\n");
             if ((locale_dir_name = malloc(dirname_len + 2)) == NULL)
             {
-              TRACE_LOG("#2\n");
               // exit-point:
               TRACE_LOG("malloc() returned NULL.\n");
-              closedir(dir);
+              fsi->close_dir(dir);
               free(dirname);
               free(zucs_buf);
               free(locale_name_utf8);
               free(path_ptr);
               return NULL;
             }
-            TRACE_LOG("#3\n");
 
             strcpy(locale_dir_name, dirname);
             strcat(locale_dir_name, "/");
-            strcat(locale_dir_name, dir_entry->d_name);
+            strcat(locale_dir_name, z_dir_entry.d_name);
             break;
           }
         }
 
         // close-resource:
-        closedir(dir);
+        fsi->close_dir(dir);
       }
 
       // close-resource:
@@ -512,10 +518,10 @@ static char *get_path_for_locale(z_ucs *locale_name)
 static locale_module *create_locale_module(z_ucs *locale_name,
     z_ucs *module_name)
 {
-  DIR *dir;
+  z_dir *dir;
   locale_module *result = NULL;
   char *ptr;
-  struct dirent *dir_entry;
+  struct z_dir_ent z_dir_entry;
   char *module_name_utf8, *locale_dir_name = NULL;
   stringmap *module_map;
 
@@ -546,12 +552,12 @@ static locale_module *create_locale_module(z_ucs *locale_name,
   strcat(module_name_utf8, "_i18n.txt");
 
   // open-resource:
-  if ((dir = opendir(locale_dir_name)) != NULL)
+  if ((dir = fsi->open_dir(locale_dir_name)) != NULL)
   {
     TRACE_LOG("Trying file \"%s\".\n", module_name_utf8);
-    while ((dir_entry = readdir(dir)) != NULL)
+    while (fsi->read_dir(&z_dir_entry, dir) == 0)
     {
-      if (strcasecmp(module_name_utf8, dir_entry->d_name) == 0)
+      if (strcasecmp(module_name_utf8, z_dir_entry.d_name) == 0)
       {
         TRACE_LOG("File matches \"%s\".\n", module_name_utf8);
         if ((result = parse_locale_file(
@@ -560,7 +566,7 @@ static locale_module *create_locale_module(z_ucs *locale_name,
                 module_name_utf8)) == NULL)
         {
           TRACE_LOG("parse_locale_file() returned NULL.\n");
-          closedir(dir);
+          fsi->close_dir(dir);
           free(module_name_utf8);
           free(locale_dir_name);
           return NULL;
@@ -569,7 +575,7 @@ static locale_module *create_locale_module(z_ucs *locale_name,
     }
 
     // close-resource:
-    closedir(dir);
+    fsi->close_dir(dir);
   }
 
   // close-resource:
@@ -1202,14 +1208,13 @@ int set_i18n_search_path(char *path)
 
 char **get_available_locale_names()
 {
-  DIR *dir;
+  z_dir *dir;
   char *search_path;
   z_ucs *search_path_zucs, *path_ptr, *colon_index, *zucs_ptr;
   z_ucs *zucs_buf = NULL;
   size_t bufsize = 0, len;
-  struct dirent *dir_entry;
+  struct z_dir_ent z_dir_entry;
   char *dirname;
-  char *locale_dir_name = NULL;
   list *result_list = create_list();
   char *new_locale_name;
   int j;
@@ -1280,29 +1285,29 @@ char **get_available_locale_names()
       TRACE_LOG("Path: '%s'\n", dirname);
 
       // open-resource:
-      if ((dir = opendir(dirname)) != NULL)
+      if ((dir = fsi->open_dir(dirname)) != NULL)
       {
-        while ((dir_entry = readdir(dir)) != NULL)
+        while (fsi->read_dir(&z_dir_entry, dir) == 0)
         {
-          TRACE_LOG("Processing \"%s\".\n", dir_entry->d_name);
+          TRACE_LOG("Processing \"%s\".\n", z_dir_entry.d_name);
 
           if (
-              (strcmp(".", dir_entry->d_name) != 0)
+              (strcmp(".", z_dir_entry.d_name) != 0)
               &&
-              (strcmp("..", dir_entry->d_name) != 0)
+              (strcmp("..", z_dir_entry.d_name) != 0)
              )
           {
             for (j=0; j<get_list_size(result_list); j++)
             {
               if (strcmp(
                     (char*)get_list_element(result_list, j),
-                    dir_entry->d_name) == 0)
+                    z_dir_entry.d_name) == 0)
                 break;
             }
 
             if (j == get_list_size(result_list))
             {
-              if ((new_locale_name = strdup(dir_entry->d_name)) == NULL)
+              if ((new_locale_name = strdup(z_dir_entry.d_name)) == NULL)
               {
                 TRACE_LOG("strdup() returned NULL.\n");
                 free(zucs_buf);
@@ -1318,15 +1323,12 @@ char **get_available_locale_names()
         }
 
         // close-resource:
-        closedir(dir);
+        fsi->close_dir(dir);
       }
 
       // close-resource:
       free(dirname);
     }
-
-    if (locale_dir_name != NULL)
-      break;
 
     path_ptr += len + (colon_index != NULL ? 1 : 0);
   }
@@ -1365,6 +1367,37 @@ int set_current_locale_name(char *new_locale_name)
   char *locale_dir_name = NULL;
   z_ucs *locale_dup;
   char *locale_dup_utf8;
+  int i, j;
+
+  if (new_locale_name == NULL)
+    return -1;
+
+  // Check if the locale name given was an alias: If, in case "en" was
+  // given as locale name, this should be interpreted as "en_US" instead --
+  // see the "locale_aliases" definition above.
+  i = 0;
+  while (locale_aliases[i][0] != NULL)
+  {
+    // Test all aliases for current locale name:
+    j = 1;
+    while (locale_aliases[i][j] != NULL)
+    {
+      if (strcmp(locale_aliases[i][j], new_locale_name) == 0)
+        break;
+      j++;
+    }
+
+    if (locale_aliases[i][j] != NULL)
+    {
+      // We've found an alias.
+      new_locale_name = locale_aliases[i][0];
+      TRACE_LOG("Locale name \"%s\" is an alias for \"%s\".\n",
+          new_locale_name, new_locale_name);
+      break;
+    }
+
+    i++;
+  }
 
   if ((locale_dup =
         dup_utf8_string_to_zucs_string(new_locale_name)) == NULL)

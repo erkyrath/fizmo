@@ -3,7 +3,7 @@
  *
  * This file is part of fizmo.
  *
- * Copyright (c) 2009-2010 Christoph Ender.
+ * Copyright (c) 2010-2011 Christoph Ender.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,16 +33,17 @@
 #ifndef drilbo_png_c_INCLUDED
 #define drilbo_png_c_INCLUDED
 
-//#include <stdbool.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <png.h>
+
+#include <tools/types.h>
+#include <tools/filesys.h>
 
 #include "drilbo.h"
 #include "drilbo-png.h"
 
 
-z_image* read_zimage_from_png(FILE *in)
+z_image* read_zimage_from_png(z_file *in)
 {
   uint8_t header[8];
   int y;
@@ -51,13 +52,16 @@ z_image* read_zimage_from_png(FILE *in)
   png_byte bit_depth;
   //png_structp png_ptr;
   //png_infop info_ptr;
-  int number_of_passes;
+  //int number_of_passes, interlace_type;
   png_bytep * row_pointers;
   uint8_t *zimage_data, *zimage_ptr;
   z_image *result;
   int bytes_per_pixel;
+  png_size_t row_bytes;
+  png_color_16 black_background = { 0, 0, 0, 0, 0 };
+  png_color_16p image_background;
 
-  fread(header, 1, 8, in);
+  fsi->getchars(header, 8, in);
   if (png_sig_cmp(header, 0, 8))
     return NULL;
 
@@ -88,7 +92,7 @@ z_image* read_zimage_from_png(FILE *in)
     exit(-1);
   }
 
-  png_init_io(png_ptr, in);
+  png_init_io(png_ptr, fsi->get_stdio_stream(in));
   png_set_sig_bytes(png_ptr, 8);
 
   png_read_info(png_ptr, info_ptr);
@@ -105,28 +109,50 @@ z_image* read_zimage_from_png(FILE *in)
   bit_depth = info_ptr->bit_depth;
 #endif
 
+  //printf("%d * %d, %dbpp\n", width, height, bit_depth);
+
+  if (png_get_bKGD(png_ptr, info_ptr, &image_background))
+    png_set_background(png_ptr, image_background,
+        PNG_BACKGROUND_GAMMA_FILE, 1, 1.0);
+  else
+    png_set_background(png_ptr, &black_background,
+        PNG_BACKGROUND_GAMMA_SCREEN, 0, 1.0);
+
   if (color_type == PNG_COLOR_TYPE_GRAY)
     bytes_per_pixel = 1;
   else
     bytes_per_pixel = 3;
 
   if (color_type == PNG_COLOR_TYPE_PALETTE)
+  {
     png_set_palette_to_rgb(png_ptr);
+  }
   if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8)
+  {
 #if PNG_LIBPNG_VER_MAJOR > 1 || (PNG_LIBPNG_VER_MAJOR == 1 && PNG_LIBPNG_VER_MINOR >= 4)
     png_set_expand_gray_1_2_4_to_8(png_ptr);
 #else
     png_set_gray_1_2_4_to_8(png_ptr);
 #endif
-  if (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS))
-    png_set_tRNS_to_alpha(png_ptr);
+  }
+
+  //if (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS))
+  //  png_set_tRNS_to_alpha(png_ptr);
 
   if (bit_depth == 16)
     png_set_strip_16(png_ptr);
 
-  zimage_data = malloc(width * height * bytes_per_pixel);
+  //row_bytes = png_get_rowbytes(png_ptr, info_ptr);
+  //printf("suggested-rowbytes: %d\n", row_bytes);
 
-  number_of_passes = png_set_interlace_handling(png_ptr);
+  // For some strange reason, the "png_get_rowbytes" will return the width
+  // of image "infocom-brain-ad.png" instead of width * 3, so we have to
+  // calculate "row_bytes" on our own:
+  row_bytes = width * bytes_per_pixel;
+
+  //printf("rbtes: %d\n", (long)row_bytes);
+  zimage_data = malloc((long)row_bytes * height);
+
   png_read_update_info(png_ptr, info_ptr);
 
   /* read file */
@@ -137,6 +163,14 @@ z_image* read_zimage_from_png(FILE *in)
     row_pointers[y] = zimage_ptr;
     zimage_ptr += width * bytes_per_pixel;
   }
+
+  /*
+  interlace_type = png_get_interlace_type(png_ptr, info_ptr);
+  number_of_passes = png_set_interlace_handling(png_ptr);
+
+  if (interlace_type == PNG_INTERLACE_ADAM7)
+    number_of_passes = png_set_interlace_handling(png_ptr);
+  */
 
   png_read_image(png_ptr, row_pointers);
 
@@ -159,7 +193,7 @@ z_image* read_zimage_from_png(FILE *in)
 
 
 /*
-void write_zimage_to_png(z_image *image, FILE *out)
+void write_zimage_to_png(z_image *image, z_file *out)
 {
 }
 */

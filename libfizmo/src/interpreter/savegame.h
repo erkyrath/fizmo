@@ -43,9 +43,13 @@ extern z_ucs last_savegame_filename[];
 
 void save_game(uint16_t address, uint16_t length, char *filename,
     bool skip_asking_for_filename, bool evaluate_result, char *directory);
+int restore_game_from_stream(uint16_t address, uint16_t length,
+    z_file *iff_file, bool evaluate_result);
 int restore_game(uint16_t address, uint16_t length, char *filename, 
     bool skip_asking_for_filename, bool evaluate_result, char *directory);
+#ifndef DISABLE_FILELIST
 bool detect_saved_game(char *file_to_check, char **story_file_to_load);
+#endif // DISABLE_FILELIST
 
 void opcode_save_0op(void);
 void opcode_save_ext(void);

@@ -1,0 +1,131 @@
+
+   Version 0.7.0
+ + 0.7.0 was finished at about Sun Sep 18 08:41:18 CEST 2011.
+ + The "fizmo-ncursesw" interface has been re-implemented for version 0.7. It
+   now makes use of libcellif for output. It uses libfizmo's new word
+   hyphenation and implements better X11-output through libdrilbo.
+ - X11 frontispiece display is now by default in a separate window, which,
+   contrary to the older implementation that simply invoked a XCopyArea
+   directly into the terminal's X window, should work reliably. For
+   terminals which by chance support it, the old behaviour is still
+   available by using the "display-x11-inline-image" config option. The
+   inline display has been changed to no longer write directly into the
+   terminal window, but instead to use a subwindow instead.
+ - Adapted to version 0.7 locale system and the new build process.
+
+   Version 0.6.9
+ + 0.6.9 was finished at about Sun Apr 24 22:26:18 CEST 2011.
+ - Added NCURSESW_INCLUDE_FROM_W_DIRNAME to configs to allow usage of
+   Apple's ncurses implementation, added GDKPIXBUF_INC_DIR configuration
+   variable.
+
+   Version 0.6.4
+ + 0.6.4 was finished at about Sun May 24 13:45:31 CEST 2009.
+ + Bugfix release: Definitely recommend for read_char fix.
+ - Fixed interface to supply default colors in case ncurses' "pair_content"
+   returned invalid colors (thanks to Samuel Verschelde).
+ - Input from read_char is no longer re-echoed to the screen (thanks to
+   Samnuel Verschelde).
+
+   Version 0.6.0
+ + 0.6.0 was finished at about Wed Mar 25 21:47:06 CET 2009.
+ + This marks the point for the first public beta release.
+ - Implemented conversion of font 3 (charachter font) to unicode. This
+   appears to make Beyond Zork's map appear at least readable.
+ - Implemented recording and replaying of timed input.
+ - The filename input for save and restore may now be cancelled using the
+   escape key.
+ - Pressing arrow up/down during filename input no longer displays the
+   command history.
+ - Implemented wordwrapper / ncursesw margins.
+ - Implemented "no-update" command line flag and config option to avoid
+   long startup scan times (for example on slow notebook drivers with many
+   story files).
+ - Implemented "--search" and "--recursively-search" command line invocations.
+ - Fixed bug in scrollback parapgraph position cache.
+ - Fixed scroll-down display for scrolling to bottom.
+ - Fixed crash that occured when a read-instruction was recursively called
+   from a timed input verification-routine.
+ - Fixed display error on refresh of preloaded input from history.
+ - Implemented forced predictable mode (ignores seeding random generator).
+ - Many, many other minor fixes and extensions.
+
+   Version 0.5.3
+ + 0.5.3 was finished at about Wed Mar 11 21:34:59 CET 2009.
+ - Re-wrote Makefile system. Releveant module defaults are now kept in
+   separate .mk-files.
+ - Added support for extra-blorb files (these are specified on the command
+   line directly after the story file name).
+ - Added "-Wextra" flag to CFLAGS and cleaned up new warnings caused by
+   the new flag.
+ - Many minor fixes (option system, running X11-enabled fizmo in text-only
+   console, etc).
+
+   Version 0.5.2
+ + 0.5.2 was finished at about Sat Jan 17 17:07:07 CET 2009.
+ - Implemented story selection menu in ncursesw interface.
+ - Implemented parsing of rc file.
+ - Added bold-for-bright-foreground and blink-for-bright-background terminal
+   options.
+ - Implemented dont-use-color and force-color option.
+ - Fixed interface for > 121 colors.
+ - Added "help" command.
+ - Implemented text paragraph position cache to speed up scrollback for
+   large amounts of text (not elegant, but works).
+ - Implemened "force-quetzal-umem" config option from the command line.
+ - Added manpage.
+ - Implemented basic blorb support (meaning that blorb files are detected,
+   information about pictures and sound is parsed and the first found "ZCOD"
+   chunk is executed).
+ - Stories may now be started from the command line using their "real name"
+   in case they are stored in the story-list. Example: "fizmo sorcerer".
+ - Many, many small fixes (scrollback, winch-redisplay, negative score,
+   undo, crash on large scrollbacks, etc).
+
+   Version 0.5.1
+ + 0.5.1 was finished at about Di 4 Nov 2008 21:48:29 CET.
+ - Fixed scrollback and i18n-exit-translation.
+ - Fixed libfizmo to also use setitimer/sigaction (makes fizmo work better
+   on linux).
+ - Implemented foreground/background color command line parameters for
+   ncursesw interface.
+ - Fixed get-cursor-[column|row] for ncursesw (makes PRINT_TABLE and
+   Sherlock work).
+ - Implemented restore from the command line: In case a quetzal-savegame
+   containing the non-standard-chunk "FILE" is given on the command line,
+   fizmo will try to restore the savegame using the story filename stored
+   in this chunk.
+
+   Version 0.5.0
+ + 0.5.0 was finished at about Do 30 Okt 2008 11:42:27 CET.
+ + This version is now definitely usable to play all non-v6 games. Did
+   extensive testing using Borderzone, "LostPig.z8", "Zokoban.z5", "crashme.z5",
+  "etude.z5", "paint.z5", "random.z5", "reverzi.z5" and "unicode.z5". Only
+   two minor known bugs remain: Scrollback sometimes miscalculates the
+   current row after a lot of scrolling back and forth (which is always
+  "fixable" to pressing any-key which correctly rebuilds the current output
+   page, and a display anomaly on the frontpage of "vampire.z8" which I
+   intended to keep after a lot of code-inspection (since fizmo appears to
+   be implementing the screen modell correctly and fixing this display
+   problem breaks a lot of other games). This version has been tested on
+   Linux, Darwin (Mac Os X) and a little bit on XP/Cygwin (using a self-built
+   ncursesw).
+ - Fixed timed-input detection for "read" opcode. This fixes the crash in
+   ZTUU when the lantern goes out.
+ - Ran fizmo through (sp)lint, fixed memory leaks, minor bugs, many typecasts,
+   some double and inconsistent definitions, cleanup up code.
+ - Fixed Makefile dependencies.
+ - Implemened scrollback for ncursesw interface, added support method for
+   scrollback in "history.c".
+ - Added configuration system.
+ - Some split-window / set_window / set_cursor fixed for ncursesw-interface.
+ - Substitued ualarm/signal with setitimer/sigaction since the first one
+   won't catch SIGALRM on linux and manpage says that ualarm is obsolete.
+ - Fixed color management so that ncurses color pair is avaiable for reading.
+ - Many, many minor bugfixes.
+
+   Version 0.4.1
+ + 0.4.1 was finished at about Wed Nov 14 08:23:19 CET 2007.
+ - Separated code in core, interface, c and cpp interfaces.
+ - Improved upper window handling (trinity sundial) and blockbuffer (zork1.z5).
+

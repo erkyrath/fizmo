@@ -3,7 +3,7 @@
  *
  * This file is part of fizmo.
  *
- * Copyright (c) 2009-2010 Christoph Ender.
+ * Copyright (c) 2010-2011 Christoph Ender.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,7 +33,7 @@
 #ifndef drilbo_h_INCLUDED 
 #define drilbo_h_INCLUDED
 
-#define DRILBO_VERSION "0.2.0-b3"
+#define DRILBO_VERSION "0.2.0"
 
 #ifdef UNUSED 
 #elif defined(__GNUC__) 
@@ -45,7 +45,6 @@
 #endif
 
 #include <inttypes.h>
-#include <stdio.h>
 
 #define DRILBO_IMAGE_TYPE_RGB 1
 #define DRILBO_IMAGE_TYPE_GRAYSCALE 2
@@ -62,6 +61,7 @@ typedef struct
 z_image *scale_zimage(z_image *image, int dest_width, int dest_height);
 z_image *scale_zimage_to_width(z_image *image, int dest_width);
 z_image *zimage_dup(z_image *image);
+z_image *get_blorb_image(int res_no);
 void free_zimage(z_image *image);
 char *get_drilbo_version();
 

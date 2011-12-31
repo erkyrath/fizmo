@@ -11,7 +11,8 @@ ifneq ($(ENABLE_OPTIMIZATION),)
 override CFLAGS += -O2
 endif
 
-FIZMO_CFLAGS = $(shell pkg-config --cflags libfizmo)
+FIZMO_CFLAGS = $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config \
+ --cflags libfizmo)
 
 all: fizmo_ncursesw_locales.o
 

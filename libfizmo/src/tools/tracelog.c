@@ -48,10 +48,11 @@
 #include "i18n.h"
 #include "types.h"
 #include "z_ucs.h"
+#include "filesys.h"
 #include "../locales/libfizmo_locales.h"
 
 
-FILE *stream_t = NULL;
+z_file *stream_t = NULL;
 
 #ifdef ENABLE_TRACING
 
@@ -63,7 +64,8 @@ void turn_on_trace(void)
     return;
   }
 
-  stream_t = fopen(DEFAULT_TRACE_FILE_NAME, "w");
+  stream_t = fsi->openfile(
+      DEFAULT_TRACE_FILE_NAME, FILETYPE_TEXT, FILEACCESS_WRITE);
 
   if (stream_t == NULL)
     i18n_translate_and_exit(
@@ -82,8 +84,8 @@ void turn_off_trace(void)
     return;
   }
 
-  fflush(stream_t);
-  fclose(stream_t);
+  fsi->flushfile(stream_t);
+  fsi->closefile(stream_t);
 
   stream_t = NULL;
 }
@@ -98,8 +100,8 @@ void _trace_log_z_ucs(z_ucs *output)
     while (*output != 0)
     {
       zucs_string_to_utf8_string(utf_8_output, &output, 80 * UTF_8_MB_LEN + 1);
-      fputs(utf_8_output, stream_t);
-      fflush(stream_t);
+      fsi->writestring(utf_8_output, stream_t);
+      fsi->flushfile(stream_t);
     }
   }
 }

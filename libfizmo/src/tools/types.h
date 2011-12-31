@@ -35,7 +35,8 @@
 
 #include <inttypes.h>
 #include <stdbool.h>
-#include <stdio.h>
+#include <time.h> // for time_t
+#include <sys/types.h> // for off_t
 
 #define Z_COLOUR_UNDEFINED -2
 #define Z_COLOUR_UNDER_CURSOR -1
@@ -66,6 +67,10 @@
 #define Z_STYLE_ITALIC 4
 #define Z_STYLE_FIXED_PITCH 8
 
+#define Z_BLORB_TYPE_PICT 0
+#define Z_BLORB_TYPE_SOUND 1
+#define Z_BLORB_TYPE_EXEC 2
+
 #define bool_equal(a,b) ((a) ? (b) : !(b))
 //#define FIZMO_UNIQUE_EXIT_CODE(filecode) (-(((filecode) << 16) | __LINE__))
 //#define FIZMO_UNIQUE_EXIT_CODE(filecode) (__LINE__)
@@ -85,36 +90,37 @@ struct commandline_parameter
   int i18n_description_code;
 };
 
-#define Z_BLORB_IMAGE_PNG 0
-#define Z_BLORB_IMAGE_JPEG 1
-#define Z_BLORB_IMAGE_PLACEHOLDER 2
-
-struct z_story_blorb_image
+struct z_file_struct
 {
-  int resource_number;
-  long blorb_offset;
-  int type;
-  uint32_t size;
-  int placeholder_width;
-  int placeholder_height;
+  void *file_object; // Used to store z_filesys_interface-dependent data.
+  char *filename;
+  int filetype;
+  int fileaccess;
+  int implementation; // used by glk_if
 };
 
-// Blorb specification 12.3: " sound is stored in AIFF (sampled) or Ogg/MOD
-// (music) format.) -> AIFF is a sound effect, OGG and MOD (and song) are
-// considered to contain music.
-#define Z_BLORB_SOUND_AIFF 0
-#define Z_BLORB_SOUND_OGG 1
-#define Z_BLORB_SOUND_MOD 2
-#define Z_BLORB_SOUND_SONG 3
+typedef struct z_file_struct z_file;
 
-struct z_story_blorb_sound
+struct z_dir_struct
 {
-  int resource_number;
-  int type;
-  uint32_t size;
-  int v3_number_of_loops;
-  long blorb_offset;
+  void *dir_object;
 };
+
+typedef struct z_dir_struct z_dir;
+
+struct z_dir_ent
+{
+  // Using only d_name since "this is the only field you can count on in
+  // all POSIX systems".
+  char *d_name;
+};
+
+struct z_blorb_map_struct
+{
+    void *blorb_map_implementation;
+};
+
+typedef struct z_blorb_map_struct z_blorb_map;
 
 struct z_story
 {
@@ -125,9 +131,10 @@ struct z_story
   uint16_t checksum;
   char *title;
 
-  FILE *z_file;
-  FILE *blorb_file;
-  char *absolute_directory_name;
+  z_file *z_story_file;
+  z_file *blorb_file;
+  z_blorb_map *blorb_map;
+  //char *absolute_directory_name;
   char *absolute_file_name;
   long story_file_exec_offset;
   uint8_t *dynamic_memory_end;
@@ -151,12 +158,14 @@ struct z_story
   uint8_t *dictionary_table;
   uint8_t score_mode;
 
+  /*
   int nof_sounds;
   int nof_images;
   int frontispiece_image_no;
 
   struct z_story_blorb_sound *blorb_sounds;
   struct z_story_blorb_image *blorb_images;
+  */
 
   int max_nof_color_pairs;
 };

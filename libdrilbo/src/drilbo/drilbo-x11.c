@@ -3,7 +3,7 @@
  *
  * This file is part of fizmo.
  *
- * Copyright (c) 2009-2010 Christoph Ender.
+ * Copyright (c) 2010-2011 Christoph Ender.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,7 +50,7 @@
  * low delay eats up again all CPU time.
  * This implies the use of threads, one thread being the normal main execution
  * and a second thread -- here: "xevent_thead" -- examines the event queue.
- * This is the reason why drilbo requires thread usage. I've chosen Pthreads 
+ * This is the reason why drilbo requires thread usage. I've chosen pthreads 
  * since fizmo was designed with POSIX compiatiblity in mind.
  *
  * Next problem: X ist not thread safe. Thus we'll do a select() on the
@@ -64,7 +64,6 @@
 #define drilbo_x11_c_INCLUDED
 
 #include <stdbool.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -413,7 +412,6 @@ void *xevent_thead(void *UNUSED(threadid))
   fd_set in_fds;
   int new_width; //, new_height;
   z_image *scaled_zimage;
-  //FILE *out;
   int i;
   bool flushNeeded;
   int max_filedes_number_plus_1;
@@ -506,7 +504,7 @@ void *xevent_thead(void *UNUSED(threadid))
                 }
                 else
                 {
-                  printf("Clientmessage: %ld.\n", event.xclient.data.l[0]);
+                  //printf("Clientmessage: %ld.\n", event.xclient.data.l[0]);
                 }
               }
               else
@@ -600,6 +598,7 @@ static int x_error_handler(Display *UNUSED(display), XErrorEvent *event)
 
   XGetErrorText(x11_display, event->error_code, message, 1024);
 
+  /*
   printf("X-Error: type %d, serial %ld, code %d, request %d, minor %d:%s\n",
       event->type,
       event->serial,
@@ -607,6 +606,7 @@ static int x_error_handler(Display *UNUSED(display), XErrorEvent *event)
       event->request_code,
       event->minor_code,
       message);
+  */
 
   return 0;
 }
@@ -678,7 +678,7 @@ int init_x11_display()
         TrueColor,
         &x11_visualinfo))
   {
-    printf ("Cannot get TrueColor Visual!\n");
+    //printf ("Cannot get TrueColor Visual!\n");
     exit (EXIT_FAILURE);
   }
 

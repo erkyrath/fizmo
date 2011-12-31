@@ -3,7 +3,7 @@
  *
  * This file is part of fizmo.
  *
- * Copyright (c) 2009-2010 Christoph Ender.
+ * Copyright (c) 2010-2011 Christoph Ender.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,10 +39,11 @@
 #ifndef drilbo_mg1_c_INCLUDED
 #define drilbo_mg1_c_INCLUDED
 
-#include <stdbool.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <inttypes.h>
+
+#include <tools/types.h>
+#include <tools/filesys.h>
 
 #include "drilbo-mg1.h"
 
@@ -128,17 +129,17 @@ typedef struct compress_s {
 static short code_table[CODE_TABLE_SIZE][2];
 static unsigned char buffer[CODE_TABLE_SIZE];
 
-static FILE *mg1_file = NULL;
+static z_file *mg1_file = NULL;
 static struct mg1_header header;
 static struct mg1_image_entry *mg1_image_entries = NULL;
 
 
-static int read_byte(FILE *in, uint8_t *byte)
+static int read_byte(z_file *in, uint8_t *byte)
 {
   int data;
 
-  if ((data = fgetc(in)) == EOF)
-  { fclose(in); return -1; }
+  if ((data = fsi->getchar(in)) == -1)
+  { fsi->closefile(in); return -1; }
 
   *byte = (uint8_t)data;
 
@@ -146,15 +147,15 @@ static int read_byte(FILE *in, uint8_t *byte)
 }
 
 
-static int read_word(FILE *in, uint16_t *word)
+static int read_word(z_file *in, uint16_t *word)
 {
   int lower, upper;
 
-  if ((lower = fgetc(in)) == EOF)
-  { fclose(in); return -1; }
+  if ((lower = fsi->getchar(in)) == -1)
+  { fsi->closefile(in); return -1; }
 
-  if ((upper = fgetc(in)) == EOF)
-  { fclose(in); return -1; }
+  if ((upper = fsi->getchar(in)) == -1)
+  { fsi->closefile(in); return -1; }
 
   *word = (lower & 0xff) | ((upper & 0xff) << 8);
 
@@ -162,18 +163,18 @@ static int read_word(FILE *in, uint16_t *word)
 }
 
 
-static int read_24bit(FILE *in, uint32_t *data)
+static int read_24bit(z_file *in, uint32_t *data)
 {
   int lower, middle, upper;
 
-  if ((upper = fgetc(in)) == EOF)
-  { fclose(in); return -1; }
+  if ((upper = fsi->getchar(in)) == -1)
+  { fsi->closefile(in); return -1; }
 
-  if ((middle = fgetc(in)) == EOF)
-  { fclose(in); return -1; }
+  if ((middle = fsi->getchar(in)) == -1)
+  { fsi->closefile(in); return -1; }
 
-  if ((lower = fgetc(in)) == EOF)
-  { fclose(in); return -1; }
+  if ((lower = fsi->getchar(in)) == -1)
+  { fsi->closefile(in); return -1; }
 
   *data = (lower & 0xff) | ((middle & 0xff) << 8) | ((upper & 0xff) << 16);
 
@@ -184,7 +185,7 @@ static int read_24bit(FILE *in, uint32_t *data)
 int end_mg1_graphics()
 {
   if (mg1_file != NULL)
-    fclose(mg1_file);
+    fsi->closefile(mg1_file);
 
   if (mg1_image_entries != NULL)
     free(mg1_image_entries);
@@ -198,7 +199,8 @@ int init_mg1_graphics(char *mg1_filename)
   int image_index;
   struct mg1_image_entry *image;
 
-  if ((mg1_file = fopen(mg1_filename, "r")) == NULL)
+  if ((mg1_file = fsi->openfile(mg1_filename, FILETYPE_DATA, FILEACCESS_READ))
+      == NULL)
     return -1;
 
   if ((read_byte(mg1_file, &header.part)) == -1)
@@ -207,33 +209,33 @@ int init_mg1_graphics(char *mg1_filename)
   if ((read_byte(mg1_file, &header.flags)) == -1)
     return -1;
 
-  if (fseek(mg1_file, 2, SEEK_CUR) == -1)
-  { fclose(mg1_file); return -1; }
+  if (fsi->setfilepos(mg1_file, 2, SEEK_CUR) == -1)
+  { fsi->closefile(mg1_file); return -1; }
 
   if ((read_word(mg1_file, &header.nof_images)) == -1)
     return -1;
 
-  if (fseek(mg1_file, 2, SEEK_CUR) == -1)
-  { fclose(mg1_file); return -1; }
+  if (fsi->setfilepos(mg1_file, 2, SEEK_CUR) == -1)
+  { fsi->closefile(mg1_file); return -1; }
 
   if ((read_byte(mg1_file, &header.dir_size)) == -1)
     return -1;
 
-  if (fseek(mg1_file, 1, SEEK_CUR) == -1)
-  { fclose(mg1_file); return -1; }
+  if (fsi->setfilepos(mg1_file, 1, SEEK_CUR) == -1)
+  { fsi->closefile(mg1_file); return -1; }
 
   if ((read_word(mg1_file, &header.checksum)) == -1)
     return -1;
 
-  if (fseek(mg1_file, 2, SEEK_CUR) == -1)
-  { fclose(mg1_file); return -1; }
+  if (fsi->setfilepos(mg1_file, 2, SEEK_CUR) == -1)
+  { fsi->closefile(mg1_file); return -1; }
 
   if ((read_word(mg1_file, &header.version)) == -1)
     return -1;
 
   if ((mg1_image_entries
         = malloc(sizeof(struct mg1_image_entry) * header.nof_images)) == NULL)
-  { fclose(mg1_file); return -1; }
+  { fsi->closefile(mg1_file); return -1; }
 
   for (image_index=0; image_index<header.nof_images; image_index++)
   {
@@ -311,7 +313,7 @@ static int get_image_index_from_number(int picture_number)
 }
 
 
-static short read_code(FILE *fp, compress_t *comp, unsigned char *code_buffer)
+static short read_code(z_file *fp, compress_t *comp, unsigned char *code_buffer)
 {
   short code, bsize, tlen, tptr;
 
@@ -323,9 +325,9 @@ static short read_code(FILE *fp, compress_t *comp, unsigned char *code_buffer)
   {
     if (comp->slen == 0)
     {
-      if ((comp->slen = fread(code_buffer, 1, MAX_BIT, fp)) == 0)
+      if ((comp->slen = fsi->getchars(code_buffer, MAX_BIT, fp)) == 0)
       {
-        perror("fread");
+        perror("getchars");
         exit (EXIT_FAILURE);
       }
       comp->slen *= 8;
@@ -378,7 +380,7 @@ z_image *get_picture(int picture_number)
 
   if (image->cm_addr != 0)
   {
-    if (fseek(mg1_file, image->cm_addr, SEEK_SET) != 0)
+    if (fsi->setfilepos(mg1_file, image->cm_addr, SEEK_SET) != 0)
       return NULL;
 
     if (read_byte(mg1_file, &colormap.nof_colors) == -1)
@@ -410,7 +412,7 @@ z_image *get_picture(int picture_number)
     //printf("Transparent color exists.");
   }
 
-  if (fseek(mg1_file, image->data_addr, SEEK_SET) != 0)
+  if (fsi->setfilepos(mg1_file, image->data_addr, SEEK_SET) != 0)
     return NULL;
 
   if ((image_data = (uint8_t*)malloc(image->width * image->height * 3)) == NULL)
@@ -433,14 +435,14 @@ z_image *get_picture(int picture_number)
 
   for (;;)
   {
-    if ((code = read_code (mg1_file, &comp, code_buffer)) == (clear_code + 1))
+    if ((code = read_code(mg1_file, &comp, code_buffer)) == (clear_code + 1))
       break;
 
     if (code == clear_code)
     {
       comp.tlen = CODE_SIZE + 1;
       comp.next_code = clear_code + 2;
-      code = read_code (mg1_file, &comp, code_buffer);
+      code = read_code(mg1_file, &comp, code_buffer);
     }
     else
     {

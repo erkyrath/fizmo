@@ -3,7 +3,7 @@
  *
  * This file is part of fizmo.
  *
- * Copyright (c) 2009-2010 Christoph Ender.
+ * Copyright (c) 2010-2011 Christoph Ender.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,12 +33,12 @@
 #ifndef cellscreen_h_INCLUDED
 #define cellscreen_h_INCLUDED
 
-#define LIBCELLINTERFACE_VERSION "0.7.0-b12"
+#define LIBCELLINTERFACE_VERSION "0.7.0"
 
 #include "../screen_interface/screen_cell_interface.h"
 
-z_colour default_foreground_colour;
-z_colour default_background_colour;
+#define MAX_MARGIN_SIZE 100
+#define MAX_MARGIN_AS_STRING_LEN 4
 
 void fizmo_register_screen_cell_interface(struct z_screen_cell_interface
     *screen_cell_interface);

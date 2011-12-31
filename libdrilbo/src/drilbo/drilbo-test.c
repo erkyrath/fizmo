@@ -3,7 +3,7 @@
  *
  * This file is part of fizmo.
  *
- * Copyright (c) 2009-2010 Christoph Ender.
+ * Copyright (c) 2010-2011 Christoph Ender.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,13 +32,14 @@
 
 #include <pthread.h>
 #include <unistd.h>
-#include <fcntl.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <fcntl.h>
 
 #include <tools/tracelog.h>
 #include <tools/i18n.h>
 #include <tools/z_ucs.h>
+#include <tools/filesys.h>
 
 #include "drilbo.h"
 #include "drilbo-ppm.h"
@@ -60,17 +61,18 @@
 
 #define STREAM_BUFSIZE 128
 
-static const char ppm_out_file_name[] = "shogun.ppm";
+static const char *png_ppm_out_file_name = "infocom-brain-ad.ppm";
+static const char *mg1_ppm_out_file_name = "shogun.ppm";
 
-static const char jpeg_in_file_name[] = "../test/infocom-brain-ad.jpg";
-static const char jpeg_out_file_rgb_name[] = "ad-RGB.jpg";
-static const char jpeg_out_file_ycbcr_name[] = "ad-YCbCr.jpg";
-static const char jpeg_out_file_grayscale_name[] = "ad-Grayscale.jpg";
+static const char *jpeg_in_file_name = "../test/infocom-brain-ad.jpg";
+static const char *jpeg_out_file_rgb_name = "ad-RGB.jpg";
+static const char *jpeg_out_file_ycbcr_name = "ad-YCbCr.jpg";
+static const char *jpeg_out_file_grayscale_name = "ad-Grayscale.jpg";
 
-static const char jpeg_grayscale_in_file_name[] = "../test/zork-poster-grayscale.jpg";
+static const char *jpeg_grayscale_in_file_name = "../test/zork-poster-grayscale.jpg";
 
-static const char png_in_file_name[] = "../test/infocom-brain-ad.png";
-static char mg1_file_name[] = "../test/Shogun.mg1";
+static const char *png_in_file_name = "../test/infocom-brain-ad.png";
+static const char *mg1_file_name = "../test/Shogun.mg1";
 #ifdef TEST_X11
 static x11_image_window_id image_window_id;
 static int signalling_pipe[2];
@@ -81,15 +83,6 @@ static int signalling_pipe[2];
   int ret_val;
 #endif // TEST_X11
 
-/*
-static void wait_for_enter()
-{
-  char ch;
-
-  printf("\nPress enter to continue.\n");
-  while ((EOF != (ch = getc(stdin))) && ('\n' != ch)) continue;
-}
-*/
 
 
 void callback_func(x11_image_window_id window_id, int event)
@@ -207,9 +200,8 @@ int wait_for_callback()
 
 int main(int UNUSED(argc), char *UNUSED(argv[]))
 {
-  FILE *in, *out;
+  z_file *in, *out;
   z_image *zork_poster;
-  //z_image *mg1_image;
   int nof_mg1_images;
   uint16_t *mg1_image_numbers;
   int image_index;
@@ -278,9 +270,9 @@ int main(int UNUSED(argc), char *UNUSED(argv[]))
   if (mg1_image == NULL)
     return -1;
 
-  out = fopen(ppm_out_file_name, "w");
+  out = fsi->openfile(mg1_ppm_out_file_name, FILETYPE_DATA, FILEACCESS_WRITE);
   write_zimage_to_ppm(mg1_image, out);
-  fclose(out);
+  fsi->closefile(out);
 
   end_mg1_graphics();
 
@@ -289,34 +281,36 @@ int main(int UNUSED(argc), char *UNUSED(argv[]))
   printf("\nStarting jpg-test.\n");
 
   printf("Loading JPEG file \"%s\" ...\n", jpeg_in_file_name);
-  in = fopen(jpeg_in_file_name, "r");
+  in = fsi->openfile(jpeg_in_file_name, FILETYPE_DATA, FILEACCESS_READ);
   brain_ad_jpeg = read_zimage_from_jpeg(in);
-  fclose(in);
+  fsi->closefile(in);
 
   scaled_brain_ad_jpeg = scale_zimage_to_width(brain_ad_jpeg, 800);
 
   printf("Writing RGB JPEG file \"%s\" ...\n", jpeg_out_file_rgb_name);
-  out = fopen(jpeg_out_file_rgb_name, "w");
+  out = fsi->openfile(jpeg_out_file_rgb_name, FILETYPE_DATA, FILEACCESS_WRITE);
   //write_zimage_to_jpeg(brain_ad, out, JCS_RGB);
   write_zimage_to_jpeg(scaled_brain_ad_jpeg, out, JCS_RGB);
-  fclose(out);
+  fsi->closefile(out);
 
   printf("Writing YCbCr JPEG file \"%s\" ...\n", jpeg_out_file_ycbcr_name);
-  out = fopen(jpeg_out_file_ycbcr_name, "w");
+  out = fsi->openfile(jpeg_out_file_ycbcr_name, FILETYPE_DATA,
+      FILEACCESS_WRITE);
   write_zimage_to_jpeg(brain_ad_jpeg, out, JCS_YCbCr);
-  fclose(out);
+  fsi->closefile(out);
 
   printf("Writing Grayscale JPEG file \"%s\" ...\n",
       jpeg_out_file_grayscale_name);
-  out = fopen(jpeg_out_file_grayscale_name, "w");
+  out = fsi->openfile(jpeg_out_file_grayscale_name, FILETYPE_DATA,
+      FILEACCESS_WRITE);
   write_zimage_to_jpeg(brain_ad_jpeg, out, JCS_GRAYSCALE);
-  fclose(out);
+  fsi->closefile(out);
 
   printf("Loading Grayscale JPEG file \"%s\" ...\n",
       jpeg_grayscale_in_file_name);
-  in = fopen(jpeg_grayscale_in_file_name, "r");
+  in = fsi->openfile(jpeg_grayscale_in_file_name, FILETYPE_DATA, FILEACCESS_READ);
   zork_poster = read_zimage_from_jpeg(in);
-  fclose(in);
+  fsi->closefile(in);
 
 #endif // TEST_JPEG
 
@@ -325,15 +319,19 @@ int main(int UNUSED(argc), char *UNUSED(argv[]))
   printf("Starting png-test.\n");
 
   printf("Loading PNG file \"%s\" ...\n", png_in_file_name);
-  in = fopen(png_in_file_name, "r");
+  in = fsi->openfile(png_in_file_name, FILETYPE_DATA, FILEACCESS_READ);
   brain_ad_png = read_zimage_from_png(in);
-  fclose(in);
+  fsi->closefile(in);
+
+  out = fsi->openfile(png_ppm_out_file_name, FILETYPE_DATA, FILEACCESS_WRITE);
+  write_zimage_to_ppm(brain_ad_png, out);
+  fsi->closefile(out);
 
   /*
   printf("Loading PNG file \"%s\" ...\n", png_in_file_name);
-  in = fopen(png_in_file_name, "r");
+  in = fsi->openfile(png_in_file_name, FILETYPE_DATA, FILEACCESS_READ);
   brain_ad_png = read_zimage_from_png(in);
-  fclose(in);
+  fsi->closefile(in);
   */
 
 #endif // TEST_PNG

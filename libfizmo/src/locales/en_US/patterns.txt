@@ -1,9 +1,15 @@
 %
-% This file has been renamed from ushyphmax.tex to hyph-en-us.tex in June
-% 2008 for consistency with other files with hyphenation patterns in
-% hyph-utf8 package.
+% This file has been renamed from hyph-en-us.tex to patterns.tex in July 2011
+% for usage in the fizmo z-machine interpreter. Empty lines were removed
+% and lines containing comments divided into separate data and comments
+% lines for technical reasons. No other changes made.
+%
+% This file has been renamed from ushyphmax.tex to hyph-en-us.tex in June 2008
+% for consistency with other files with hyphenation patterns in hyph-utf8
+% package.
 % No other changes made. See http://www.tug.org/tex-hyphen for more details.
-% ushyphmax.tex –– patterns for more hyphenation pattern memory (12000+).
+%
+% ushyphmax.tex -- patterns for more hyphenation pattern memory (12000+).
 % Also known as ushyphen.max.
 %
 % version of 2005-05-30.
@@ -28,7 +34,6 @@
 %
 % Please send bugs or suggestions to tex-live (at) tug.org.
 %
-%
 % 2005-05-30 (karl): in the past, ushyphmax.tex was a file containing
 % only the additional patterns, without the \patterns command, etc.
 % This turned out not to be very useful, since in practice the TeX
@@ -38,8 +43,7 @@
 % hyphen.tex.
 %
 % The Plain TeX hyphenation tables.
-%
-%
+%\patterns{ % just type <return> if you're not using INITEX
 .ach4
 .ad4der
 .af1t
@@ -4487,6 +4491,7 @@ zo5ol
 zte4
 4z1z2
 z4zy
+% hyphen.tex patterns end here, and additional patterns begin:
 .con5gr
 .de5riva
 .dri5v4
@@ -4978,3 +4983,22 @@ yes5ter1y
 z3ian.
 z3o1phr
 z2z3w
+% end of additional patterns.
+%}
+% DEK's hyphenation exception list, from hyphen.tex; not changed.
+%\hyphenation{
+%as-so-ciate
+%as-so-ciates
+%dec-li-na-tion
+%oblig-a-tory
+%phil-an-thropic
+%present
+%presents
+%project
+%projects
+%reci-procity
+%re-cog-ni-zance
+%ref-or-ma-tion
+%ret-ri-bu-tion
+%ta-ble
+%}

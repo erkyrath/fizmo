@@ -33,7 +33,6 @@
 #ifndef routine_c_INCLUDED
 #define routine_c_INCLUDED
 
-#include <stdio.h>
 #include <string.h>
 
 #include "../tools/tracelog.h"

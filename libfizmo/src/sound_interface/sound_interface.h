@@ -52,6 +52,9 @@ struct z_sound_interface
   uint16_t (*get_next_sound_end_routine)();
   char* (*get_interface_name)();
   char* (*get_interface_version)();
+  int (*parse_config_parameter)(char *key, char *value);
+  char* (*get_config_value)(char *key);
+  char **(*get_config_option_names)();
 };
 
 #endif /* sound_interface_h_INCLUDED */

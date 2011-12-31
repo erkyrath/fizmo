@@ -20,7 +20,8 @@ ifneq ($(ENABLE_GDB_SYMBOLS),)
 override CFLAGS += -g
 endif
 
-LIBFIZMO_CFLAGS = $(shell pkg-config --cflags libfizmo)
+LIBFIZMO_CFLAGS = $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config \
+ --cflags libfizmo)
 
 
 .PHONY : all clean
@@ -31,7 +32,8 @@ libsndifsdl.a: sound_sdl.o
 	$(AR) rcs libsndifsdl.a sound_sdl.o
 
 sound_sdl.o: sound_sdl.c
-	$(CC) $(CFLAGS) $(LIBFIZMO_CFLAGS) $(SDL_CFLAGS) $(SNDFILE_CFLAGS) -c sound_sdl.c
+	$(CC) $(CFLAGS) $(LIBFIZMO_CFLAGS) $(SDL_CFLAGS) $(SNDFILE_CFLAGS) \
+ -c sound_sdl.c
 
 clean:
 	rm -f *.o

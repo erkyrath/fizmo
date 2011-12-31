@@ -38,7 +38,9 @@
 #include <stdarg.h>
 #include <unistd.h>
 #include <sys/types.h>
+#if !defined (__WIN32__)
 #include <pwd.h>
+#endif // !defined (__WIN32__)
 
 #include "../tools/tracelog.h"
 #include "config.h"
@@ -55,33 +57,37 @@
 bool auto_adapt_upper_window = true;
 bool auto_open_upper_window = true;
 bool skip_active_routines_stack_check_warning = false;
-char true_value[] = "true";
-char false_value[] = "false";
+char config_true_value[] = "true";
+char config_false_value[] = "false";
 char empty_string[] = "";
+bool user_homedir_initialized = false;
+char *user_homedir = NULL;
 
 
 struct configuration_option configuration_options[] = {
 
   // String values:
   { "background-color", NULL },
-  { "command-filename", NULL },
+  { "input-command-filename", NULL },
+  { "record-command-filename", NULL },
   { "foreground-color", NULL },
   { "i18n-search-path", NULL },
   { "locale", NULL },
   { "random-mode", NULL },
+  { "save-text-history-paragraphs", NULL },
   { "savegame-path", NULL },
+  { "savegame-default-filename", NULL },
   { "transcript-filename", NULL },
   { "z-code-path", NULL },
   { "z-code-root-path", NULL },
-  { "save-text-history-paragraphs", NULL },
+  { "stream-2-line-width", NULL },
+  { "stream-2-left-margin", NULL },
 
   // Boolean values:
-  { "disable-color", NULL },
   { "disable-external-streams", NULL },
   { "disable-restore", NULL },
   { "disable-save", NULL },
   { "disable-sound", NULL },
-  { "enable-color", NULL },
   { "enable-font3-conversion", NULL },
   { "quetzal-umem", NULL },
   { "restore-after-save-and-quit-file-before-read", NULL },
@@ -90,7 +96,9 @@ struct configuration_option configuration_options[] = {
   { "start-command-recording-when-story-starts", NULL },
   { "start-file-input-when-story-starts", NULL },
   { "start-script-when-story-starts", NULL },
+  { "disable-stream-2-hyphenation", NULL },
   { "sync-transcript", NULL },
+  { "dont-set-locale-from-config", NULL },
 
   // NULL terminates the option list.
   { NULL, NULL }
@@ -100,9 +108,8 @@ struct configuration_option configuration_options[] = {
 
 static char *expand_configuration_value(char *unexpanded_value)
 {
-  static char *homedir = NULL;
-  static int homedir_len = -1;
-  struct passwd *pw_entry;
+  static char *homedir;
+  static int homedir_len;
   char *ptr = unexpanded_value;
   int resultlen;
   char *result, *resultindex;
@@ -112,17 +119,11 @@ static char *expand_configuration_value(char *unexpanded_value)
   if (unexpanded_value == NULL)
     return NULL;
 
-  TRACE_LOG("Value to expand: \"%s\".\n", unexpanded_value);
+  if ((homedir = get_user_homedir()) == NULL)
+    homedir = empty_string;
+  homedir_len = strlen(homedir);
 
-  if (homedir == NULL)
-  {
-    pw_entry = getpwuid(getuid());
-    if (pw_entry->pw_dir == NULL)
-      homedir = empty_string;
-    else
-      homedir = strdup(pw_entry->pw_dir);
-    homedir_len = strlen(homedir);
-  }
+  TRACE_LOG("Value to expand: \"%s\".\n", unexpanded_value);
 
   resultlen = 0;
   while (*ptr != 0)
@@ -238,10 +239,13 @@ int append_path_value(char *key, char *value_to_append)
 
 int set_configuration_value(char *key, char* new_unexpanded_value)
 {
-  int i, return_code;
-  char *current_value, *new_value = NULL;
+  int i, return_code, result;
+  char *new_value = NULL;
   char buf[BUFSIZE];
   short color_code;
+  long long_value;
+  char *endptr;
+
 
   if (key == NULL)
     return -1;
@@ -270,7 +274,12 @@ int set_configuration_value(char *key, char* new_unexpanded_value)
 
       if (strcmp(key, "locale") == 0)
       {
-        return_code = set_current_locale_name(new_value);
+        TRACE_LOG("Trying to set locale to \"%s\".\n", new_value);
+        return_code
+          = (strcmp(get_configuration_value(
+                  "dont-set-locale-from-config"), "true") == 0)
+          ? 0
+          : set_current_locale_name(new_value);
         free(new_value);
         return return_code;
       }
@@ -315,15 +324,38 @@ int set_configuration_value(char *key, char* new_unexpanded_value)
           ||
           (strcmp(key, "savegame-path") == 0)
           ||
+          (strcmp(key, "savegame-default-filename") == 0)
+          ||
           (strcmp(key, "transcript-filename") == 0)
           ||
           (strcmp(key, "save-text-history-paragraphs") == 0)
           ||
-          (strcmp(key, "command-filename") == 0)
+          (strcmp(key, "input-command-filename") == 0)
+          ||
+          (strcmp(key, "record-command-filename") == 0)
           )
       {
         if (configuration_options[i].value != NULL)
           free(configuration_options[i].value);
+        configuration_options[i].value = new_value;
+        return 0;
+      }
+
+      // Integer values
+      else if (
+          (strcmp(key, "stream-2-line-width") == 0)
+          ||
+          (strcmp(key, "stream-2-left-margin") == 0)
+          )
+      {
+        if ( (new_value == NULL) || (strlen(new_value) == 0) )
+          return -1;
+        long_value = strtol(new_value, &endptr, 10);
+        if (*endptr != 0)
+        {
+          free(new_value);
+          return -1;
+        }
         configuration_options[i].value = new_value;
         return 0;
       }
@@ -358,101 +390,39 @@ int set_configuration_value(char *key, char* new_unexpanded_value)
         return 0;
       }
 
-      // Non-primitive boolean options
-      else if (strcmp(key, "enable-color") == 0)
-      {
-        if (
-            (new_value == NULL)
-            ||
-            (*new_value == 0)
-            ||
-            (strcmp(new_value, true_value) == 0)
-           )
-        {
-          free(new_value);
-          current_value = get_configuration_value("disable-color");
-          if (strcmp(current_value, true_value) == 0)
-            return -1;
-          configuration_options[i].value = fizmo_strdup(true_value);
-          return 0;
-        }
-        else if ((new_value != NULL) && (strcmp(new_value, false_value)==0))
-        {
-          free(new_value);
-          if (configuration_options[i].value != NULL)
-            free(configuration_options[i].value);
-          configuration_options[i].value = fizmo_strdup(false_value);
-          return -1;
-        }
-        else
-        {
-          free(new_value);
-          return -1;
-        }
-      }
-      else if (strcmp(key, "disable-color") == 0)
-      {
-        if (
-            (new_value == NULL)
-            ||
-            (*new_value == 0)
-            ||
-            (strcmp(new_value, true_value) == 0)
-           )
-        {
-          free(new_value);
-          current_value = get_configuration_value("enable-color");
-          if (strcmp(current_value, true_value) == 0)
-            return -1;
-          configuration_options[i].value = fizmo_strdup(true_value);
-          return 0;
-        }
-        else if ((new_value != NULL) && (strcmp(new_value, false_value)==0))
-        {
-          free(new_value);
-          if (configuration_options[i].value != NULL)
-            free(configuration_options[i].value);
-          configuration_options[i].value = fizmo_strdup(false_value);
-          return -1;
-        }
-        else
-        {
-          free(new_value);
-          return -1;
-        }
-      }
-
       // Boolean options
       else if (
-          (strcmp(key, "save-and-quit-file-before-read") == 0)
-          ||
-          (strcmp(key, "disable-save") == 0)
+          (strcmp(key, "disable-external-streams") == 0)
           ||
           (strcmp(key, "disable-restore") == 0)
           ||
-          (strcmp(key, "restore-after-save-and-quit-file-before-read") == 0)
-          ||
-          (strcmp(key, "disable-external-streams") == 0)
-          ||
-          (strcmp(key, "start-script-when-story-starts") == 0)
+          (strcmp(key, "disable-save") == 0)
           ||
           (strcmp(key, "disable-sound") == 0)
           ||
           (strcmp(key, "enable-font3-conversion") == 0)
           ||
-          (strcmp(key, "sync-transcript") == 0)
-          ||
-          (strcmp(key, "start-command-recording-when-story-starts") == 0)
-          ||
-          (strcmp(key, "command-filename") == 0)
-          ||
-          (strcmp(key, "start-file-input-when-story-starts") == 0)
+          (strcmp(key, "quetzal-umem") == 0)
           ||
           (strcmp(key, "random-mode") == 0)
           ||
-          (strcmp(key, "quetzal-umem") == 0)
+          (strcmp(key, "restore-after-save-and-quit-file-before-read") == 0)
+          ||
+          (strcmp(key, "save-and-quit-file-before-read") == 0)
           ||
           (strcmp(key, "set-tandy-flag") == 0)
+          ||
+          (strcmp(key, "start-command-recording-when-story-starts") == 0)
+          ||
+          (strcmp(key, "start-script-when-story-starts") == 0)
+          ||
+          (strcmp(key, "start-file-input-when-story-starts") == 0)
+          ||
+          (strcmp(key, "disable-stream-2-hyphenation") == 0)
+          ||
+          (strcmp(key, "sync-transcript") == 0)
+          ||
+          (strcmp(key, "dont-set-locale-from-config") == 0)
           )
       {
         if (
@@ -460,22 +430,23 @@ int set_configuration_value(char *key, char* new_unexpanded_value)
             ||
             (*new_value == 0)
             ||
-            (strcmp(new_value, true_value) == 0)
+            (strcmp(new_value, config_true_value) == 0)
            )
         {
           if (new_value != NULL)
             free(new_value);
           if (configuration_options[i].value != NULL)
             free(configuration_options[i].value);
-          configuration_options[i].value = fizmo_strdup(true_value);
+          configuration_options[i].value = fizmo_strdup(config_true_value);
           return 0;
         }
-        else if ((new_value != NULL) && (strcmp(new_value, false_value)==0))
+        else if ((new_value != NULL)
+            && (strcmp(new_value, config_false_value)==0))
         {
           free(new_value);
           if (configuration_options[i].value != NULL)
             free(configuration_options[i].value);
-          configuration_options[i].value = fizmo_strdup(false_value);
+          configuration_options[i].value = fizmo_strdup(config_false_value);
           return -1;
         }
         else
@@ -497,13 +468,45 @@ int set_configuration_value(char *key, char* new_unexpanded_value)
     i++;
   }
 
-  return -1;
+  if (active_interface != NULL)
+  {
+    result = active_interface->parse_config_parameter(key, new_value);
+    if (result == -1)
+    {
+      i18n_translate_and_exit(
+          libfizmo_module_name,
+          i18n_libfizmo_INVALID_VALUE_P0S_FOR_PARAMETER_P1S,
+          -0x0101,
+          key,
+          new_value);
+    }
+  }
+
+  if (active_sound_interface == NULL)
+    return -2;
+  else
+  {
+    result = active_sound_interface->parse_config_parameter(key, new_value);
+    if (result == -1)
+    {
+      i18n_translate_and_exit(
+          libfizmo_module_name,
+          i18n_libfizmo_INVALID_VALUE_P0S_FOR_PARAMETER_P1S,
+          -0x0101,
+          key,
+          new_value);
+      }
+
+  }
+
+  return result;
 }
 
 
 char *get_configuration_value(char *key)
 {
   int i = 0;
+  char **interface_option_names;
 
   if (key == NULL)
     return NULL;
@@ -520,6 +523,19 @@ char *get_configuration_value(char *key)
   {
     return get_current_locale_name_in_utf8();
   }
+  else if (
+      (strcmp(key, "background-color-name") == 0)
+      ||
+      (strcmp(key, "foreground-color-name") == 0)
+      )
+  {
+    return z_colour_names[
+      atoi(
+          get_configuration_value(
+            ( strcmp(key, "background-color-name") == 0
+              ? "background-color"
+              : "foreground-color")))];
+  }
   else
   {
     while (configuration_options[i].name != NULL)
@@ -530,45 +546,41 @@ char *get_configuration_value(char *key)
       {
         // Boolean options
         if (
-            (strcmp(key, "save-and-quit-file-before-read") == 0)
-            ||
-            (strcmp(key, "disable-save") == 0)
+            (strcmp(key, "disable-external-streams") == 0)
             ||
             (strcmp(key, "disable-restore") == 0)
             ||
-            (strcmp(key, "restore-after-save-and-quit-file-before-read")==0)
-            ||
-            (strcmp(key, "disable-external-streams") == 0)
-            ||
-            (strcmp(key, "start-script-when-story-starts") == 0)
+            (strcmp(key, "disable-save") == 0)
             ||
             (strcmp(key, "disable-sound") == 0)
             ||
             (strcmp(key, "enable-font3-conversion") == 0)
             ||
-            (strcmp(key, "sync-transcript") == 0)
-            ||
-            (strcmp(key, "start-command-recording-when-story-starts") == 0)
-            ||
-            (strcmp(key, "command-filename") == 0)
-            ||
-            (strcmp(key, "start-file-input-when-story-starts") == 0)
-            ||
-            (strcmp(key, "random-mode") == 0)
-            ||
             (strcmp(key, "quetzal-umem") == 0)
+            ||
+            (strcmp(key, "restore-after-save-and-quit-file-before-read") == 0)
+            ||
+            (strcmp(key, "save-and-quit-file-before-read") == 0)
             ||
             (strcmp(key, "set-tandy-flag") == 0)
             ||
-            (strcmp(key, "enable-color") == 0)
+            (strcmp(key, "start-command-recording-when-story-starts") == 0)
             ||
-            (strcmp(key, "disable-color") == 0)
+            (strcmp(key, "start-script-when-story-starts") == 0)
+            ||
+            (strcmp(key, "start-file-input-when-story-starts") == 0)
+            ||
+            (strcmp(key, "disable-stream-2-hyphenation") == 0)
+            ||
+            (strcmp(key, "sync-transcript") == 0)
+            ||
+            (strcmp(key, "dont-set-locale-from-config") == 0)
            )
         {
           if (configuration_options[i].value == NULL)
           {
             TRACE_LOG("return \"false\".\n");
-            return false_value;
+            return config_false_value;
           }
           else
           {
@@ -587,15 +599,23 @@ char *get_configuration_value(char *key)
             ||
             (strcmp(key, "savegame-path") == 0)
             ||
+            (strcmp(key, "savegame-default-filename") == 0)
+            ||
             (strcmp(key, "transcript-filename") == 0)
             ||
-            (strcmp(key, "command-filename") == 0)
+            (strcmp(key, "input-command-filename") == 0)
+            ||
+            (strcmp(key, "record-command-filename") == 0)
+            ||
+            (strcmp(key, "background-color") == 0)
             ||
             (strcmp(key, "foreground-color") == 0)
             ||
             (strcmp(key, "save-text-history-paragraphs") == 0)
             ||
-            (strcmp(key, "background-color") == 0)
+            (strcmp(key, "stream-2-line-width") == 0)
+            ||
+            (strcmp(key, "stream-2-left-margin") == 0)
             )
         {
           TRACE_LOG("Returning value at %p.\n", configuration_options[i].value);
@@ -604,12 +624,38 @@ char *get_configuration_value(char *key)
 
         else
         {
+          // Internal error: config-key was found in configuration_options[],
+          // but not in the hardcoded keys above.
           TRACE_LOG("Unknown config key: \"%s\".", key);
           return NULL;
         }
       }
 
       i++;
+    }
+
+    if (active_interface != NULL)
+    {
+      if ((interface_option_names
+            = active_interface->get_config_option_names()) != NULL)
+      {
+        i = 0;
+        while (interface_option_names[i] != NULL)
+          if (strcmp(interface_option_names[i++], key) == 0)
+            return active_interface->get_config_value(key);
+      }
+    }
+
+    if (active_sound_interface != NULL)
+    {
+      if ((interface_option_names
+            = active_sound_interface->get_config_option_names()) != NULL)
+      {
+        i = 0;
+        while (interface_option_names[i] != NULL)
+          if (strcmp(interface_option_names[i++], key) == 0)
+            return active_sound_interface->get_config_value(key);
+      }
     }
 
     TRACE_LOG("Unknown config key: \"%s\".", key);
@@ -659,6 +705,44 @@ char **get_valid_configuration_options(char *key, ...)
     return NULL;
 }
 */
+
+
+bool is_valid_libfizmo_config_key(char *key)
+{
+  int i = 0;
+
+  while (configuration_options[i].name != NULL)
+  {
+    if (strcmp(configuration_options[i++].name, key) == 0)
+      return true;
+  }
+  return false;
+}
+
+
+char *get_user_homedir()
+{
+#if !defined (__WIN32__)
+  struct passwd *pw_entry;
+#endif // !defined (__WIN32__)
+
+  if (user_homedir_initialized == false)
+  {
+#if !defined (__WIN32__)
+    pw_entry = getpwuid(getuid());
+    if (pw_entry->pw_dir == NULL)
+      user_homedir = NULL;
+    else
+      user_homedir = strdup(pw_entry->pw_dir);
+#else
+    if ((user_homedir = getenv("HOME")) == NULL)
+      user_homedir = getenv("HOMEPATH");
+#endif // !defined (__WIN32__)
+    user_homedir_initialized = true;
+  }
+
+  return user_homedir;
+}
 
 
 #endif /* config_c_INCLUDED */

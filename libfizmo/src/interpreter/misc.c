@@ -30,7 +30,6 @@
  */
 
 
-#include <stdio.h>
 #include <string.h>
 #include <signal.h>
 #include <stdlib.h>
@@ -38,6 +37,7 @@
 
 #include "../tools/tracelog.h"
 #include "../tools/i18n.h"
+#include "../tools/filesys.h"
 #include "misc.h"
 #include "fizmo.h"
 #include "streams.h"
@@ -48,7 +48,9 @@
 #include "../locales/libfizmo_locales.h"
 
 
+#if !defined(__WIN32__)
 static struct sigaction fizmo_sigactions;
+#endif // defined(__WIN32__)
 
 
 void opcode_restart(void)
@@ -80,8 +82,8 @@ void opcode_verify(void)
 
   if (file_length * scale - 1 >= 0x40)
   {
-    if (fseek(
-          active_z_story->z_file,
+    if (fsi->setfilepos(
+          active_z_story->z_story_file,
           0x40 + active_z_story->story_file_exec_offset,
           SEEK_SET) != 0)
       i18n_translate_and_exit(
@@ -92,7 +94,7 @@ void opcode_verify(void)
     i = 0x40;
     while (i < file_length * scale)
     {
-      if ((input = fgetc(active_z_story->z_file)) == EOF)
+      if ((input = fsi->getchar(active_z_story->z_story_file)) == EOF)
         i18n_translate_and_exit(
             libfizmo_module_name,
             i18n_libfizmo_FATAL_ERROR_READING_STORY_FILE,
@@ -146,7 +148,7 @@ void abort_interpreter(int exit_code, z_ucs *error_message)
   // available to a waiting parent process. [Option End]
   //  -> Thus, we print the exit code seperately.
   TRACE_LOG("Output exit code.\n");
-  fprintf(stderr, "Exit code: %d.\n", exit_code);
+  //fprintf(stderr, "Exit code: %d.\n", exit_code);
 
   //(void)signal(SIGSEGV, SIG_DFL);
 
@@ -155,10 +157,15 @@ void abort_interpreter(int exit_code, z_ucs *error_message)
 #ifdef THROW_SIGFAULT_ON_ERROR
   x = *((int*)NULL);
 #endif
+
+#if defined(__WIN32__)
+  exit_code = 0;
+#endif // !defined(__WIN32__)
   exit(exit_code);
 }
 
 
+#if !defined(__WIN32__)
 static void catch_signal_and_abort(int sig_num)
 {
   TRACE_LOG("Caught signal %d.\n", sig_num);
@@ -169,10 +176,12 @@ static void catch_signal_and_abort(int sig_num)
       -1,
       (long)sig_num);
 }
+#endif // defined(__WIN32__)
 
 
 void init_signal_handlers(void)
 {
+#if !defined(__WIN32__)
   TRACE_LOG("Initialiazing signal handlers.\n");
 
   sigemptyset(&fizmo_sigactions.sa_mask);
@@ -185,5 +194,6 @@ void init_signal_handlers(void)
   sigaction(SIGQUIT, &fizmo_sigactions, NULL);
   sigaction(SIGBUS, &fizmo_sigactions, NULL);
   sigaction(SIGILL, &fizmo_sigactions, NULL);
+#endif // !defined(__WIN32__)
 }
 

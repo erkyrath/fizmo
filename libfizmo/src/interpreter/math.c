@@ -33,7 +33,6 @@
 #ifndef math_c_INCLUDED
 #define math_c_INCLUDED
 
-#include <stdio.h>
 #include <time.h>
 #include <sys/time.h>
 #include <time.h>

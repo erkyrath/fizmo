@@ -51,6 +51,7 @@ struct z_story_list_entry
   uint8_t z_code_version;
   char *title;
   char *author;
+  char *language;
   char *description;
   char *filename;
   char *blorbfile;
@@ -63,9 +64,7 @@ void free_z_story_list_entry(struct z_story_list_entry *entry);
 struct z_story_list *get_z_story_list();
 struct z_story_list_entry *get_z_story_entry_from_list(char *serial,
     uint16_t release, uint16_t checksum);
-//void build_filelist(char *root_dir, struct z_story_list *story_list,
-//    bool recursive);
-struct z_story_list *update_fizmo_story_list(char *fizmo_dir);
+struct z_story_list *update_fizmo_story_list();
 void detect_and_add_single_z_file(char *input_filename, char *blorb_filename);
 void search_directory(char *absolute_dirname, bool recursive);
 

@@ -107,6 +107,12 @@ uint8_t ScreenInterface::get_total_width_in_pixels_of_text_sent_to_output_stream
 int ScreenInterface::parse_config_parameter(char *key, char *value)
 { return 1; }
 
+char *ScreenInterface::get_config_value(char *key)
+{ return NULL; }
+
+char **ScreenInterface::get_config_option_names()
+{ return NULL; }
+
 void ScreenInterface::link_interface_to_story(struct z_story *story)
 { }
 

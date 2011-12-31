@@ -3,7 +3,7 @@
  *
  * This file is part of fizmo.
  *
- * Copyright (c) 2009-2010 Christoph Ender.
+ * Copyright (c) 2010-2011 Christoph Ender.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,15 +34,20 @@
 #define drilbo_jpeg_h_INCLUDED
 
 #include <stdbool.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <jpeglib.h>
+//#include <jpeglib.h>
 
 #include "drilbo.h"
 
+#define COLORSPACE_JCS_CMYK 0
+#define COLORSPACE_JCS_YCCK 1
+#define COLORSPACE_JCS_UNKNOWN 2
+#define COLORSPACE_JCS_RGB 3
+#define COLORSPACE_JCS_GRAYSCALE 4
+#define COLORSPACE_JCS_YCbCr 5
 
-z_image* read_zimage_from_jpeg(FILE *in);
-void write_zimage_to_jpeg(z_image *image, FILE *out, J_COLOR_SPACE color_space);
+z_image* read_zimage_from_jpeg(z_file *in);
+void write_zimage_to_jpeg(z_image *image, z_file *out, int color_space);
 
 
 #endif /* drilbo_jpeg_h_INCLUDED */

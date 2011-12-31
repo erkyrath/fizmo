@@ -36,6 +36,7 @@
 
 #include "z_ucs.h"
 #include "types.h"
+#include "filesys.h"
 
 
 size_t z_ucs_len(z_ucs *string)
@@ -269,7 +270,7 @@ z_ucs *dup_latin1_string_to_zucs_string(char *src)
 }
 
 
-z_ucs parse_utf8_char_from_file(FILE *in)
+z_ucs parse_utf8_char_from_file(z_file *in)
 {
   // FIXME: Fail on overlong UTF-8 characters.
   int current_char;
@@ -279,7 +280,7 @@ z_ucs parse_utf8_char_from_file(FILE *in)
   int cmp_value2;
   z_ucs result;
 
-  if ((current_char = fgetc(in)) == EOF)
+  if ((current_char = fsi->getchar(in)) == EOF)
     return UEOF;
 
   if ((current_char & 0x80) == 0)
@@ -307,7 +308,7 @@ z_ucs parse_utf8_char_from_file(FILE *in)
       // Found a sequence of length len.
       for (i=0; i<len-1; i++)
       {
-        if ((current_char = fgetc(in)) == EOF)
+        if ((current_char = fsi->getchar(in)) == EOF)
           return UEOF;
 
         result <<= 6;

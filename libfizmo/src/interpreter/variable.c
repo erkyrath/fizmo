@@ -33,8 +33,6 @@
 #ifndef variable_c_INCLUDED 
 #define variable_c_INCLUDED
 
-#include <stdio.h>
-
 #include "../tools/tracelog.h"
 #include "../tools/i18n.h"
 #include "fizmo.h"

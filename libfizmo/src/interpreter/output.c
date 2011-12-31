@@ -67,7 +67,6 @@ z_colour lower_window_background_colour;
 // The lower two values are initalized by the init in "fizmo.c".
 int16_t active_window_number;
 z_font current_font  = Z_FONT_NORMAL;
-//z_font previous_z_font;
 static int upper_window_height = 0;
 
 
@@ -331,8 +330,38 @@ static void process_set_colour_opcode(uint16_t op0, uint16_t op1, uint16_t op2)
   if (window_number == -1)
     window_number = active_window_number;
 
+  if (ver == 6)
+  {
+    if ( (new_foreground_colour < -1) || (new_foreground_colour > 12) )
+      return;
+
+    if ( (new_background_colour < -1) || (new_background_colour > 12) )
+      return;
+  }
+  else
+  {
+    if ( (new_foreground_colour < 0) || (new_foreground_colour > 9) )
+      return;
+
+    if ( (new_background_colour < 0) || (new_background_colour > 9) )
+      return;
+  }
+
+  if (new_foreground_colour == Z_COLOUR_CURRENT)
+    new_foreground_colour = current_foreground_colour;
+  else if (new_foreground_colour == Z_COLOUR_DEFAULT)
+    new_foreground_colour = default_foreground_colour;
+
+  if (new_background_colour == Z_COLOUR_CURRENT)
+    new_background_colour = current_background_colour;
+  else if (new_background_colour == Z_COLOUR_DEFAULT)
+    new_background_colour = default_background_colour;
+
   current_foreground_colour = new_foreground_colour;
   current_background_colour = new_background_colour;
+
+  TRACE_LOG("evaluated new foreground col: %d.\n", new_foreground_colour);
+  TRACE_LOG("evaluated new background col: %d.\n", new_background_colour);
 
   active_interface->set_colour(
       new_foreground_colour,
@@ -421,13 +450,11 @@ void opcode_set_font(void)
 
     active_interface->set_font(new_z_font);
     set_variable(z_res_var, (uint16_t)current_font);
-    //previous_z_font = current_font;
     current_font = new_z_font;
     TRACE_LOG("New font is: %d\n", current_font);
   }
   else
   {
-    //set_variable(z_res_var, (uint16_t)previous_z_font);
     set_variable(z_res_var, (uint16_t)current_font);
   }
 }

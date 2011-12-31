@@ -38,19 +38,23 @@
 #include "../tools/types.h"
 
 #define IFF_MODE_READ 0
-#define IFF_MODE_WRITE 1
+#define IFF_MODE_READ_SAVEGAME 1
+#define IFF_MODE_WRITE 2
+#define IFF_MODE_WRITE_SAVEGAME 3
 
-/*@null@*/ /*@dependent@*/ FILE *open_simple_iff_file(char *filename, int mode);
-int start_new_chunk(char *id, FILE *iff_file);
-int end_current_chunk(FILE *iff_file);
-int close_simple_iff_file(FILE *iff_file);
-int find_chunk(char *id, FILE *iff_file);
-int read_chunk_length(FILE *iff_file);
+bool detect_simple_iff_stream(z_file *iff_file);
+int init_empty_file_for_iff_write(z_file *file_to_init);
+z_file *open_simple_iff_file(char *filename, int mode);
+int start_new_chunk(char *id, z_file *iff_file);
+int end_current_chunk(z_file *iff_file);
+int close_simple_iff_file(z_file *iff_file);
+int find_chunk(char *id, z_file *iff_file);
+int read_chunk_length(z_file *iff_file);
 int get_last_chunk_length();
-int write_four_byte_number(uint32_t number, FILE *iff_file);
-uint32_t read_four_byte_number(FILE *iff_file);
-char *read_form_type(FILE *iff_file);
-bool is_form_type(FILE *iff_file, char* form_type);
+int write_four_byte_number(uint32_t number, z_file *iff_file);
+uint32_t read_four_byte_number(z_file *iff_file);
+char *read_form_type(z_file *iff_file);
+bool is_form_type(z_file *iff_file, char* form_type);
 
 #endif /* iff_h_INCLUDED */
 

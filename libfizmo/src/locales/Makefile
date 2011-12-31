@@ -17,7 +17,7 @@ all: libfizmo_locales.o
 
 
 libfizmo_locales.o: libfizmo_locales.c
-	$(CC) $(CFLAGS) -c libfizmo_locales.c
+	"$(CC)" $(CFLAGS) -c libfizmo_locales.c
 
 clean:
 	rm -f *.o

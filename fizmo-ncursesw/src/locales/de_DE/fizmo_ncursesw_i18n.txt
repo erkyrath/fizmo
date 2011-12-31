@@ -3,7 +3,7 @@ Hintergrundfarbe festlegen.
 Abstand zum rechten Rand festlegen.
 Abstand zum linken Rand festlegen.
 Ungültiger Konfigurationswert "\{0s}" für Option "\{1s}".
-Syntax: fizmo [optionen] [storyfile | quetzal-datei] [blorbfile]
+Syntax: fizmo-ncursesw [optionen] [storyfile | quetzal-datei] [blorbfile]
 Gültige Optionen sind:
 Lokalisierung für Interpretermeldungen setzen.
 Zufallsgenerator im berechenbaren Modus starten.
@@ -20,7 +20,7 @@ Hilfe anzeigen und beenden.
 Bold-Attribut für helle Vordergrundfarben.
 Blink-Attribut für helle Hintergrundfarben.
 Keine Farben verwenden.
-Verwendung von Farbe erzwingen.
+Farben aktivieren.
 Zur Zeit sind noch keine Story-Dateien registriert. Wenn Sie eine bestimmte\nGeschichte starten wollen, fügen Sie den Dateinamen an die Kommandozeile an\n(in der Art von "fizmo storydatei.z5"). Es ist auch möglich ein komplettes\nVerzeichnis zu durchsuchen, verwenden Sie dazu "fizmo -s verzeichnisname"\nund starten Sie dann "fizmo" erneut. Darüberhinaus existieren noch viele\nweitere Optionen Story-Dateien zu verwalten, die Manual Page oder ein Aufruf\nvon "fizmo -h" liefern weitere Informationen.
 Leertaste für nächste Seite
 b für letzte Seite
@@ -49,3 +49,7 @@ Lokalisierungsdaten-Suchpfad
 Dateiname, von dem Kommandos gelesen werden.
 X11-Inline-Grafik aktivieren.
 libdrilbo version \{0s}.
+Worttrennung deaktivieren.
+Dateiname für Transcript festlegen.
+Name der Datei zum Speichern der Benutzereingaben.
+Konnte „\{0s}“ nicht finden oder öffnen.

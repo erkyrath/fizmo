@@ -33,15 +33,16 @@
 #ifndef babel_h_INCLUDED
 #define babel_h_INCLUDED
 
-#ifndef DISABLE_LIBXML2
+#ifndef DISABLE_BABEL
 #include <libxml/tree.h>
 #endif
 
 #include "../tools/types.h"
+#include "../tools/unused.h"
 
 struct babel_doc_entry
 {
-#ifndef DISABLE_LIBXML2
+#ifndef DISABLE_BABEL
   xmlDocPtr babel_doc;
 #else
   void *babel_doc;
@@ -66,17 +67,26 @@ struct babel_story_info
   char *title;
   char *author;
   char *description;
+  char *language;
 };
 
 void free_babel_info(struct babel_info *babel);
 void free_babel_story_info(struct babel_story_info *b_info);
-struct babel_info *load_babel_info_from_blorb(FILE *infile, int length,
-    char *filename, struct stat *stat_buf);
 struct babel_info *load_babel_info();
 struct babel_story_info *get_babel_story_info(uint16_t release, char *serial,
     uint16_t checksum, struct babel_info *babel, bool babel_from_blorb);
 void store_babel_info_timestamps(struct babel_info *babel);
 bool babel_files_have_changed(struct babel_info *babel);
+bool babel_available();
+
+#ifndef DISABLE_BABEL
+struct babel_info *load_babel_info_from_blorb(z_file *infile, int length,
+    char *filename, time_t last_mod_timestamp);
+#else
+struct babel_info *load_babel_info_from_blorb(z_file *UNUSED(infile),
+    int UNUSED(length), char *UNUSED(filename),
+    time_t UNUSED(last_mod_timestamp));
+#endif
 
 #endif /* babel_h_INCLUDED */
 

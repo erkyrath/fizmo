@@ -64,6 +64,8 @@ struct z_screen_interface
   uint8_t (*get_total_width_in_pixels_of_text_sent_to_output_stream_3)();
 
   int (*parse_config_parameter)(char *key, char *value);
+  char* (*get_config_value)(char *key);
+  char** (*get_config_option_names)();
 
   // This function is called from the interpreter once the story has been
   // read into memory and variables like version etc habe been initialized.

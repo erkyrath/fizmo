@@ -75,7 +75,7 @@ z_ucs *z_ucs_cat_latin1(z_ucs *dst, char *src);
 int z_ucs_cmp_latin1(z_ucs *s1, char *s2);
 z_ucs *dup_latin1_string_to_zucs_string(char *src);
 
-z_ucs parse_utf8_char_from_file(FILE *fp);
+z_ucs parse_utf8_char_from_file(z_file *fileref);
 z_ucs utf8_char_to_zucs_char(char **src);
 char *utf8_string_to_zucs_string(z_ucs *dest, char *src, int max_dest_size);
 z_ucs *dup_utf8_string_to_zucs_string(char *src);

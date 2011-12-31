@@ -34,7 +34,7 @@ install-dev:: libsndifsdl.a
 	echo >>$(PKGFILE)
 	echo 'Name: libsndifsdl' >>$(PKGFILE)
 	echo 'Description: libsndifsdl' >>$(PKGFILE)
-	echo 'Version: 0.7.0-b2' >>$(PKGFILE)
+	echo 'Version: 0.7.0' >>$(PKGFILE)
 ifeq ($(SOUNDSDL_PKG_REQS),)
 	echo 'Requires: libfizmo >= 0.7' >>$(PKGFILE)
 else

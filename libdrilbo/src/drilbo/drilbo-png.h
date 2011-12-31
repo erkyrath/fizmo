@@ -3,7 +3,7 @@
  *
  * This file is part of fizmo.
  *
- * Copyright (c) 2009-2010 Christoph Ender.
+ * Copyright (c) 2010-2011 Christoph Ender.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,16 +33,13 @@
 #ifndef drilbo_png_h_INCLUDED
 #define drilbo_png_h_INCLUDED
 
-//#include <stdbool.h>
-#include <stdio.h>
-//#include <stdlib.h>
-//#include <pnglib.h>
+#include <tools/types.h>
 
 #include "drilbo.h"
 
 
-z_image* read_zimage_from_png(FILE *in);
-//void write_zimage_to_png(z_image *image, FILE *out);
+z_image* read_zimage_from_png(z_file *in);
+//void write_zimage_to_png(z_image *image, z_file *out);
 
 
 #endif /* drilbo_png_h_INCLUDED */

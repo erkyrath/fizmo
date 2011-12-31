@@ -1,0 +1,12 @@
+
+   Version 0.7.0
+ + 0.7.0 was finished at about Sun Sep 18 08:41:18 CEST 2011
+ + The "libcellif" interface has been developed out of fizmo's ncursesw
+   interface in version 0.6. It assumes that the screen is up of fixed-width
+   charachter cells -- like a standard terminal -- and translates all the
+   Z-Machine output operations into "goto-xy", "print" and similar
+   commands. That menas it's possible to implement a cell-based interface
+   without having to worry about window resizes or other Z-Machine related
+   concepts.
+ - The "fizmo-ncurses" interface relies on this library for output.
+

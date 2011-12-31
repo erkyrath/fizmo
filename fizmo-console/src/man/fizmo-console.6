@@ -1,0 +1,82 @@
+.TH FIZMO-CONSOLE 6 "7 September 2011" "0.7.0"
+.SH NAME
+fizmo-console
+- bare-bone console implementation of the fizmo Z-Maschine Interpreter.
+
+.SH SYNOPSIS
+.B fizmo-console
+[ options ]
+.I storyfile
+
+.SH DESCRIPTION
+.B fizmo-console
+is a frontend for the fizmo Z-Machine interpreter\[em]\[lq]\fBF\fPimzo
+\fBi\fPnterprets \fBZ\fP-\fBm\fPachine \fBo\fPpcodes\[rq]\[em]which uses
+only the basic console output and input methods. It will run most of the
+interactive fiction games aka text adventures written by Infocom or other
+games which are based on the Z-Machine\[em]currently all versions except
+version 6 are supported.
+
+.SH OPTIONS
+.TP
+.B -h, --help
+Show help message and exit.
+.TP
+.B -ll, --line-length
+Will set the line length for the current screen. This will enable word-wrapping
+using the defined screen size.
+.TP
+.B -dh, --disable-hyphenation
+Disable word hyphenation. Useful for languages other than the supported
+ones.
+
+.SH CREDITS
+.SS ITF \[em] The InfoTaskForce
+All the people who drew up the Z-Machine Specification, in alphabetical order:
+Chris Tham,
+David Beazley,
+George Janczuk,
+Graham Nelson,
+Mark Howell,
+Matthias Pfaller,
+Mike Threepoint,
+Paul David Doherty,
+Peter Lisle,
+Russell Hoare
+and
+Stefan Jokisch.
+See \fChttp://en.wikipedia.org/wiki/InfoTaskForce\fP for more information.
+.SS The Frotz authors
+When I really got stuck I peeked into the frotz source. Thanks to
+Stefan Jokisch,
+Galen Hazelwood
+and
+David Griffith.
+.SS People helping with bug fixes, extensions, packaging, translations and more
+in alphabetical order:
+Andrew Plotkin,
+David Leverton,
+Eric Forgeot,
+irb,
+Lewis Gentry,
+Michael Dunlap,
+Pattrick Matth\(:ai,
+Samuel Verschelde, 
+Zachary Kline
+and the people at MacPorts.
+
+
+.SH SEE ALSO
+.BR fizmo-ncursesw(6),
+.BR frotz(6),
+.BR xzip(6),
+.BR jzip(6),
+.BR inform(1)
+
+.SH AUTHOR
+Fizmo was written in 2005\[en]2011 by Christoph Ender.
+
+.SH BUGS
+Fizmo is in beta stage and will probably still have some bugs.
+If you stumble upon one, please send an e-mail to fizmo@spellbreaker.org.
+

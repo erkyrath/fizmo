@@ -1,11 +1,10 @@
-.TH FIZMO 6 "4 May 2011" "0.7.0-beta5"
+.TH FIZMO-NCURSESW 6 "7 September 2011" "0.7.0"
 .SH NAME
-fizmo
-- Z-Machine Interpreter
-- \[lq]\fBF\fPimzo \fBi\fPnterprets \fBZ\fP-\fBm\fPachine \fBo\fPpcodes\[rq]
+fizmo-ncursesw
+- wide-character-ncurses implementation of the fizmo Z-Machine Interpreter.
 
 .SH SYNOPSIS
-.B fizmo
+.B fizmo-ncursesw
 [ options ] [
 .I storyfile [ blorbfile ]
 |
@@ -15,12 +14,15 @@ fizmo
 ]
 
 .SH DESCRIPTION
-.B Fizmo
-is a Z-Machine interpreter, which means that it runs most of the interactive
-fiction games aka text adventures written by Infocom or other games which
-are based on the Z-Machine. Currently all versions except version 6 are
-supported. It supports sound via the SDL media library (see subsection
-\[lq]Sound Support\[rq]) and implements basic Blorb support.
+.B fizmo-ncursesw
+is a frontend for the fizmo Z-Machine interpreter\[em]\[lq]\fBF\fPimzo
+\fBi\fPnterprets \fBZ\fP-\fBm\fPachine \fBo\fPpcodes\[rq]\[em]based on the
+ncurses library, and supporting wide characters. It runs most
+of the interactive fiction games aka text adventures written by Infocom or
+other games which are based on the Z-Machine. Currently all versions
+except version 6 are supported. It also supports sound via the SDL media
+library\[em]see subsection \[lq]Sound Support\[rq]\[em]and implements basic
+Blorb support.
 .SS Starting a new game by providing a filename
 This is the most direct way to get a game running. Just give the filename
 of the story file at the end of the command line.
@@ -40,9 +42,9 @@ line, fizmo will use it's story file list to locate the story file the
 saved game originates from to directly restore the game.
 
 .SS Sound Support
-Fizmo supports sound via the SDL multimedia library which is available for
-most unix flavors and Windows. Sound files are either read from a blorb file,
-or, old-infocom-style-wise, from separate *.snd files which have to be
+fizmo-ncursesw supports sound via the SDL multimedia library which is available
+for most unix flavors and Windows. Sound files are either read from a blorb
+file, or, old-infocom-style-wise, from separate *.snd files which have to be
 stored in the same directory as the game file. At the moment, only AIFF sounds
 can be read from a blorb file.
 When the game requests a sound, fizmo uses the sound from the current blorb
@@ -55,8 +57,8 @@ and lowercase filenames are attempted. That means you can directly use the
 sounds from the IF-archive at \fC\[lq]/if-archive/infocom/media/sound\[rq]\fP.
 
 .SS Story-Metadata / IF Bibliography
-Fizmo is able to read metadata-files as defined in the \[lq]Treaty of
-Babel\[rq]. It will try to read the metadata from all files ending with
+fizmo-ncursesw is able to read metadata-files as defined in the \[lq]Treaty of
+Babel\[rq]. It will try to read the metadata from all files ending in
 \fC.iFiction\fP which are found in the \fC$HOME/.config/fizmo\fP directory.
 Fizmo will re-build the story list once the metadata files have been changed.
 For this purpose, the timestamps for the metadata-files are stored in the file
@@ -74,29 +76,30 @@ Set background color. Valid color names are \fIblack\fP, \fIred\fP,
 \fIgreen\fP, \fIyellow\fP, \fIblue\fP, \fImagenta\fP, \fIcyan\fP and
 \fIwhite\fP.
 .TP
-.B -bb, --blink-for-bright-background
-Use blink for bright background colors.
-.TP
-.B -bf, --bold-for-bright-foreground
-Use bold for bright foreground colors.
+.B -dh, --disable-hyphenation
+Disable word hyphenation. Useful for languages other than the supported
+ones.
 .TP
 .B -ds, --disable-sound
 Disable sound alltogether. May be useful when playing on remote machines.
 .TP
 .B -ec, --enable-colors
-Force using colors.
+Enable colors.
 .TP
 .B -f, --foreground-color \fI<color-name>\fP
 Set foreground color. Valid color names are \fIblack\fP, \fIred\fP,
 \fIgreen\fP, \fIyellow\fP, \fIblue\fP, \fImagenta\fP, \fIcyan\fP and
 \fIwhite\fP.
 .TP
+.B -fi, --start-file-input
+Start game with input from file.
+.TP
 .B -if, --input-file
-When the story starts, read input directly from a file.
+Filename to read commands from.
 .TP
 .B -l, --set-locale \fI<locale-code>\fP
 Set locale name for interpreter messages. Currently valid locale codes are
-\fIen_US\fP and \fIde_DE\fP.
+\fIen_US\fP, \fIde_DE\fP and \fIfr_FR\fP.
 .TP
 .B -lm, --left-margin \fI<width>\fP
 Set left margin width, requires a numeric argument.
@@ -104,16 +107,24 @@ Set left margin width, requires a numeric argument.
 .B -nc, --dont-use-colors
 Don't use colors.
 .TP
-.B -p, --predictable
+.B -nu, --dont-update-story-list
+Don't update story-list on startup. Useful in case you've got a large
+number of story files in your repository.
+.TP
+.B -nx, --disable-x11-graphics
+Disable X11 graphics.
+.TP
+.B -pr, --predictable
 Start with random generator in predictable mode.
 .TP
-.B -fp, --force-predictable
-Start with random generator in predictable mode. The random generator will
-ignore all seed commands and always deliver predictable number (which might
-make games unsolvable).
+.B -ra, --random
+Start with random generator in standard random mode.
 .TP
 .B -rc, --record-commands
 Activate recording of commands as soon as the game starts.
+.TP
+.B -rf, --record-filename
+Filename to record input to.
 .TP
 .B -rm, --right-margin \fI<width>\fP
 Set right margin width, requires a numeric argument.
@@ -132,24 +143,30 @@ be capable of 16-bit sound output).
 .B -st, --start-transcript
 Start game with scripting already enabled.
 .TP
+.B -sy, --sync-transcript
+When a transcript is active, write data directly into the file as soon
+as possible.
+.TP
 .B -t, --set-tandy-flag
 Sets the tandy flag, which emulates a game sold by the Tandy Corporation
 and slightly alters the game behaviour. See
 \fChttp://www.ifarchive.org/if-archive/infocom/info/tandy_bits.html\fP
 for detailed information on what the tandy flag does.
 .TP
+.B -tf, --transcript-filename
+Set transcript filename for the current session.
+.TP
+.B -u,  --update-story-list
+In case you have disabled automatic updates for your story list, this
+option will allow you to run the re-indexing manually.
+.TP
 .B -um, --umem
 Use UMem instead of CMem for saving.
 .TP
-.B -sy, --sync-transcript
-When a transcript is active, write data directly into the file as soon
-as possible.
-.TP
-.B -x, -enable-xterm-graphics
+.B -xi, -enable-x11-inline-graphics
 Enable XTerm graphics. This will make fizmo try to display graphics into
-an X11-XTerminal using Gtk 2.0 and Gdk-Pixbuf. Since this represents a
-rather ugly hack\[em]and may not work at all for some installations\[em]it is
-not enabled by default.
+a X-Terminal. Since this represents a rather ugly hack\[em]and may not
+work at all for some installations\[em]it is not enabled by default.
 .TP
 .B -xt, --enable-xterm-title
 Use the XTerminal title bar to display the game name.
@@ -163,6 +180,9 @@ Displays the list of available in-game commands.
 Displays general version about the interpreter and it's status, such as the
 version number, story release and serial number, stack, memory and random
 generator status.
+.TP
+.B /config
+Displays current configuration values.
 .TP
 .B /predictable
 Switches the random generator from \[lq]random\[rq] in \[lq]predictable\[rq]
@@ -231,26 +251,74 @@ lines options. For a detailed description of these options, see the
 line without any leading whitespace. Comments start with a '#' at the
 beginning of the line.
 
-\fC background-color = <color-name>
-\fC foreground-color = <color-name>
-\fC transscript-filename = <filename>
-\fC command-filename = <filename>
-\fC langauage = <language-code>
-\fC bold-for-bright-foreground = <any value means yes, empty no>
-\fC blink-for-bright-background = <any value means yes, empty no>
-\fC dont-use-colors = <any value means yes, empty no>
-\fC savegame-path = <directory-name>
-\fC enable-xterm-graphics = <any value means yes, empty no>
-\fC enable-xterm-title = <any value means yes, empty no>
-\fC left-margin = <number-of-columns>
-\fC right-margin = <number-of-columns>
-\fC dont-udpate-story-list = <any value means yes, empty no>
+background-color = <color-name>
+.br
+foreground-color = <color-name>
+.br
+transscript-filename = <filename>
+.br
+command-filename = <filename>
+.br
+i18n-search-path = <colon-separated-directory-names>
+.br
+locale = <language-code>
+.br
+savegame-path = <directory-name>
+.br
+random-mode = <random or predictable>
+.br
+save-text-history-paragraphs = <number of paragraphs to store in savegames>
+.br
+z-code-path = <colon-separated-directory-names>
+.br
+z-code-root-path = <colon-separated-directory-names>
+.br
+disable-sound = <no value or \[lq]true\[rq] means yes, otherwise no>
+.br
+quetzal-umem = <no value or \[lq]true\[rq] means yes, otherwise no>
+.br
+set-tandy-flag = <no value or \[lq]true\[rq] means yes, otherwise no>
+.br
+start-command-recording-when-story-starts = <no value or \[lq]true\[rq] means
+yes, otherwise no>
+.br
+start-file-input-when-story-starts = <no value or \[lq]true\[rq] means yes,
+otherwise no>
+.br
+start-script-when-story-starts = <no value or \[lq]true\[rq] means yes,
+otherwise no>
+.br
+disable-stream-2-hyphenation = <no value or \[lq]true\[rq] means yes, otherwise no>
+.br
+stream-2-line-width = <line-width>
+.br
+stream-2-left-margin = <margin-size>
+.br
+sync-transcript = <no value or \[lq]true\[rq] means yes, otherwise no>
+.br
+left-margin = <number-of-columns>
+.br
+right-margin = <number-of-columns>
+.br
+disable-hyphenation = <no value or \[lq]true\[rq] means yes, otherwise no>
+.br
+disable-color = <any value means yes, empty no>
+.br
+force-8bit-sound = <any value means yes, empty no>
+.br
+enable-xterm-title = <no value or \[lq]true\[rq] means yes, otherwise no>
+.br
+dont-udpate-story-list = <no value or \[lq]true\[rq] means yes, otherwise no>
+.br
+enable-xterm-graphics = <no value or \[lq]true\[rq] means yes, otherwise no>
+.br
+display-x11-inline-image = <no value or \[lq]true\[rq] means yes, otherwise no>
 
 .SH MISCELLANEOUS
 .SS Scrolling back
-You can use the \fCPageUp\fP and \fCPageDown\fP keys (some terminals require
-to hold down shift) anytime to review text which was scrolled above the
-current window border.
+You can use the \fCPageUp\fP and \fCPageDown\fP keys (some terminals may
+require holding down shift) anytime to review text which was scrolled above
+the current window border.
 .SS Refreshing the screen
 \fCCTRL-L\fP will redraw the current display.
 .SS Resizing the screen
@@ -304,8 +372,7 @@ Hearts, Shogun, Sorcerer, Spellbreaker, Stationfall and Zork Zero.
 
 .SH CREDITS
 .SS ITF \[em] The InfoTaskForce
-All the people who drew up the Z-Machine Specification. In alphabetical order
-(as far as I could find):
+All the people who drew up the Z-Machine Specification, in alphabetical order:
 Chris Tham,
 David Beazley,
 George Janczuk,
@@ -320,7 +387,7 @@ and
 Stefan Jokisch.
 See \fChttp://en.wikipedia.org/wiki/InfoTaskForce\fP for more information.
 .SS The Frotz authors
-When I really got stuck I peeked into the frotz source. Thanks to
+When I got stuck I peeked into the frotz source. Thanks to
 Stefan Jokisch,
 Galen Hazelwood
 and
@@ -328,8 +395,22 @@ David Griffith.
 .SS Mark Howell
 For the pix2gif code which is used in libdrilbo to parse the infocom .mg1
 image files.
+.SS People helping with bug fixes, extensions, packaging, translations and more
+in alphabetical order:
+Andrew Plotkin,
+David Leverton,
+Eric Forgeot,
+irb,
+Lewis Gentry,
+Michael Dunlap,
+Pattrick Matth\(:ai,
+Samuel Verschelde, 
+Zachary Kline
+and the people at MacPorts.
+
 
 .SH SEE ALSO
+.BR fizmo-console(6),
 .BR frotz(6),
 .BR xzip(6),
 .BR jzip(6),
@@ -339,7 +420,6 @@ image files.
 Fizmo was written in 2005\[en]2011 by Christoph Ender.
 
 .SH BUGS
-Fizmo is still in beta stage and I couldn't test all the games out there, so
-there will be some for sure. If you find them, please send an e-mail to
-fizmo@spellbreaker.org.
+Fizmo is in beta stage and will probably still have some bugs.
+If you stumble upon one, please send an e-mail to fizmo@spellbreaker.org.
 

@@ -11,7 +11,8 @@ ifneq ($(ENABLE_OPTIMIZATION),)
 override CFLAGS += -O2
 endif
 
-FIZMO_CFLAGS = $(shell pkg-config --cflags libfizmo)
+FIZMO_CFLAGS = $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config \
+ --cflags libfizmo)
 
 
 all: libdrilbo_locales.o
@@ -22,4 +23,6 @@ libdrilbo_locales.o: libdrilbo_locales.c
 
 clean:
 	rm -f *.o
+
+distclean: clean
 

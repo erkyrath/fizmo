@@ -63,11 +63,17 @@ static bool instatuswin = false;
 static int inputbuffer_size = 0;
 static glui32 *inputbuffer = NULL;
 
+static void glkint_get_screen_size(glui32 *, glui32 *);
+
 void glkint_open_interface()
 {
   mainwin = glk_window_open(NULL, 0, 0, wintype_TextBuffer, 1);
   glk_set_window(mainwin);
   instatuswin = false;
+
+  glui32 width, height;
+  glkint_get_screen_size( &width, &height);
+  fizmo_new_screen_size(width, height);
 }
 
 char *glkint_get_interface_name()
@@ -85,24 +91,34 @@ uint8_t glkint_return_0()
 uint8_t glkint_return_1()
 { return 1; }
 
+static void glkint_get_screen_size(glui32 *width, glui32 *height)
+{
+  if (statuswin) {
+    glk_window_get_size(statuswin, width, height);
+    return;
+  }
+  if (mainwin) {
+    glk_window_get_size(mainwin, width, height);
+    return;
+  }
+  /* Fallback values, for when no windows are open at all */
+  *width = 80;
+  *height = 24;
+  return;
+}
+
 uint8_t glkint_get_screen_height()
 { 
-  if (statuswin) {
-    glui32 width, height;
-    glk_window_get_size(statuswin, &width, &height);
-    return height;
-  }
-  return 24; /* Fall back if we don't have open windows */
+  glui32 width, height;
+  glkint_get_screen_size(&width, &height);
+  return height;
 }
 
 uint8_t glkint_get_screen_width()
 { 
-  if (statuswin) {
-    glui32 width, height;
-    glk_window_get_size(statuswin, &width, &height);
-    return width;
-  }
-  return 80; /* Fall back if we don't have open windows */
+  glui32 width, height;
+  glkint_get_screen_size(&width, &height);
+  return width;
 }
 
 z_colour glkint_get_default_foreground_colour()
@@ -215,6 +231,13 @@ int16_t glkint_interface_read_line(zscii *dest, uint16_t maximum_length,
     if (event.type == evtype_LineInput)
       break;
 
+    if (event.type == evtype_Arrange) {
+      glui32 width, height;
+      glkint_get_screen_size( &width, &height);
+      fizmo_new_screen_size(width, height);
+      continue;
+    }
+
     if (event.type == evtype_Timer) {
       timercount += 1;
       timed_routine_retval = interpret_from_call(verification_routine);
@@ -266,6 +289,13 @@ int glkint_interface_read_char(uint16_t tenth_seconds,
 
     if (event.type == evtype_CharInput)
       break;
+
+    if (event.type == evtype_Arrange) {
+      glui32 width, height;
+      glkint_get_screen_size( &width, &height);
+      fizmo_new_screen_size(width, height);
+      continue;
+    }
 
     if (event.type == evtype_Timer) {
       timercount += 1;

@@ -259,6 +259,7 @@ int16_t glkint_interface_read_line(zscii *dest, uint16_t maximum_length,
   }
 
   int count = event.val1;
+  count = glk_buffer_to_lower_case_uni(inputbuffer, inputbuffer_size, count);
   for (ix=0; ix<count; ix++) {
     zch = unicode_char_to_zscii_input_char(inputbuffer[ix]);
     dest[ix] = zch;

@@ -37,7 +37,7 @@
 #include <strings.h>
 
 #include "glk.h"
-#include "glkstart.h" /* This comes with the Glk library. */
+#include "iosglk_startup.h" /* This comes with the IosGlk library. */
 
 #include "glk_filesys_if.h"
 #include "glk_screen_if.h"

@@ -41,7 +41,7 @@
 
 #include "glk.h"
 //#include "glkint.h"
-#include "glkstart.h" /* This comes with the Glk library. */
+#include "iosglk_startup.h" /* This comes with the IosGlk library. */
 
 #include <interpreter/fizmo.h>
 #include <interpreter/text.h>

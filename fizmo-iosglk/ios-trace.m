@@ -1,5 +1,5 @@
 
-/* fizmo-iosglk.m
+/* ios-trace.m
  *
  * This file is part of fizmo.
  *
@@ -29,53 +29,56 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#import "GlkStream.h"
-
-#include "glk.h"
-#include "glk_interface.h"
-#include "glk_screen_if.h"
-#include "glk_blorb_if.h"
-#include "glk_filesys_if.h"
-#include "iosglk_startup.h" /* This comes with the IosGlk library. */
-
-#include <interpreter/fizmo.h>
-#include <interpreter/config.h>
 #include <tools/tracelog.h>
-#include <tools/unused.h>
+#include <tools/z_ucs.h>
 
-static char *init_err = NULL; /*### use this */
-static char *init_err2 = NULL; /*### use this */
+static BOOL trace_active = NO;
 
-static strid_t gamefilestream = nil;
-static NSString *gamepathname = nil;
-
-void iosglk_startup_code()
+void turn_on_trace(void)
 {
-	NSBundle *bundle = [NSBundle mainBundle];
-	gamepathname = [[bundle pathForResource:@"Game" ofType:@"z5"] retain]; // retain forever
-	gamefilestream = [[GlkStreamFile alloc] initWithMode:filemode_Read rock:1 unicode:NO textmode:NO dirname:@"." pathname:gamepathname]; // retain forever
-}
-
-void glk_main(void)
-{
-	z_file *story_stream;
-	
-	if (init_err) {
-		glkint_fatal_error_handler(init_err, NULL, init_err2, FALSE, 0);
+	if (trace_active) {
+		TRACE_LOG("Tracelog already active.\n");
 		return;
 	}
 	
-	set_configuration_value("savegame-path", NULL);
-	set_configuration_value("transcript-filename", "transcript.txt");
-	set_configuration_value("savegame-default-filename", "");
+	trace_active = YES;
+}
+
+void turn_off_trace(void)
+{
+	if (!trace_active) {
+		TRACE_LOG("Tracelog already deactivated.\n");
+		return;
+	}
 	
-	fizmo_register_filesys_interface(&glkint_filesys_interface);
-	fizmo_register_screen_interface(&glkint_screen_interface);
-	fizmo_register_blorb_interface(&glkint_blorb_interface);
+	trace_active = NO;
+}
+
+void _trace_log_ios(char *format, ...)
+{
+	char *buf = nil;
 	
-	glkint_open_interface();
-	story_stream = zfile_from_glk_strid(gamefilestream, "Game",
-										FILETYPE_DATA, FILEACCESS_READ);
-	fizmo_start(story_stream, NULL, NULL, -1, -1);
+	va_list args;
+	va_start(args, format);
+	vasprintf(&buf, format, args);
+	va_end(args);
+	
+	if (trace_active) {
+		NSLog(@"fizmo: %s", buf);
+	}
+	
+	free(buf);
+}
+
+void _trace_log_ios_z_ucs(z_ucs *output)
+{
+	if (trace_active) {
+		/* Turn the buffer into an NSString. We'll release this at the end of the function. 
+		 This is an endianness dependency; we're telling NSString that our array of 32-bit words in stored little-endian. (True for all iOS, as I write this.) */
+		int len = z_ucs_len(output);		
+		NSString *str = [[NSString alloc] initWithBytes:output length:len*sizeof(z_ucs) encoding:NSUTF32LittleEndianStringEncoding];
+		NSLog(@"fizmo: %@", str);
+		[str release];
+	}
 }
 

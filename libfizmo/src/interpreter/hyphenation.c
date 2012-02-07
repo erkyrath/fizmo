@@ -43,6 +43,7 @@
 #include "../tools/list.h"
 #include "../tools/i18n.h"
 #include "../tools/filesys.h"
+#include "../locales/libfizmo_locales.h"
 #include "config.h"
 #include "fizmo.h"
 #include "hyphenation.h"
@@ -70,7 +71,11 @@ static z_ucs input_char(z_file *in)
   if ((input = parse_utf8_char_from_file(in)) == UEOF)
   {
     TRACE_LOG("Premature end of file.\n");
-    exit(-1);
+    i18n_translate_and_exit(
+        libfizmo_module_name,
+        i18n_libfizmo_ERROR_WHILE_READING_FILE_P0S,
+        -1,
+        "<hyphenation>");
   }
 
   return (z_ucs)input;

@@ -165,7 +165,10 @@ static z_blorb_map *fizmo_blorb_init(z_file *blorb_file)
       blorb->type = Z_BLORB_TYPE_EXEC;
     else
       // Unknown resource.
-      exit(-1);
+      i18n_translate_and_exit(
+          libfizmo_module_name,
+          i18n_libfizmo_UNKNOWN_ERROR_CASE,
+          -1);
 
     blorb->resource_number = read_four_byte_number(result->blorb_file);
     blorb->offset = read_four_byte_number(result->blorb_file) + 8;

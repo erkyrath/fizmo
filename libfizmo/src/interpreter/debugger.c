@@ -195,7 +195,7 @@ void debugger()
 
   for(;;)
   {
-    sprintf(buffer, "\nPC: %lx\n", pc - z_mem);
+      sprintf(buffer, "\nPC: %lx\n", (long)(pc - z_mem));
     debugger_output(newsockfd, buffer);
     for (i=0; i<number_of_locals_active; i++)
     {

@@ -71,6 +71,7 @@
 #include "../tools/tracelog.h"
 #include "../tools/types.h"
 #include "../tools/z_ucs.h"
+#include "../tools/i18n.h"
 #include "../locales/libfizmo_locales.h"
 #include "history.h"
 #include "fizmo.h"

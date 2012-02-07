@@ -100,7 +100,9 @@ static bool dictionary_is_unsorted;
 static uint8_t *dictionary_start;
 
 z_ucs z_ucs_newline_string[] = { Z_UCS_NEWLINE, 0 };
+#ifndef DISABLE_PREFIX_COMMANDS
 static char fizmo_command_prefix_string[] = { FIZMO_COMMAND_PREFIX, '\0' };
+#endif /* DISABLE_PREFIX_COMMANDS */
 
 uint8_t alphabet_table_v1[] =
 { 

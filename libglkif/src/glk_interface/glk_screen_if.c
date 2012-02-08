@@ -177,6 +177,8 @@ int glkint_close_interface(z_ucs *error_message)
 { 
   if (error_message)
     glkint_fatal_error_handler(NULL, error_message, NULL, 0, 0);
+  else
+    glk_exit();
   return 0;
 }
 

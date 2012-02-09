@@ -648,6 +648,10 @@ static locale_module *get_locale_module(z_ucs *locale_name,
 static void i18n_exit(int exit_code, z_ucs *error_message)
 {
   char *output;
+  static z_ucs fallback_error[] = { 'u', 'n', 'k', 'n', 'o', 'w', 'n', ' ', 'i', '1', '8', 'n', ' ', 'e', 'r', 'r', 'o', 'r', 0 };
+
+  if (!error_message)
+    error_message = fallback_error;
 
   if (abort_function != NULL)
   {

@@ -69,6 +69,10 @@ void glk_main(void)
 	set_configuration_value("transcript-filename", "transcript.txt");
 	set_configuration_value("savegame-default-filename", "");
 	
+	NSString *approot = [NSBundle mainBundle].bundlePath;
+	NSString *locales = [approot stringByAppendingPathComponent:@"FizmoLocales"];
+	set_configuration_value("i18n-search-path", (char *)locales.UTF8String);
+
 	fizmo_register_filesys_interface(&glkint_filesys_interface);
 	fizmo_register_screen_interface(&glkint_screen_interface);
 	fizmo_register_blorb_interface(&glkint_blorb_interface);

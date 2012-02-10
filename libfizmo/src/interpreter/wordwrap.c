@@ -450,7 +450,8 @@ static void flush_input_buffer(WORDWRAP *wrapper, bool force_flush)
       // Output everything before *index and a newline after.
 
       buf2 = *index;
-      *index = Z_UCS_NEWLINE;
+      if (wrapper->add_newline_after_full_line)
+        *index = Z_UCS_NEWLINE;
       buf = *(index + 1);
       *(index + 1) = 0;
 
@@ -508,7 +509,8 @@ static void flush_input_buffer(WORDWRAP *wrapper, bool force_flush)
         index = input + wrapper->line_length;
 
       buf = *index;
-      *index = Z_UCS_NEWLINE;
+      if (wrapper->add_newline_after_full_line)
+        *index = Z_UCS_NEWLINE;
       buf2 = *(index+1);
       *(index+1) = 0;
 

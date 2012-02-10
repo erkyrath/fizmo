@@ -52,7 +52,7 @@
 #define DEFAULT_SAVEGAME_FILENAME "savegame.qut"
 
 #define MAXIMUM_SCRIPT_FILE_NAME_LENGTH 64
-#define DEFAULT_TRANSCRIPT_FILE_NAME "transscript.txt"
+#define DEFAULT_TRANSCRIPT_FILE_NAME "transcript.txt"
 #define DEFAULT_INPUT_COMMAND_FILE_NAME "input-script.txt"
 #define DEFAULT_RECORD_COMMAND_FILE_NAME "record.txt"
 

@@ -162,6 +162,9 @@ void init_streams()
     : DEFAULT_STREAM_2_LEFT_PADDING;
 
   stream_2_wrapper = wordwrap_new_wrapper(
+      (strcmp(get_configuration_value("disable-stream-2-wrap"),"true")==0
+       ? false
+       : true),
       stream2width,
       &stream_2_wrapped_output_destination,
       NULL,

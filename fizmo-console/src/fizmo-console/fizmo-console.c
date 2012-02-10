@@ -398,6 +398,7 @@ int main(int argc, char *argv[])
   if (line_length > 0)
   {
     output_wordwrapper = wordwrap_new_wrapper(
+        true,
         line_length,
         &z_ucs_output_wordwrap_destination,
         (void*)NULL,

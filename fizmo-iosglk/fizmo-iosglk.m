@@ -66,8 +66,10 @@ void glk_main(void)
 	}
 	
 	set_configuration_value("savegame-path", NULL);
-	set_configuration_value("transcript-filename", "transcript.txt");
+	set_configuration_value("transcript-filename", "transcript");
 	set_configuration_value("savegame-default-filename", "");
+	set_configuration_value("disable-stream-2-hyphenation", "true");
+	set_configuration_value("stream-2-left-margin", "0");
 	
 	NSString *approot = [NSBundle mainBundle].bundlePath;
 	NSString *locales = [approot stringByAppendingPathComponent:@"FizmoLocales"];

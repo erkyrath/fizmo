@@ -1021,6 +1021,7 @@ static void link_interface_to_story(struct z_story *story)
     z_windows[i]->buffering = ((ver == 6) || (i == 0)) ? true : false;
 
     z_windows[i]->wordwrapper = wordwrap_new_wrapper(
+        true,
         z_windows[i]->xsize-z_windows[i]->leftmargin-z_windows[i]->rightmargin,
         &z_ucs_output_window_target,
         (void*)(&z_windows[i]->window_number),
@@ -1033,6 +1034,7 @@ static void link_interface_to_story(struct z_story *story)
   active_z_window_id = 0;
 
   refresh_wordwrapper = wordwrap_new_wrapper(
+      true,
       z_windows[0]->xsize-z_windows[0]->leftmargin-z_windows[0]->rightmargin,
       &z_ucs_output_refresh_destination,
       NULL,

@@ -98,6 +98,7 @@ struct configuration_option configuration_options[] = {
   { "start-script-when-story-starts", NULL },
   { "disable-stream-2-hyphenation", NULL },
   { "sync-transcript", NULL },
+  { "disable-stream-2-wrap", NULL },
   { "dont-set-locale-from-config", NULL },
 
   // NULL terminates the option list.
@@ -421,6 +422,8 @@ int set_configuration_value(char *key, char* new_unexpanded_value)
           ||
           (strcmp(key, "sync-transcript") == 0)
           ||
+          (strcmp(key, "disable-stream-2-wrap") == 0)
+          ||
           (strcmp(key, "dont-set-locale-from-config") == 0)
           )
       {
@@ -572,6 +575,8 @@ char *get_configuration_value(char *key)
             (strcmp(key, "disable-stream-2-hyphenation") == 0)
             ||
             (strcmp(key, "sync-transcript") == 0)
+            ||
+            (strcmp(key, "disable-stream-2-wrap") == 0)
             ||
             (strcmp(key, "dont-set-locale-from-config") == 0)
            )

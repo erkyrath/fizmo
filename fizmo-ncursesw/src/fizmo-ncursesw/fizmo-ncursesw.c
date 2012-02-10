@@ -1943,6 +1943,7 @@ static char *select_story_from_menu()
   sigaction(SIGWINCH, &default_sigaction, NULL);
 
   infowin_output_wordwrapper = wordwrap_new_wrapper(
+      true,
       80,
       &infowin_z_ucs_output_wordwrap_destination,
       (void*)NULL,

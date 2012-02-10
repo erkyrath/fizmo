@@ -149,6 +149,71 @@ static z_file *glkint_openfile(char *filename, int filetype, int fileaccess)
   return result;
 }
 
+static z_file *glkint_prompt_for_file(char *filename, int filetype, int fileaccess)
+{
+  frefid_t fileref = NULL;
+  strid_t str = NULL;
+  glui32 usage, fmode;
+  z_file *result;
+
+  TRACE_LOG("prompt_for_file: %s\n", filename);
+
+  if (filetype == FILETYPE_SAVEGAME)
+  {
+    usage = fileusage_SavedGame | fileusage_BinaryMode;
+  }
+  else if (filetype == FILETYPE_TRANSCRIPT)
+  {
+    usage = fileusage_Transcript | fileusage_TextMode;
+  }
+  else if (filetype == FILETYPE_INPUTRECORD)
+  {
+    usage = fileusage_InputRecord | fileusage_TextMode;
+  }
+  else if (filetype == FILETYPE_DATA)
+  {
+    usage = fileusage_Data | fileusage_BinaryMode;
+  }
+  else if (filetype == FILETYPE_TEXT)
+  {
+    usage = fileusage_Data | fileusage_TextMode;
+  }
+  else
+    return NULL;
+
+  if (fileaccess == FILEACCESS_READ)
+    fmode = filemode_Read;
+  else if (fileaccess == FILEACCESS_WRITE)
+    fmode = filemode_Write;
+  else if (fileaccess == FILEACCESS_APPEND)
+    fmode = filemode_WriteAppend;
+  else
+    return NULL;
+
+  fileref = glk_fileref_create_by_name(usage, filename, 0);
+
+  if (!fileref)
+    return NULL;
+
+  TRACE_LOG("new open file: %s\n", filename);
+  str = glk_stream_open_file(fileref, fmode, 0);
+  /* Dispose of the fileref, whether the stream opened successfully
+   * or not. */
+  glk_fileref_destroy(fileref);
+
+  if (!str)
+  {
+    TRACE_LOG("Couldn't GLK-open: %s\n", filename);
+    return NULL;
+  }
+
+  if ((result = malloc(sizeof(z_file))) == NULL)
+    return NULL;
+
+  result = zfile_from_glk_strid(str, filename, filetype, fileaccess);
+  return result;
+}
+
 int glkint_closefile(z_file *file_to_close)
 {
   if (file_to_close == NULL)
@@ -492,7 +557,8 @@ struct z_filesys_interface glkint_filesys_interface =
   &glkint_close_dir,
   &glkint_read_dir,
   &glkint_make_dir,
-  &glkint_is_filename_directory
+  &glkint_is_filename_directory,
+  &glkint_prompt_for_file
 };
 
 #endif // glk_filesys_c_INCLUDED 

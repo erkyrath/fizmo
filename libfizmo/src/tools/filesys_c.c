@@ -319,7 +319,8 @@ struct z_filesys_interface z_filesys_interface_c =
   &close_dir_c,
   &read_dir_c,
   &make_dir_c,
-  &is_filename_directory_c
+  &is_filename_directory_c,
+  NULL /* prompt_for_file */
 };
 
 

@@ -194,6 +194,16 @@ static int ask_for_filename(char *filename_suggestion, z_file **result_file,
   char *filename_utf8;
   int i;
 
+  /* The prompt_for_file entry in fsi is optional. If it's not NULL, call
+     it now. */
+  if (fsi->prompt_for_file) {
+    *result_file = (fsi->prompt_for_file)(filename_suggestion, filetype_or_mode, fileaccess);
+    return 0;
+  }
+
+  /* There was no prompt_for_file, so the interpreter will have to ask for
+     a filename directly. */
+
   TRACE_LOG("last:\"");
   TRACE_LOG_Z_UCS(last_savegame_filename);
   TRACE_LOG("\"\n");

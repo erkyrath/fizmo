@@ -47,6 +47,7 @@ struct wordwrap_metadata
 
 typedef struct
 {
+  bool enable;
   int line_length;
   void (*wrapped_text_output_destination)(z_ucs *output, void *parameter);
   void *destination_parameter;
@@ -80,7 +81,7 @@ typedef struct
 } WORDWRAP;
 
 
-WORDWRAP *wordwrap_new_wrapper(size_t line_length,
+WORDWRAP *wordwrap_new_wrapper(bool enable, size_t line_length,
     void (*wrapped_text_output_destination)(z_ucs *output, void *parameter),
     void *destination_parameter, bool add_newline_after_full_line,
     int left_side_padding, bool flush_after_newline, bool enable_hyphenation);

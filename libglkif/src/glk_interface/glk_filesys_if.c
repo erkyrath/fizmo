@@ -190,7 +190,7 @@ static z_file *glkint_prompt_for_file(char *filename, int filetype, int fileacce
   else
     return NULL;
 
-  fileref = glk_fileref_create_by_name(usage, filename, 0);
+  fileref = glk_fileref_create_by_prompt(usage, fmode, 0);
 
   if (!fileref)
     return NULL;

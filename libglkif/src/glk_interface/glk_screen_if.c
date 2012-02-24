@@ -39,7 +39,7 @@
 #include <strings.h>
 
 #include "glk.h"
-#include "iosglk_startup.h" /* This comes with the IosGlk library. */
+#include "glkstart.h" /* This comes with the Glk library. */
 
 #include "glk_interface.h"
 

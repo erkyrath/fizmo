@@ -36,7 +36,7 @@
 #include "glk_screen_if.h"
 #include "glk_blorb_if.h"
 #include "glk_filesys_if.h"
-#include "iosglk_startup.h" /* This comes with the IosGlk library. */
+#include "glkstart.h" /* This comes with the Glk library. */
 
 #include <interpreter/fizmo.h>
 #include <interpreter/config.h>

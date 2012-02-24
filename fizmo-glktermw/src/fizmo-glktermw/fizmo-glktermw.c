@@ -113,7 +113,7 @@ void glk_main(void)
   }
 
   set_configuration_value("savegame-path", NULL);
-  set_configuration_value("transcript-filename", "transcript.txt");
+  /*set_configuration_value("transcript-filename", "transcript.txt");*/
   set_configuration_value("savegame-default-filename", "");
 
   fizmo_register_screen_interface(&glkint_screen_interface);

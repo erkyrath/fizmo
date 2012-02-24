@@ -548,40 +548,34 @@ static void stream_2_output(z_ucs *z_ucs_output)
       (stream_2_was_already_active == false)
       &&
       (stream_2_init_underway == false)
+      &&
+      (!fsi->prompt_for_file)
      )
   {
-    /* The prompt_for_file entry in fsi is optional. If it's not NULL, call
-       it now. */
-    if (fsi->prompt_for_file) {
-      stream_2 = (fsi->prompt_for_file)("transcript", FILETYPE_TRANSCRIPT, FILEACCESS_APPEND);
-      if (!stream_2) {
-        printf("### prompt_for_file failed ###\n");
-        /* The user cancelled out. We'll have to silently turn off stream 2.
-           Not the best option, but the best option I can see how to
-           do. */
-        z_mem[0x11] &= 0xfe;
-        return;
-      }
-      stream_2_was_already_active = true;
-      fsi->writechar('\n', stream_2);
-      wordwrap_output_left_padding(stream_2_wrapper);
-      fsi->writestring("---\n\n", stream_2);
-      wordwrap_output_left_padding(stream_2_wrapper);
-      if (strcmp(get_configuration_value("sync-transcript"), "true") == 0)
-        fsi->flushfile(stream_2);
-    }
-    else {
-      ask_for_stream2_filename();
-    }
+    ask_for_stream2_filename();
   }
 
   if (stream_2_init_underway == false)
   {
     if (stream_2 == NULL)
     {
-      TRACE_LOG("Opening script-file '%s' for writing.\n", stream_2_filename);
-      stream_2 = fsi->openfile(
-          stream_2_filename, FILETYPE_TRANSCRIPT, FILEACCESS_APPEND);
+      /* The prompt_for_file entry in fsi is optional. If it's not NULL, call
+         it now. */
+      if (fsi->prompt_for_file) {
+        stream_2 = (fsi->prompt_for_file)("transcript", FILETYPE_TRANSCRIPT, FILEACCESS_APPEND);
+        if (!stream_2) {
+          /* The user cancelled out. We'll have to silently turn off stream 2.
+             Not the best option, but the best option I can see how to
+             do. */
+          z_mem[0x11] &= 0xfe;
+          return;
+        }
+      }
+      else {
+        TRACE_LOG("Opening script-file '%s' for writing.\n", stream_2_filename);
+        stream_2 = fsi->openfile(
+            stream_2_filename, FILETYPE_TRANSCRIPT, FILEACCESS_APPEND);
+      }
       fsi->writechar('\n', stream_2);
       wordwrap_output_left_padding(stream_2_wrapper);
       fsi->writestring("---\n\n", stream_2);

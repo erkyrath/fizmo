@@ -3,7 +3,7 @@
  *
  * This file is part of fizmo.
  *
- * Copyright (c) 2009-2011 Christoph Ender.
+ * Copyright (c) 2009-2012 Christoph Ender.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -100,7 +100,10 @@ static bool dictionary_is_unsorted;
 static uint8_t *dictionary_start;
 
 z_ucs z_ucs_newline_string[] = { Z_UCS_NEWLINE, 0 };
+
+#ifndef DISABLE_PREFIX_COMMANDS
 static char fizmo_command_prefix_string[] = { FIZMO_COMMAND_PREFIX, '\0' };
+#endif // DISABLE_PREFIX_COMMANDS
 
 uint8_t alphabet_table_v1[] =
 { 
@@ -1174,21 +1177,21 @@ void display_status_line(void)
   if (active_interface->is_status_line_available() == false)
     return;
 
-  current_room_object = get_variable(0x10);
+  current_room_object = get_variable(0x10, false);
   
   if (current_room_object != 0)
     (void)zchar_to_z_ucs(
         z_ucs_output_buffer,
         Z_UCS_OUTPUT_BUFFER_SIZE,
-        (get_objects_property_table(get_variable(0x10))) + 1);
+        (get_objects_property_table(get_variable(0x10, false))) + 1);
   else
     *z_ucs_output_buffer = 0;
 
   active_interface->show_status(
       z_ucs_output_buffer,
       (int)active_z_story->score_mode,
-      get_variable(0x11),
-      get_variable(0x12));
+      get_variable(0x11, false),
+      get_variable(0x12, false));
 }
 
 
@@ -1347,6 +1350,8 @@ static bool process_interpreter_command()
 
 #else /* DISABLE_PREFIX_COMMANDS */
 
+#ifndef DISABLE_PREFIX_COMMANDS
+
 static bool process_interpreter_command()
 {
   z_ucs *prefixed_command;
@@ -1418,7 +1423,7 @@ static bool process_interpreter_command()
     (void)i18n_translate(
         libfizmo_module_name,
         i18n_libfizmo_LIBFIZMO_VERSION_P0S,
-        FIZMO_VERSION);
+        LIBFIZMO_VERSION);
     (void)streams_latin1_output("\n");
 
     if (active_sound_interface != NULL)
@@ -1644,7 +1649,8 @@ static bool process_interpreter_command()
   }
 }
 
-#endif /* DISABLE_PREFIX_COMMANDS */
+#endif // DISABLE_PREFIX_COMMANDS
+
 
 int save_and_quit_if_required(bool force_save)
 {
@@ -1996,12 +2002,12 @@ void opcode_read(void)
         if (input_length >= 0)
         /*@+usedef@*/
         {
-          set_variable(z_res_var, (zscii)10);
+          set_variable(z_res_var, (zscii)10, false);
           z_text_buffer[1] = (zscii)input_length;
         }
         else
         {
-          set_variable(z_res_var, 0);
+          set_variable(z_res_var, 0, false);
           z_text_buffer[1] = 0;
         }
       }
@@ -2030,7 +2036,7 @@ void opcode_read(void)
 
         TRACE_LOG("Resulting input length: %d.\n", input_length);
         z_text_buffer[1] = (zscii)input_length;
-        set_variable(z_res_var, Z_UCS_NEWLINE);
+        set_variable(z_res_var, Z_UCS_NEWLINE, false);
       }
 
 #ifndef DISABLE_COMMAND_HISTORY
@@ -2115,6 +2121,7 @@ void opcode_read(void)
             false);
       }
 
+#ifndef DISABLE_PREFIX_COMMANDS
       if (first_word_found == 0)
       {
         interpreter_command_found = process_interpreter_command();
@@ -2137,6 +2144,7 @@ void opcode_read(void)
             return;
         }
       }
+#endif // DISABLE_PREFIX_COMMANDS
 
       // In case no lexical analysis is required and we've found no interpreter
       // command, we can quite the loop.
@@ -2280,7 +2288,7 @@ void opcode_read_char(void)
     (void)streams_z_ucs_output_user_input(z_ucs_newline_string);
     */
 
-    set_variable(z_res_var, input_char);
+    set_variable(z_res_var, input_char, false);
 
     TRACE_LOG("Reading character via timed input done.\n");
   }
@@ -2327,7 +2335,7 @@ void opcode_read_char(void)
     (void)streams_z_ucs_output_user_input(buf);
     (void)streams_z_ucs_output_user_input(z_ucs_newline_string);
     */
-    set_variable(z_res_var, input_char);
+    set_variable(z_res_var, input_char, false);
     TRACE_LOG("Reading single character done.\n");
   }
 
@@ -2437,7 +2445,7 @@ void opcode_check_unicode(void)
   else
     result = 1;
 
-  set_variable(z_res_var, result);
+  set_variable(z_res_var, result, false);
 }
 
 #endif /* text_c_INCLUDED */

@@ -3,7 +3,7 @@
  *
  * This file is part of fizmo.
  *
- * Copyright (c) 2009-2011 Christoph Ender.
+ * Copyright (c) 2009-2012 Christoph Ender.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -70,6 +70,8 @@ extern int terminate_interpreter;
 
 #endif // zpu_c_INCLUDED
 
+void parse_opcode(uint8_t *z_instr, uint8_t *z_instr_form,
+    uint8_t *result_number_of_operands, uint8_t **instr_ptr);
 void interpret_from_address(uint32_t start_address);
 void interpret_resume();
 uint16_t interpret_from_call(uint32_t routine_address);

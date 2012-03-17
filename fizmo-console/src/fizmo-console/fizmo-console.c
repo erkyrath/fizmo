@@ -3,7 +3,7 @@
  *
  * This file is part of fizmo.
  *
- * Copyright (c) 2009-2011 Christoph Ender.
+ * Copyright (c) 2009-2012 Christoph Ender.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,7 +48,7 @@
 #include <tools/tracelog.h>
 
 static char* interface_name = "fizmo-console";
-static char* interface_version = "0.7.1";
+static char* interface_version = "0.7.2";
 int line_length = -1;
 bool disable_hyphenation = false;
 static WORDWRAP *output_wordwrapper;

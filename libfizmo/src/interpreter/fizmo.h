@@ -3,7 +3,7 @@
  *
  * This file is part of fizmo.
  *
- * Copyright (c) 2009-2011 Christoph Ender.
+ * Copyright (c) 2009-2012 Christoph Ender.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,8 @@
 #include "../blorb_interface/blorb_interface.h"
 #include "blockbuf.h"
 
-#define FIZMO_VERSION "0.7.1"
+#define FIZMO_VERSION "0.7.2"
+#define LIBFIZMO_VERSION "0.7.2"
 
 #define FIZMO_INTERPRETER_NUMBER 6
 /*

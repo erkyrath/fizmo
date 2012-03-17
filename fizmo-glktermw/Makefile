@@ -11,8 +11,8 @@ src/fizmo-glktermw/fizmo-glktermw::
 	cp src/fizmo-glktermw/fizmo-glktermw .
 
 install: src/fizmo-glktermw/fizmo-glktermw
-	mkdir -p $(bindir)
-	cp src/fizmo-glktermw/fizmo-glktermw $(bindir)
+	mkdir -p $(DESTDIR)$(bindir)
+	cp src/fizmo-glktermw/fizmo-glktermw $(DESTDIR)$(bindir)
 
 clean:
 	cd src/fizmo-glktermw ; make clean

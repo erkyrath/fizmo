@@ -4,7 +4,7 @@
 include config.mk
 
 ifeq ($(fizmo_build_prefix),)
-  fizmo_build_prefix="$(prefix)"
+  fizmo_build_prefix="$(DESTDIR)$(prefix)"
 endif
 PKG_DIR = $(fizmo_build_prefix)/lib/pkgconfig
 PKGFILE = $(PKG_DIR)/libsndifsdl.pc
@@ -34,7 +34,7 @@ install-dev:: libsndifsdl.a
 	echo >>$(PKGFILE)
 	echo 'Name: libsndifsdl' >>$(PKGFILE)
 	echo 'Description: libsndifsdl' >>$(PKGFILE)
-	echo 'Version: 0.7.1' >>$(PKGFILE)
+	echo 'Version: 0.7.2' >>$(PKGFILE)
 ifeq ($(SOUNDSDL_PKG_REQS),)
 	echo 'Requires: libfizmo >= 0.7' >>$(PKGFILE)
 else

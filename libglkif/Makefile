@@ -4,7 +4,7 @@
 include config.mk
 
 ifeq ($(fizmo_build_prefix),)
-  fizmo_build_prefix="$(prefix)"
+  fizmo_build_prefix="$(DESTDIR)$(prefix)"
 endif
 PKG_DIR = $(fizmo_build_prefix)/lib/pkgconfig
 PKGFILE = $(PKG_DIR)/libglkif.pc
@@ -34,7 +34,7 @@ install-dev:: libglkif.a
 	echo >>$(PKGFILE)
 	echo 'Name: libglkif' >>$(PKGFILE)
 	echo 'Description: libglkif' >>$(PKGFILE)
-	echo 'Version: 0.1.1' >>$(PKGFILE)
+	echo 'Version: 0.1.2' >>$(PKGFILE)
 	echo 'Requires: libfizmo >= 0.7 ' >>$(PKGFILE)
 	echo 'Requires.private:' >>$(PKGFILE)
 	echo 'Cflags: -I$(fizmo_build_prefix)/include/fizmo ' >>$(PKGFILE)
@@ -42,11 +42,11 @@ install-dev:: libglkif.a
 	echo >>$(PKGFILE)
 
 install-locales::
-	mkdir -p $(localedir)
+	mkdir -p $(DESTDIR)$(localedir)
 	for l in `cd src/locales ; ls -d ??_??`; \
 	do \
-	  mkdir -p $(localedir)/$$l; \
-	  cp src/locales/$$l/*.txt $(localedir)/$$l; \
+	  mkdir -p $(DESTDIR)$(localedir)/$$l; \
+	  cp src/locales/$$l/*.txt $(DESTDIR)$(localedir)/$$l; \
 	done
 
 clean::

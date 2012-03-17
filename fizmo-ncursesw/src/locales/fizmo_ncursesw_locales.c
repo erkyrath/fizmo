@@ -1,9 +1,9 @@
 
-/* libfizmo_locales.c
+/* fizmo_ncursesw_locales.c
  *
  * This file is part of fizmo.
  *
- * Copyright (c) 2009-2011 Christoph Ender.
+ * Copyright (c) 2009-2012 Christoph Ender.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,13 +30,13 @@
  */
 
 
-#ifndef libfizmo_locales_c_INCLUDED 
-#define libfizmo_locales_c_INCLUDED
+#ifndef fizmo_ncursesw_locales_c_INCLUDED
+#define fizmo_ncursesw_locales_c_INCLUDED
 
 #include <tools/types.h>
 
 z_ucs fizmo_ncursesw_module_name[] = {
   'f', 'i', 'z', 'm', 'o', '_', 'n', 'c', 'u', 'r', 's', 'e', 's', 'w', 0 };
 
-#endif /* libfizmo_locales_c_INCLUDED */
+#endif // fizmo_ncursesw_locales_c_INCLUDED
 

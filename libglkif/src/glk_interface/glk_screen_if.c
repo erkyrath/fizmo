@@ -3,7 +3,7 @@
  *
  * This file is part of fizmo.
  *
- * Copyright (c) 2011 Andrew Plotkin and Christoph Ender.
+ * Copyright (c) 2011-2012 Andrew Plotkin and Christoph Ender.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -54,7 +54,7 @@
 #include <tools/tracelog.h>
 
 static char* interface_name = "glk-screen";
-static char* interface_version = "0.1.1";
+static char* interface_version = "0.1.2";
 
 static winid_t mainwin = NULL;
 static winid_t statusline = NULL;

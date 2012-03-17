@@ -4,7 +4,7 @@
 include config.mk
 
 ifeq ($(fizmo_build_prefix),)
-  fizmo_build_prefix="$(prefix)"
+  fizmo_build_prefix="$(DESTDIR)$(prefix)"
 endif
 PKG_DIR = $(fizmo_build_prefix)/lib/pkgconfig
 PKGFILE = $(PKG_DIR)/libdrilbo.pc
@@ -33,7 +33,7 @@ install-dev:: libdrilbo.a
 	echo >>"$(PKGFILE)"
 	echo 'Name: libdrilbo' >>"$(PKGFILE)"
 	echo 'Description: libdrilbo' >>"$(PKGFILE)"
-	echo 'Version: 0.2.1' >>"$(PKGFILE)"
+	echo 'Version: 0.2.2' >>"$(PKGFILE)"
 ifeq ($(DRILBO_PKG_REQS),)
 	echo 'Requires: libfizmo >= 0.7 ' >>"$(PKGFILE)"
 else
@@ -45,11 +45,11 @@ endif
 	echo >>"$(PKGFILE)"
 
 install-locales::
-	mkdir -p "$(localedir)"
+	mkdir -p "$(DESTDIR)$(localedir)"
 	for l in `cd src/locales ; ls -d ??_??`; \
 	do \
-	  mkdir -p "$(localedir)/$$l" ; \
-	  cp src/locales/$$l/*.txt "$(localedir)/$$l" ; \
+	  mkdir -p "$(DESTDIR)$(localedir)/$$l" ; \
+	  cp src/locales/$$l/*.txt "$(DESTDIR)$(localedir)/$$l" ; \
 	done
 
 clean::

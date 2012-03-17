@@ -1,4 +1,12 @@
 
+   Version 0.1.2
+ + 0.1.2 was finished at about Fri Mar 9 21:01:12 CET 2012.
+ - Merged zarf's GLK changes into "glk_screen_if.c". The new version 0.1.2
+   fixes screen size detection, timed input and adds lowering of the input
+   line.
+ - Fixed missing $(DESTDIR) variable -- should already have been present
+   since version 0.1.1.
+
    Version 0.1.1
  + 0.1.1 was finished at about Sun Nov 6 22:44:17 CET 2011.
  - Fixed missing "override" statments for CFLAGS in Makefiles.

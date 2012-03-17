@@ -3,7 +3,7 @@
  *
  * This file is part of fizmo.
  *
- * Copyright (c) 2009-2011 Christoph Ender.
+ * Copyright (c) 2009-2012 Christoph Ender.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -393,7 +393,7 @@ z_ucs utf8_char_to_zucs_char(char **src)
 
 char *utf8_string_to_zucs_string(z_ucs *dest, char *src, int max_dest_size)
 {
-  if (max_dest_size < 2)
+  if (max_dest_size < 1)
     return NULL;
 
   while (*src != (char)0)

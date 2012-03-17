@@ -112,7 +112,7 @@ static void unwind_stack_frame(int16_t result_value, bool force_discard_result)
     TRACE_LOG("Storing routine call result %x in variable code %x.\n",
         result_value, last_result_var);
 
-    set_variable(last_result_var, (uint16_t)result_value);
+    set_variable(last_result_var, (uint16_t)result_value, false);
   }
 }
 
@@ -155,7 +155,7 @@ void call_routine(
     TRACE_LOG("Target address is 0, returning false(0).\n");
 
     if (discard_result == 0)
-      set_variable(result_variable_number, 0);
+      set_variable(result_variable_number, 0, false);
     return;
   }
 
@@ -280,7 +280,7 @@ void opcode_ret_popped(void)
 {
   TRACE_LOG("Opcode: RET_POPPED.\n");
 
-  return_from_routine((int16_t)get_variable(0));
+  return_from_routine((int16_t)get_variable(0, false));
 }
 
 
@@ -371,7 +371,7 @@ void opcode_throw(void)
   while (number_of_stack_frames > dest_stack_frame)
     unwind_stack_frame(0, true);
 
-  set_variable(last_result_var, op[0]);
+  set_variable(last_result_var, op[0], false);
 }
 
 
@@ -379,7 +379,7 @@ void opcode_catch(void)
 {
   TRACE_LOG("Opcode: CATCH.\n");
   read_z_result_variable();
-  set_variable(z_res_var, (uint16_t)number_of_stack_frames);
+  set_variable(z_res_var, (uint16_t)number_of_stack_frames, false);
 }
 
 

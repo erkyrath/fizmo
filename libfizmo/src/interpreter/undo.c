@@ -51,6 +51,7 @@ struct undo_frame
   int z_stack_size;
   int stack_words_from_active_routine;
   uint8_t number_of_locals_active;
+  uint8_t number_of_locals_from_function_call;
 };
 
 
@@ -132,6 +133,8 @@ void opcode_save_undo(void)
           = stack_words_from_active_routine;
         new_undo_frame->number_of_locals_active
           = number_of_locals_active;
+        new_undo_frame->number_of_locals_from_function_call
+          = number_of_locals_from_function_call;
 
         undo_frames[undo_index++] = new_undo_frame;
 
@@ -141,7 +144,7 @@ void opcode_save_undo(void)
   }
 
   read_z_result_variable();
-  set_variable(z_res_var, (uint16_t)result);
+  set_variable(z_res_var, (uint16_t)result, false);
 }
 
 void opcode_restore_undo(void)
@@ -171,6 +174,8 @@ void opcode_restore_undo(void)
       = frame_to_restore->stack_words_from_active_routine;
     number_of_locals_active
       = frame_to_restore->number_of_locals_active;
+    number_of_locals_from_function_call
+      = frame_to_restore->number_of_locals_from_function_call;
     local_variable_storage_index
       = z_stack_index
       - stack_words_from_active_routine
@@ -201,7 +206,7 @@ void opcode_restore_undo(void)
   }
 
   read_z_result_variable();
-  set_variable(z_res_var, (uint16_t)result);
+  set_variable(z_res_var, (uint16_t)result, false);
 }
 
 

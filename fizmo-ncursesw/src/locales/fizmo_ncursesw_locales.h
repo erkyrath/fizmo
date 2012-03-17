@@ -1,5 +1,5 @@
 
-/* libfizmo_locales.h
+/* fizmo_ncursesw_locales.h
  *
  * This file is part of fizmo.
  *
@@ -30,7 +30,7 @@
  */
 
 
-#ifndef fizmo_ncursesw_locales_h_INCLUDED 
+#ifndef fizmo_ncursesw_locales_h_INCLUDED
 #define fizmo_ncursesw_locales_h_INCLUDED
 
 #define i18n_ncursesw_SET_FOREGROUND_COLOR 0
@@ -91,5 +91,5 @@
 
 extern z_ucs fizmo_ncursesw_module_name[];
 
-#endif /* fizmo_ncursesw_locales_h_INCLUDED */
+#endif // fizmo_ncursesw_locales_h_INCLUDED
 

@@ -393,7 +393,7 @@ z_ucs utf8_char_to_zucs_char(char **src)
 
 char *utf8_string_to_zucs_string(z_ucs *dest, char *src, int max_dest_size)
 {
-  if (max_dest_size < 2)
+  if (max_dest_size < 1)
     return NULL;
 
   while (*src != (char)0)

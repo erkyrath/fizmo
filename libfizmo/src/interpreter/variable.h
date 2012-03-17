@@ -40,8 +40,9 @@
 extern uint8_t number_of_locals_active;
 #endif /* variable_c_INCLUDED */
 
-void set_variable(uint8_t variable_number, uint16_t data);
-uint16_t get_variable(uint8_t variable_number);
+void set_variable(uint8_t variable_number, uint16_t data,
+    bool keep_stack_index);
+uint16_t get_variable(uint8_t variable_number, bool keep_stack_index);
 void opcode_pull(void);
 void opcode_push(void);
 void opcode_push_user_stack(void);

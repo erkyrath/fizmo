@@ -304,6 +304,8 @@ static struct z_story *load_z_story(z_file *story_stream, z_file *blorb_stream)
   }
 
   result->high_memory_end = result->memory + story_size - 1;
+  TRACE_LOG("High memory end: %x.\n",
+      result->high_memory_end - result->memory);
 
   //result->memory[0x1e] = 1;
   //result->memory[0x1f] = 2;
@@ -311,11 +313,17 @@ static struct z_story *load_z_story(z_file *story_stream, z_file *blorb_stream)
   result->static_memory = result->memory + load_word(result->memory + 0xe);
 
   result->dynamic_memory_end = result->static_memory - 1;
+  TRACE_LOG("Dynamic memory end: %x\n",
+      result->dynamic_memory_end - result->memory);
 
   result->static_memory_end
     = result->memory + (story_size > 0xffff ? 0xffff : story_size);
+  TRACE_LOG("Static memory end: %x\n",
+      result->static_memory_end - result->memory);
 
   result->high_memory = result->memory + load_word(result->memory + 0x4);
+  TRACE_LOG("High memory: %x\n",
+      result->high_memory - result->memory);
 
   result->global_variables = result->memory + load_word(result->memory + 0xc);
 

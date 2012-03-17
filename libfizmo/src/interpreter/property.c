@@ -682,7 +682,7 @@ void opcode_get_prop(void)
         i18n_libfizmo_OBJECT_NUMBER_0_IS_NOT_VALID);
     streams_latin1_output("\n");
 
-    set_variable(z_res_var, 0);
+    set_variable(z_res_var, 0, false);
     return;
   }
 
@@ -701,7 +701,7 @@ void opcode_get_prop(void)
         (long int)ver);
     streams_latin1_output("\n");
 
-    set_variable(z_res_var, 0);
+    set_variable(z_res_var, 0, false);
     return;
   }
 
@@ -718,7 +718,7 @@ void opcode_get_prop(void)
         i18n_libfizmo_PROPERTY_NUMBER_0_IS_NOT_VALID);
     streams_latin1_output("\n");
 
-    set_variable(z_res_var, 0);
+    set_variable(z_res_var, 0, false);
     return;
   }
 
@@ -737,7 +737,7 @@ void opcode_get_prop(void)
         (long int)ver);
     streams_latin1_output("\n");
 
-    set_variable(z_res_var, 0);
+    set_variable(z_res_var, 0, false);
     return;
   }
 #endif // STRICT_Z
@@ -745,14 +745,14 @@ void opcode_get_prop(void)
   // Verify if the object has the requested property.
   if (get_object_property(op[0], op[1]) != NULL)
   {
-    set_variable(z_res_var, get_property_value(op[0], op[1]));
+    set_variable(z_res_var, get_property_value(op[0], op[1]), false);
   }
   else
   {
     TRACE_LOG("Property %d not found, returning default value %d.\n",
         op[1],
         get_default_property_value(op[1]));
-    set_variable(z_res_var, get_default_property_value(op[1]));
+    set_variable(z_res_var, get_default_property_value(op[1]), false);
   }
 }
 
@@ -855,7 +855,7 @@ void opcode_get_prop_addr(void)
         i18n_libfizmo_OBJECT_NUMBER_0_IS_NOT_VALID);
     streams_latin1_output("\n");
 
-    set_variable(z_res_var, 0);
+    set_variable(z_res_var, 0, false);
     return;
   }
 
@@ -874,7 +874,7 @@ void opcode_get_prop_addr(void)
         (long int)ver);
     streams_latin1_output("\n");
 
-    set_variable(z_res_var, 0);
+    set_variable(z_res_var, 0, false);
     return;
   }
 
@@ -891,7 +891,7 @@ void opcode_get_prop_addr(void)
         i18n_libfizmo_PROPERTY_NUMBER_0_IS_NOT_VALID);
     streams_latin1_output("\n");
 
-    set_variable(z_res_var, 0);
+    set_variable(z_res_var, 0, false);
     return;
   }
 
@@ -910,7 +910,7 @@ void opcode_get_prop_addr(void)
         (long int)ver);
     streams_latin1_output("\n");
 
-    set_variable(z_res_var, 0);
+    set_variable(z_res_var, 0, false);
     return;
   }
 #endif // STRICT_Z
@@ -918,7 +918,7 @@ void opcode_get_prop_addr(void)
   property_address = get_object_property(op[0], op[1]);
 
   if (property_address == NULL)
-    set_variable(z_res_var, 0);
+    set_variable(z_res_var, 0, false);
   else
   {
     if ( (ver >= 4) && ((*property_address & 0x80) != 0) )
@@ -927,7 +927,7 @@ void opcode_get_prop_addr(void)
       property_address += 1;
     TRACE_LOG("Returning %lx.\n",
       (long unsigned int)(property_address - z_mem));
-    set_variable(z_res_var, (uint16_t)(property_address - z_mem));
+    set_variable(z_res_var, (uint16_t)(property_address - z_mem), false);
   }
 }
 
@@ -959,7 +959,7 @@ void opcode_get_prop_len(void)
     TRACE_LOG("Setting variable with code %d to %d.\n", z_res_var, result);
   }
 
-  set_variable(z_res_var, result);
+  set_variable(z_res_var, result, false);
 }
 
 
@@ -1030,13 +1030,13 @@ void opcode_get_next_prop(void)
     if (property_index == NULL)
     {
       TRACE_LOG("Empty property list, returning 0.\n");
-      set_variable(z_res_var, 0);
+      set_variable(z_res_var, 0, false);
     }
     else
     {
       TRACE_LOG("First property of object %d is %d.\n",
           op[0], *property_index & 0x1f);
-      set_variable(z_res_var, *property_index & 0x1f);
+      set_variable(z_res_var, *property_index & 0x1f, false);
     }
   }
   else
@@ -1044,7 +1044,7 @@ void opcode_get_next_prop(void)
     property_index = get_object_property(op[0], op[1]);
     if (property_index == NULL)
     {
-      set_variable(z_res_var, 0);
+      set_variable(z_res_var, 0, false);
     }
     else
     {
@@ -1053,13 +1053,13 @@ void opcode_get_next_prop(void)
       if (property_index == NULL)
       {
         TRACE_LOG("No more properties in object %d, returning 0.\n", op[0]);
-        set_variable(z_res_var, 0);
+        set_variable(z_res_var, 0, false);
       }
       else
       {
         TRACE_LOG("Returning %d od resulting property number.\n",
             *property_index & 0x1f);
-        set_variable(z_res_var, *property_index & 0x1f);
+        set_variable(z_res_var, *property_index & 0x1f, false);
       }
     }
   }

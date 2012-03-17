@@ -33,7 +33,7 @@
 #ifndef cellscreen_h_INCLUDED
 #define cellscreen_h_INCLUDED
 
-#define LIBCELLINTERFACE_VERSION "0.7.1"
+#define LIBCELLINTERFACE_VERSION "0.7.2"
 
 #include "../screen_interface/screen_cell_interface.h"
 

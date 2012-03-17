@@ -598,7 +598,7 @@ void opcode_get_sibling(void)
         i18n_libfizmo_OBJECT_NUMBER_0_IS_NOT_VALID);
     streams_latin1_output("\n");
 
-    set_variable(z_res_var, 0);
+    set_variable(z_res_var, 0, false);
     evaluate_branch(0);
     return;
   }
@@ -618,7 +618,7 @@ void opcode_get_sibling(void)
         (long int)ver);
     streams_latin1_output("\n");
 
-    set_variable(z_res_var, 0);
+    set_variable(z_res_var, 0, false);
     evaluate_branch(0);
     return;
   }
@@ -629,7 +629,7 @@ void opcode_get_sibling(void)
   TRACE_LOG("Checking if sibling of object %d (which is %d) is not 0.\n",
       op[0], sibling_number);
 
-  set_variable(z_res_var, sibling_number);
+  set_variable(z_res_var, sibling_number, false);
   evaluate_branch(sibling_number != 0 ? (uint8_t)1 : (uint8_t)0);
 }
 
@@ -656,7 +656,7 @@ void opcode_get_child(void)
         i18n_libfizmo_OBJECT_NUMBER_0_IS_NOT_VALID);
     streams_latin1_output("\n");
 
-    set_variable(z_res_var, 0);
+    set_variable(z_res_var, 0, false);
     evaluate_branch(0);
     return;
   }
@@ -676,7 +676,7 @@ void opcode_get_child(void)
         (long int)ver);
     streams_latin1_output("\n");
 
-    set_variable(z_res_var, 0);
+    set_variable(z_res_var, 0, false);
     evaluate_branch(0);
     return;
   }
@@ -687,7 +687,7 @@ void opcode_get_child(void)
   TRACE_LOG("Checking if child of object %d (which is %d) is not 0.\n",
       op[0], child_number);
 
-  set_variable(z_res_var, child_number);
+  set_variable(z_res_var, child_number, false);
   evaluate_branch(child_number != 0 ? (uint8_t)1 : (uint8_t)0);
 }
 
@@ -714,7 +714,7 @@ void opcode_get_parent(void)
         i18n_libfizmo_OBJECT_NUMBER_0_IS_NOT_VALID);
     streams_latin1_output("\n");
 
-    set_variable(z_res_var, 0);
+    set_variable(z_res_var, 0, false);
     return;
   }
 
@@ -733,7 +733,7 @@ void opcode_get_parent(void)
         (long int)ver);
     streams_latin1_output("\n");
 
-    set_variable(z_res_var, 0);
+    set_variable(z_res_var, 0, false);
     return;
   }
 #endif // STRICT_Z
@@ -743,7 +743,7 @@ void opcode_get_parent(void)
   TRACE_LOG("Checking if parent of object %d (which is %d) is not 0.\n",
       op[0], parent_number);
 
-  set_variable(z_res_var, parent_number);
+  set_variable(z_res_var, parent_number, false);
 }
 
 

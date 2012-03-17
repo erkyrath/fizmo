@@ -140,6 +140,20 @@ uint16_t z_stack_pull_word()
 }
 
 
+// The "z_stack_peek_word" function will return the topmost stack entry
+// without altering the stack contents. In case the stack is empty, it
+// will quit via a call to "i18n_translate_and_exit".
+uint16_t z_stack_peek_word()
+{
+  if (z_stack_index == z_stack)
+    i18n_translate_and_exit(
+        libfizmo_module_name,
+        i18n_libfizmo_CANNOT_PULL_FROM_EMPTY_STACK,
+        -1);
+
+  return *(z_stack_index - 1);
+}
+
 
 // This function is used by the restart-opcode and the save-game
 // functionality. It simply decreases the stack by a number of words

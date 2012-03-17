@@ -388,7 +388,7 @@ static int _store_save_or_restore_result(uint16_t result_code)
   else
   {
     read_z_result_variable();
-    set_variable(z_res_var, result_code);
+    set_variable(z_res_var, result_code, false);
   }
 
   return result_code;
@@ -1016,6 +1016,7 @@ int restore_game_from_stream(uint16_t address, uint16_t length,
   uint8_t last_stack_frame_nof_locals = 0;
   uint16_t current_stack_frame_nof_functions_stack_words = 0;
   uint16_t last_stack_frame_nof_functions_stack_words = 0;
+  uint8_t flags2;
   int i;
 #ifndef DISABLE_OUTPUT_HISTORY
   z_ucs history_buffer[HISTORY_BUFFER_INPUT_SIZE];
@@ -1527,12 +1528,18 @@ int restore_game_from_stream(uint16_t address, uint16_t length,
   // restored_story_mem has been filled via dynamix_index above so inhibit
   // warning is okay.
 
+  // As with restart, the transcription and fixed font bits survive.
+
+  flags2 = z_mem[0x11] & 0x3;
   /*@-compdef@*/
   memcpy(
       z_mem + address,
       restored_story_mem,
       length);
   /*@+compdef@*/
+
+  z_mem[0x11] &= 0xfc;
+  z_mem[0x11] |= flags2;
 
   free(restored_story_mem);
 

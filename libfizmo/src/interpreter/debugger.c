@@ -190,12 +190,22 @@ void debugger()
 {
   int n, i;
   fd_set input_set;
+  uint8_t dbg_z_instr;
+  uint8_t dbg_z_instr_form;
+  uint8_t dbg_number_of_operands;
+  uint8_t *dbg_pc = pc;
 
   debugger_output(newsockfd, "\nEntering debugger.\n");
 
   for(;;)
   {
-    sprintf(buffer, "\nPC: %lx\n", pc - z_mem);
+    parse_opcode(
+        &dbg_z_instr,
+        &dbg_z_instr_form,
+        &dbg_number_of_operands,
+        &dbg_pc);
+    sprintf(buffer, "\n: %6lx: %d %d %d\n", pc - z_mem,
+        dbg_z_instr, dbg_z_instr_form, dbg_number_of_operands);
     debugger_output(newsockfd, buffer);
     for (i=0; i<number_of_locals_active; i++)
     {
@@ -241,6 +251,8 @@ void debugger()
     {
       debugger_output(newsockfd, "Valid commands:\n");
       debugger_output(newsockfd, " - stack:       Dump stack contents.\n");
+      debugger_output(newsockfd, 
+          " - story:       Print story file information.\n");
       debugger_output(newsockfd, " - exit, quit:  Leave debugger.\n");
     }
     else if (strcmp(buffer, "stack") == 0)
@@ -263,6 +275,29 @@ void debugger()
         i++;
       }
       debugger_output(newsockfd, "\n");
+    }
+    else if (strcmp(buffer, "story") == 0)
+    {
+      sprintf(buffer, "Z-Story version: %d.\n", active_z_story->version);
+      debugger_output(newsockfd, buffer);
+      sprintf(buffer, "Release code: %d.\n", active_z_story->release_code);
+      debugger_output(newsockfd, buffer);
+      sprintf(buffer, "Serial code: %s.\n", active_z_story->serial_code);
+      debugger_output(newsockfd, buffer);
+      sprintf(buffer, "Checksum: %d.\n", active_z_story->checksum);
+      debugger_output(newsockfd, buffer);
+      sprintf(buffer, "Dynamic memory end: $%lx.\n",
+          active_z_story->dynamic_memory_end - z_mem);
+      debugger_output(newsockfd, buffer);
+      sprintf(buffer, "Static memory end: $%lx.\n",
+          active_z_story->static_memory_end - z_mem);
+      debugger_output(newsockfd, buffer);
+      sprintf(buffer, "High memory: $%lx.\n",
+          active_z_story->high_memory - z_mem);
+      debugger_output(newsockfd, buffer);
+      sprintf(buffer, "High memory end: $%lx.\n",
+          active_z_story->high_memory_end - z_mem);
+      debugger_output(newsockfd, buffer);
     }
     else
     {

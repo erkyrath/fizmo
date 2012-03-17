@@ -421,7 +421,7 @@ void opcode_set_font(void)
       )
      )
   {
-    set_variable(z_res_var, 0);
+    set_variable(z_res_var, 0, false);
     return;
   }
 
@@ -449,13 +449,13 @@ void opcode_set_font(void)
     }
 
     active_interface->set_font(new_z_font);
-    set_variable(z_res_var, (uint16_t)current_font);
+    set_variable(z_res_var, (uint16_t)current_font, false);
     current_font = new_z_font;
     TRACE_LOG("New font is: %d\n", current_font);
   }
   else
   {
-    set_variable(z_res_var, (uint16_t)current_font);
+    set_variable(z_res_var, (uint16_t)current_font, false);
   }
 }
 

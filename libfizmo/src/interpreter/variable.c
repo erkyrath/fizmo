@@ -46,20 +46,29 @@
 uint8_t number_of_locals_active;
 
 
-void set_variable(uint8_t variable_number, uint16_t data)
+void set_variable(uint8_t variable_number, uint16_t data,
+    bool keep_stack_index)
 {
 
   if (variable_number == 0)
   {
     if (stack_words_from_active_routine == MAXIMUM_STACK_ENTRIES_PER_ROUTINE)
       i18n_translate_and_exit(
-          libfizmo_module_name,
-          i18n_libfizmo_MAXIMUM_NUMBER_OF_STACK_ENTRIES_PER_ROUTINE_P0D_EXCEEDED,
-          -1,
-          (long int)MAXIMUM_STACK_ENTRIES_PER_ROUTINE);
+         libfizmo_module_name,
+         i18n_libfizmo_MAXIMUM_NUMBER_OF_STACK_ENTRIES_PER_ROUTINE_P0D_EXCEEDED,
+         -1,
+         (long int)MAXIMUM_STACK_ENTRIES_PER_ROUTINE);
 
-    z_stack_push_word(data);
-    stack_words_from_active_routine++;
+    if (bool_equal(keep_stack_index, true))
+    {
+      z_stack_pull_word();
+      z_stack_push_word(data);
+    }
+    else
+    {
+      z_stack_push_word(data);
+      stack_words_from_active_routine++;
+    }
   }
   else if (variable_number < 0x10)
   {
@@ -87,7 +96,7 @@ void set_variable(uint8_t variable_number, uint16_t data)
 }
 
 
-uint16_t get_variable(uint8_t variable_number)
+uint16_t get_variable(uint8_t variable_number, bool keep_stack_index)
 {
   uint16_t result;
 
@@ -98,13 +107,19 @@ uint16_t get_variable(uint8_t variable_number)
       if (bool_equal(skip_active_routines_stack_check_warning, false))
         i18n_translate_and_exit(
             libfizmo_module_name,
-            i18n_libfizmo_NOT_ENOUGH_STACK_WORDS_FROM_LOCAL_ROUTINE_ON_STACK, -1);
+            i18n_libfizmo_NOT_ENOUGH_STACK_WORDS_FROM_LOCAL_ROUTINE_ON_STACK,
+            -1);
       else
         return 0;
     }
 
-    result = z_stack_pull_word();
-    stack_words_from_active_routine--;
+    if (bool_equal(keep_stack_index, true))
+      result = z_stack_peek_word();
+    else
+    {
+      result = z_stack_pull_word();
+      stack_words_from_active_routine--;
+    }
     return result;
   }
   else if (variable_number < 0x10)
@@ -173,11 +188,9 @@ void opcode_pull(void)
   }
 
   if (ver == 6)
-    set_variable(z_res_var, value);
+    set_variable(z_res_var, value, true);
   else
-    set_variable(
-        op[0],
-        /*@-usedef@*/ value /*@-usedef@*/ );
+    set_variable(op[0], value, true);
 
 }
 
@@ -223,58 +236,30 @@ void opcode_push_user_stack(void)
 }
 
 
-void opcode_loadb(void)
-{
-  uint8_t *address = z_mem + op[0] + op[1];
-
-  TRACE_LOG("Opcode: LOADB.\n");
-
-  read_z_result_variable();
-
-  if (address > active_z_story->static_memory_end)
-  {
-    TRACE_LOG("Trying to loadb from %x which is above static memory.",
-        op[0] + op[1]);
-    set_variable(z_res_var, 0);
-  }
-  else
-  {
-    TRACE_LOG("Loading %x at %x[%x] = %x to var %x.\n",
-        *address,
-        op[0],
-        op[1],
-        op[0] + op[1],
-        z_res_var);
-    set_variable(z_res_var, *address);
-  }
-}
-
-
 void opcode_store(void)
 {
   TRACE_LOG("Opcode: STORE.\n");
   TRACE_LOG("Writing %x to variable %x.\n", op[1], op[0]);
 
-  set_variable(op[0], op[1]);
+  set_variable(op[0], op[1], true);
 }
 
 
 void opcode_storew(void)
 {
-  uint8_t *address = z_mem + op[0] + op[1]*2;
+  uint8_t *address = z_mem + (uint16_t)(op[0] + ((int16_t)op[1])*2);
 
   TRACE_LOG("Opcode: STOREW.\n");
 
   if (address > active_z_story->dynamic_memory_end)
   {
-    TRACE_LOG("Trying to storew to %x which is above dynamic memory.",
-        op[0] + op[1]*2);
+    TRACE_LOG("Trying to storew to %x which is above dynamic memory.\n",
+        address);
   }
   else
   {
-    TRACE_LOG("Storing %x at %x + %x*2 = %x.\n",
-        op[2], op[0], op[1], op[0]+op[1]*2);
-    store_word(z_mem + op[0] + op[1]*2, op[2]);
+    TRACE_LOG("Storing %x to %x.\n", op[2], address);
+    store_word(z_mem + (uint16_t)(op[0] + ((int16_t)op[1])*2), op[2]);
   }
 }
 
@@ -282,7 +267,7 @@ void opcode_storew(void)
 void opcode_loadw(void)
 {
   uint16_t value;
-  uint8_t *address = z_mem + op[0] + op[1]*2;
+  uint8_t *address = z_mem + (uint16_t)(op[0] + ((int16_t)op[1])*2);
 
   TRACE_LOG("Opcode: LOADW.\n");
 
@@ -291,15 +276,57 @@ void opcode_loadw(void)
   if (address > active_z_story->static_memory_end)
   {
     TRACE_LOG("ERROR: Trying to loadw from %x which is above static memory.\n",
-        op[0] + op[1]*2);
-    set_variable(z_res_var, 0);
+        address);
+    set_variable(z_res_var, 0, false);
   }
   else
   {
     value = load_word(address);
-    TRACE_LOG("Loading %x at %x + %x*2 = %x to var %x.\n",
-        value, op[0], op[1], op[0]+op[1]*2, z_res_var);
-    set_variable(z_res_var, value);
+    TRACE_LOG("Loading %x from %x var %x.\n", value, address, z_res_var);
+    set_variable(z_res_var, value, false);
+  }
+}
+
+
+void opcode_storeb(void)
+{
+  uint8_t *address = z_mem + (uint16_t)(op[0] + ((int16_t)op[1]));
+
+  TRACE_LOG("Opcode: STOREB.\n");
+
+  if (address > active_z_story->dynamic_memory_end)
+  {
+    TRACE_LOG("Trying to storeb to %x which is above dynamic memory.", address);
+  }
+  else
+  {
+    TRACE_LOG("Storing %x to %x.\n", op[2], address);
+    *(z_mem + (uint16_t)(op[0] + (int16_t)op[1])) = op[2];
+  }
+}
+
+
+void opcode_loadb(void)
+{
+  uint8_t *address = z_mem + (uint16_t)(op[0] + (int16_t)op[1]);
+
+  TRACE_LOG("Opcode: LOADB.\n");
+
+  read_z_result_variable();
+
+  if (address > active_z_story->static_memory_end)
+  {
+    TRACE_LOG("Static memory end: %x.\n", active_z_story->static_memory_end);
+    TRACE_LOG("Trying to loadb from %x which is above static memory.\n",
+        address);
+    set_variable(z_res_var, 0, false);
+  }
+  else
+  {
+    TRACE_LOG("Loading from %x to var %x.\n",
+        *address,
+        z_res_var);
+    set_variable(z_res_var, *address, false);
   }
 }
 
@@ -309,31 +336,10 @@ void opcode_inc(void)
   int16_t value;
   
   TRACE_LOG("Opcode: INC.\n");
-  value = (int16_t)get_variable(op[0]);
+  value = (int16_t)get_variable(op[0], false);
   TRACE_LOG("Incrementing variable %d from %d to %d.\n", op[0], value, value+1);
 
-  set_variable(op[0], (uint16_t)(value + 1));
-}
-
-
-void opcode_storeb(void)
-{
-  uint8_t *address = z_mem + op[0] + op[1];
-
-  TRACE_LOG("Opcode: STOREB.\n");
-
-  if (address > active_z_story->dynamic_memory_end)
-  {
-    TRACE_LOG("Trying to storeb to %x which is above dynamic memory.",
-        op[0] + op[1]);
-  }
-  else
-  {
-    TRACE_LOG("Storing $%x at $%x + $%x = %x.\n",
-        op[2], op[0], op[1], op[0]+op[1]);
-
-    *(z_mem + op[0] + op[1]) = op[2];
-  }
+  set_variable(op[0], (uint16_t)(value + 1), false);
 }
 
 
@@ -342,11 +348,11 @@ void opcode_dec(void)
   int16_t value;
   
   TRACE_LOG("Opcode: DEC.\n");
-  value = (int16_t)get_variable(op[0]);
+  value = (int16_t)get_variable(op[0], false);
   TRACE_LOG("Decrementing variable %d from %d to %d.\n",
       op[0], value, value-1);
 
-  set_variable(op[0], (uint16_t)(value - 1));
+  set_variable(op[0], (uint16_t)(value - 1), false);
 }
 
 
@@ -359,7 +365,7 @@ void opcode_load(void)
   TRACE_LOG("Loading variable with code %d to variable with code %d.\n",
       op[0], z_res_var);
 
-  set_variable(z_res_var, get_variable(op[0]));
+  set_variable(z_res_var, get_variable(op[0], true), false);
 }
 
 

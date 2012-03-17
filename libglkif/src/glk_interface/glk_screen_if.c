@@ -46,6 +46,7 @@
 #include <interpreter/fizmo.h>
 #include <interpreter/text.h>
 #include <interpreter/streams.h>
+#include <interpreter/zpu.h>
 #include <tools/unused.h>
 #include <tools/types.h>
 #include <tools/i18n.h>
@@ -53,7 +54,7 @@
 #include <tools/tracelog.h>
 
 static char* interface_name = "glk-screen";
-static char* interface_version = "0.1.1";
+static char* interface_version = "0.1.2";
 
 static winid_t mainwin = NULL;
 static winid_t statusline = NULL;
@@ -62,11 +63,17 @@ static bool instatuswin = false;
 static int inputbuffer_size = 0;
 static glui32 *inputbuffer = NULL;
 
+static void glkint_get_screen_size(glui32 *, glui32 *);
+
 void glkint_open_interface()
 {
   mainwin = glk_window_open(NULL, 0, 0, wintype_TextBuffer, 1);
   glk_set_window(mainwin);
   instatuswin = false;
+
+  glui32 width, height;
+  glkint_get_screen_size( &width, &height);
+  fizmo_new_screen_size(width, height);
 }
 
 char *glkint_get_interface_name()
@@ -84,14 +91,34 @@ uint8_t glkint_return_0()
 uint8_t glkint_return_1()
 { return 1; }
 
+static void glkint_get_screen_size(glui32 *width, glui32 *height)
+{
+  if (statuswin) {
+    glk_window_get_size(statuswin, width, height);
+    return;
+  }
+  if (mainwin) {
+    glk_window_get_size(mainwin, width, height);
+    return;
+  }
+  /* Fallback values, for when no windows are open at all */
+  *width = 80;
+  *height = 24;
+  return;
+}
+
 uint8_t glkint_get_screen_height()
 { 
-  return 24; //###
+  glui32 width, height;
+  glkint_get_screen_size(&width, &height);
+  return height;
 }
 
 uint8_t glkint_get_screen_width()
 { 
-  return 80; //###
+  glui32 width, height;
+  glkint_get_screen_size(&width, &height);
+  return width;
 }
 
 z_colour glkint_get_default_foreground_colour()
@@ -163,8 +190,8 @@ void glkint_interface_output_z_ucs(z_ucs *z_ucs_output)
 }
 
 int16_t glkint_interface_read_line(zscii *dest, uint16_t maximum_length,
-    uint16_t UNUSED(tenth_seconds), uint32_t UNUSED(verification_routine),
-    uint8_t preloaded_input, int *UNUSED(tenth_seconds_elapsed),
+    uint16_t tenth_seconds, uint32_t verification_routine,
+    uint8_t preloaded_input, int *tenth_seconds_elapsed,
     bool UNUSED(disable_command_history), bool UNUSED(return_on_escape))
 {
   int ix;
@@ -185,20 +212,54 @@ int16_t glkint_interface_read_line(zscii *dest, uint16_t maximum_length,
   //input_buffer[i] = 0;
 
   event_t event;
+  int timercount = 0;
+  int timed_routine_retval;
   winid_t win = (instatuswin ? statuswin : mainwin);
 
   if (win) {
-    //### use timeout params
     glk_request_line_event_uni(win, inputbuffer, maximum_length,
         preloaded_input);
   }
+
+  if (tenth_seconds) {
+    glk_request_timer_events(tenth_seconds * 100);
+  }
+
   while (true) {
     glk_select(&event);
+
     if (event.type == evtype_LineInput)
       break;
+
+    if (event.type == evtype_Arrange) {
+      glui32 width, height;
+      glkint_get_screen_size( &width, &height);
+      fizmo_new_screen_size(width, height);
+      continue;
+    }
+
+    if (event.type == evtype_Timer) {
+      timercount += 1;
+      timed_routine_retval = interpret_from_call(verification_routine);
+      if (timed_routine_retval) {
+        glk_request_timer_events(0);
+        if (tenth_seconds_elapsed)
+          *tenth_seconds_elapsed = (timercount * tenth_seconds);
+
+        if (win) {
+          glk_cancel_line_event(win, &event);
+        }
+        else {
+          event.val1 = 0;
+        }
+
+        break;
+      }
+    }
   }
 
   int count = event.val1;
+  count = glk_buffer_to_lower_case_uni(inputbuffer, inputbuffer_size, count);
   for (ix=0; ix<count; ix++) {
     zch = unicode_char_to_zscii_input_char(inputbuffer[ix]);
     dest[ix] = zch;
@@ -208,21 +269,49 @@ int16_t glkint_interface_read_line(zscii *dest, uint16_t maximum_length,
 }
 
 
-int glkint_interface_read_char(uint16_t UNUSED(tenth_seconds),
-    uint32_t UNUSED(verification_routine), int *UNUSED(tenth_seconds_elapsed))
+int glkint_interface_read_char(uint16_t tenth_seconds,
+    uint32_t verification_routine, int *tenth_seconds_elapsed)
 {
   event_t event;
+  int timercount = 0;
+  int timed_routine_retval;
   winid_t win = (instatuswin ? statuswin : mainwin);
 
   if (win) {
-    //### use the timeout params
     glk_request_char_event_uni(win);
+  }
+
+  if (tenth_seconds) {
+    glk_request_timer_events(tenth_seconds * 100);
   }
 
   while (true) {
     glk_select(&event);
+
     if (event.type == evtype_CharInput)
       break;
+
+    if (event.type == evtype_Arrange) {
+      glui32 width, height;
+      glkint_get_screen_size( &width, &height);
+      fizmo_new_screen_size(width, height);
+      continue;
+    }
+
+    if (event.type == evtype_Timer) {
+      timercount += 1;
+      timed_routine_retval = interpret_from_call(verification_routine);
+      if (timed_routine_retval) {
+        glk_request_timer_events(0);
+        if (tenth_seconds_elapsed)
+          *tenth_seconds_elapsed = (timercount * tenth_seconds);
+        return 0;
+      }
+    }
+  }
+
+  if (tenth_seconds) {
+    glk_request_timer_events(0);
   }
 
   glui32 ch = event.val1;

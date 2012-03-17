@@ -100,10 +100,10 @@ static bool hyphenation_enabled = true;
 static bool using_colors = false;
 static bool color_disabled = false;
 static bool disable_more_prompt = false;
-static z_ucs *ncursesw_if_more_prompt;
-static z_ucs *ncursesw_if_score_string;
-static z_ucs *ncursesw_if_turns_string;
-static int ncursesw_if_right_status_min_size;
+static z_ucs *libcellif_more_prompt;
+static z_ucs *libcellif_score_string;
+static z_ucs *libcellif_turns_string;
+static int libcellif_right_status_min_size;
 static int active_z_window_id = -1;
 static z_colour current_output_foreground_colour = -3;
 static z_colour current_output_background_colour = -3;
@@ -442,7 +442,7 @@ void z_ucs_output_window_target(z_ucs *z_ucs_output,
                )
               wordwrap_flush_output(z_windows[i]->wordwrapper);
 
-          screen_cell_interface->z_ucs_output(ncursesw_if_more_prompt);
+          screen_cell_interface->z_ucs_output(libcellif_more_prompt);
           screen_cell_interface->update_screen();
           refresh_cursor(window_number);
 
@@ -1048,39 +1048,39 @@ static void link_interface_to_story(struct z_story *story)
         default_foreground_colour, default_background_colour);
   screen_cell_interface->clear_area(1, 1, screen_width, screen_height);
 
-  ncursesw_if_more_prompt
+  libcellif_more_prompt
     = i18n_translate_to_string(
         libcellif_module_name,
         i18n_libcellif_MORE_PROMPT);
 
-  len = z_ucs_len(ncursesw_if_more_prompt);
+  len = z_ucs_len(libcellif_more_prompt);
 
-  ncursesw_if_more_prompt
-    = (z_ucs*)fizmo_realloc(ncursesw_if_more_prompt, sizeof(z_ucs) * (len + 3));
+  libcellif_more_prompt
+    = (z_ucs*)fizmo_realloc(libcellif_more_prompt, sizeof(z_ucs) * (len + 3));
 
   memmove(
-      ncursesw_if_more_prompt + 1,
-      ncursesw_if_more_prompt,
+      libcellif_more_prompt + 1,
+      libcellif_more_prompt,
       len * sizeof(z_ucs));
 
-  ncursesw_if_more_prompt[0] = '[';
-  ncursesw_if_more_prompt[len+1] = ']';
-  ncursesw_if_more_prompt[len+2] = 0;
+  libcellif_more_prompt[0] = '[';
+  libcellif_more_prompt[len+1] = ']';
+  libcellif_more_prompt[len+2] = 0;
 
-  ncursesw_if_score_string =
+  libcellif_score_string =
     i18n_translate_to_string(
         libcellif_module_name,
         i18n_libcellif_SCORE);
 
-  ncursesw_if_turns_string
+  libcellif_turns_string
     = i18n_translate_to_string(
         libcellif_module_name,
         i18n_libcellif_TURNS);
 
   //  -> "Score: x  Turns: x ",
-  ncursesw_if_right_status_min_size
-    = z_ucs_len(ncursesw_if_score_string)
-    + z_ucs_len(ncursesw_if_turns_string)
+  libcellif_right_status_min_size
+    = z_ucs_len(libcellif_score_string)
+    + z_ucs_len(libcellif_turns_string)
     + 9; // 5 Spaces, 2 colons, 2 digits.
 
   refresh_cursor(active_z_window_id);
@@ -2792,7 +2792,7 @@ static void show_status(z_ucs *room_description, int status_line_mode,
 {
   int desc_len = z_ucs_len(room_description);
   int score_length, turn_length, rightside_length, room_desc_space;
-  z_ucs rightside_buf_zucs[ncursesw_if_right_status_min_size + 12];
+  z_ucs rightside_buf_zucs[libcellif_right_status_min_size + 12];
   z_ucs buf = 0;
   z_ucs *ptr;
   char latin1_buf[8];
@@ -2822,7 +2822,7 @@ static void show_status(z_ucs *room_description, int status_line_mode,
       turn_length = number_length(parameter2);
 
       rightside_length
-        = ncursesw_if_right_status_min_size - 2 + score_length + turn_length;
+        = libcellif_right_status_min_size - 2 + score_length + turn_length;
 
       room_desc_space
         = z_windows[statusline_window_id]->xsize - rightside_length - 3;
@@ -2841,10 +2841,10 @@ static void show_status(z_ucs *room_description, int status_line_mode,
         = z_windows[statusline_window_id]->xsize - rightside_length + 1;
       refresh_cursor(statusline_window_id);
 
-      ptr = z_ucs_cpy(rightside_buf_zucs, ncursesw_if_score_string);
+      ptr = z_ucs_cpy(rightside_buf_zucs, libcellif_score_string);
       sprintf(latin1_buf, ": %d  ", parameter1);
       ptr = z_ucs_cat_latin1(ptr, latin1_buf);
-      ptr = z_ucs_cat(ptr, ncursesw_if_turns_string);
+      ptr = z_ucs_cat(ptr, libcellif_turns_string);
       sprintf(latin1_buf, ": %d", parameter2);
       ptr = z_ucs_cat_latin1(ptr, latin1_buf);
 

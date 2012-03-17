@@ -98,12 +98,12 @@ void opcode_scan_table(void)
 
   if (bool_equal(entry_found, true))
   {
-    set_variable(z_res_var, index);
+    set_variable(z_res_var, index, false);
     evaluate_branch(1);
   }
   else
   {
-    set_variable(z_res_var, 0);
+    set_variable(z_res_var, 0, false);
     evaluate_branch(0);
   }
 }

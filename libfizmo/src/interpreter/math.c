@@ -60,7 +60,7 @@ void opcode_and(void)
   TRACE_LOG("Opcode: AND.\n");
   read_z_result_variable();
   TRACE_LOG("ANDing %x and %x to %x.\n", op[0], op[1], op[0] & op[1]);
-  set_variable(z_res_var, op[0] & op[1]);
+  set_variable(z_res_var, op[0] & op[1], false);
 }
 
 
@@ -69,7 +69,8 @@ void opcode_add(void)
   TRACE_LOG("Opcode: ADD.\n");
   read_z_result_variable();
   TRACE_LOG("Adding %d and %d.\n", (int16_t)op[0], (int16_t)op[1]);
-  set_variable(z_res_var, (uint16_t)(((int16_t)op[0]) + ((int16_t) op[1])));
+  set_variable(z_res_var, (uint16_t)(((int16_t)op[0]) + ((int16_t) op[1])),
+      false);
 }
 
 
@@ -82,7 +83,8 @@ void opcode_sub(void)
   // pointer appears as an argument. Thus "@sub sp sp" subtracts the
   // second-from-top stack item from the topmost stack item.
   TRACE_LOG("Subtracting %x from %x.\n", (int16_t)op[0], (int16_t)op[1]);
-  set_variable(z_res_var, (uint16_t)(((int16_t)op[0]) - ((int16_t)op[1])));
+  set_variable(z_res_var, (uint16_t)(((int16_t)op[0]) - ((int16_t)op[1])),
+      false);
 }
 
 
@@ -149,13 +151,13 @@ void opcode_inc_chk(void)
   // reference to the stack pointer does not push or pull the top
   // item of the stack -- it is read or written in place.
 
-  value = (int16_t)get_variable(op[0]);
+  value = (int16_t)get_variable(op[0], false);
 
   TRACE_LOG("Incrementing variable with code %d from %d to %d.\n",
       op[0], value, value+1);
 
   value++;
-  set_variable(op[0], (uint16_t)value);
+  set_variable(op[0], (uint16_t)value, false);
 
   TRACE_LOG("Checking whether %d > %d.\n", value, (int16_t)op[1]);
 
@@ -190,13 +192,13 @@ void opcode_dec_chk(void)
 
   TRACE_LOG("Opcode: DEC_CHK.\n");
 
-  value = (int16_t)get_variable(op[0]);
+  value = (int16_t)get_variable(op[0], false);
 
   TRACE_LOG("Decrementing variable with code %d from %d to %d.\n",
       op[0], value, value-1);
 
   value--;
-  set_variable(op[0], (uint16_t)value);
+  set_variable(op[0], (uint16_t)value, false);
 
   TRACE_LOG("Checking whether %d < %d.\n", value, (int16_t)op[1]);
 
@@ -212,7 +214,8 @@ void opcode_mul(void)
 
   TRACE_LOG("Multiplying %d and %d.\n", (int16_t)op[0], (int16_t)op[1]);
 
-  set_variable(z_res_var, (uint16_t)(((int16_t)op[0]) * ((int16_t) op[1])));
+  set_variable(z_res_var, (uint16_t)(((int16_t)op[0]) * ((int16_t) op[1])),
+      false);
 }
 
 
@@ -285,7 +288,7 @@ void opcode_random(void)
           predictable_upper_border);
     }
 
-    set_variable(z_res_var, 0);
+    set_variable(z_res_var, 0, false);
   }
   else
   {
@@ -316,7 +319,8 @@ void opcode_random(void)
 
       set_variable(
           z_res_var,
-          ((uint16_t)rint((double)random_number * multiplier)) + 1);
+          ((uint16_t)rint((double)random_number * multiplier)) + 1,
+          false);
     }
     else
     {
@@ -331,7 +335,8 @@ void opcode_random(void)
 
       set_variable(
           z_res_var,
-          (uint16_t)last_predictable_random);
+          (uint16_t)last_predictable_random,
+          false);
     }
   }
 }
@@ -351,7 +356,8 @@ void opcode_div(void)
 
   TRACE_LOG("Dividing %d by %d.\n", (int16_t)op[0], (int16_t)op[1]);
 
-  set_variable(z_res_var, (uint16_t)(((int16_t)op[0]) / ((int16_t)op[1])));
+  set_variable(z_res_var, (uint16_t)(((int16_t)op[0]) / ((int16_t)op[1])),
+      false);
 }
 
 
@@ -360,7 +366,7 @@ void opcode_or(void)
   TRACE_LOG("Opcode: OR.\n");
   read_z_result_variable();
   TRACE_LOG("ORing %x and %x to %x.\n", op[0], op[1], op[0] | op[1]);
-  set_variable(z_res_var, op[0] | op[1]);
+  set_variable(z_res_var, op[0] | op[1], false);
 }
 
 
@@ -381,7 +387,7 @@ void opcode_mod(void)
       (int16_t)op[1],
       (uint16_t)((int16_t)op[0] % (int16_t)op[1]));
 
-  set_variable(z_res_var, (uint16_t)((int16_t)op[0] % (int16_t)op[1]));
+  set_variable(z_res_var, (uint16_t)((int16_t)op[0] % (int16_t)op[1]), false);
 }
 
 
@@ -390,7 +396,7 @@ void opcode_not(void)
   TRACE_LOG("Opcode: NOT.\n");
   read_z_result_variable();
   TRACE_LOG("NOTing %x to %x.\n", op[0], ~op[0]);
-  set_variable(z_res_var, ~op[0]);
+  set_variable(z_res_var, ~op[0], false);
 }
 
 
@@ -414,7 +420,7 @@ void opcode_art_shift(void)
   /*@+shiftimplementation@*/
   /*@+shiftnegative@*/
 
-  set_variable(z_res_var, (uint16_t)result);
+  set_variable(z_res_var, (uint16_t)result, false);
 }
 
 
@@ -430,7 +436,7 @@ void opcode_log_shift(void)
   else if (shift_places < 0)
     result >>= (-shift_places);
 
-  set_variable(z_res_var, result);
+  set_variable(z_res_var, result, false);
 }
 
 

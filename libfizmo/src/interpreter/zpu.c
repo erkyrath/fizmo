@@ -128,21 +128,176 @@ void dump_stack(void)
 }
 
 
-// This function is not called directly, but invoked from a call
-// to "interpret_from_address", "interpret_from_call" or from
-// "interpret_from_call_without_result".
-static void interpret(/*@null@*/ int frame_index_to_quit_on)
+void parse_opcode(
+    uint8_t *z_instr,
+    uint8_t *z_instr_form,
+    uint8_t *result_number_of_operands,
+    uint8_t **instr_ptr)
 {
   // uint32_t for "operand_types" to be sure we have at least 18 bits
   // capacity. 16 are used to encode the possible 8 operand types
   // using 2 bits each, and after that 2 more bits ('11') are required
   // to terminate the parser loop.
   uint32_t operand_types;
-  uint8_t instrbyte0;
-  uint8_t operand_index;
   uint8_t current_operand_type;
-  uint16_t current_operand_value = 0; // compiler complains, init not required
+  uint8_t operand_index;
   uint16_t variable_number;
+  uint8_t instrbyte0 = *((*instr_ptr)++);
+  uint16_t current_operand_value = 0; // compiler complains, init not required
+
+  *z_instr_form = INSTRUCTION_UNDEF;
+
+  TRACE_LOG("Instruction-Byte 0: %x.\n", instrbyte0);
+
+  if ((instrbyte0 & 0xc0) == 0xc0)
+  {
+    TRACE_LOG("Instruction has variable form.\n");
+    *z_instr = instrbyte0 & 0x1f;
+
+    if ((instrbyte0 == 236) || (instrbyte0 == 250))
+    {
+      // 8 operands, so interpret 2nd operand byte, too.
+      *z_instr_form = INSTRUCTION_VAR;
+      operand_types  = (*((*instr_ptr)++) << 24);
+      operand_types |= (*((*instr_ptr)++) << 16);
+      operand_types |= 0xffff;
+    }
+    else if ((instrbyte0 & 0x20) == 0)
+    {
+      // 4.3.3 In variable form, if bit 5 is 0 then the count is 2OP; [...]
+      *z_instr_form = INSTRUCTION_2OP;
+      operand_types = (*((*instr_ptr)++) << 24) | 0xffffff;
+    }
+    else
+    {
+      // ... if it is 1, then the count is VAR. The opcode number is given
+      // in the bottom 5 bits.
+      *z_instr_form = INSTRUCTION_VAR;
+      operand_types = (*((*instr_ptr)++) << 24) | 0xffffff;
+    }
+  }
+
+  else if ((instrbyte0 & 0xc0) == 0x80)
+  {
+    // 4.3.1 In short form, bits 4 and 5 of the opcode byte give an
+    // operand type as above. If this is $11 then the operand count
+    // is 0OP; otherwise, 1OP. In either case the opcode number is
+    // given in the bottom 4 bits.
+
+    // (except $be extended opcode given in next byte)
+    if ((instrbyte0 == 0xbe) && (active_z_story->version >= 5))
+    {
+      TRACE_LOG("Instruction has extended form.\n");
+
+      *z_instr_form = INSTRUCTION_EXT;
+      *z_instr = *((*instr_ptr)++);
+      operand_types = (*((*instr_ptr)++) << 24) | 0xffffff;
+    }
+    else
+    {
+      TRACE_LOG("Instruction has short form.\n");
+
+      *z_instr = instrbyte0 & 0xf;
+
+      if ((instrbyte0 & 0x30) == 0x30)
+      {
+        *z_instr_form = INSTRUCTION_0OP;
+        operand_types = 0xffffffff;
+      }
+      else
+      {
+        *z_instr_form = INSTRUCTION_1OP;
+        operand_types = (uint32_t)(0x3fffffff | ((instrbyte0 & 0x30) << 26));
+      }
+    }
+  }
+
+  else
+  {
+    TRACE_LOG("Instruction has long form.\n");
+
+    // 4.3.2 In long form the operand count is always 2OP. The opcode
+    // number is given in the bottom 5 bits.
+
+    *z_instr_form = INSTRUCTION_2OP;
+    *z_instr = instrbyte0 & 0x1f;
+
+    // 4.4.2 In long form, bit 6 of the opcode gives the type of the
+    // first operand, bit 5 of the second. A value of 0 means a small
+    // constant and 1 means a variable. (If a 2OP instruction needs a
+    // large constant as operand, then it should be assembled in
+    // variable rather than long form.)
+    if ((instrbyte0 & 0x40) != 0)
+      operand_types = 0x8fffffff;
+    else
+      operand_types = 0x4fffffff;
+
+    if ((instrbyte0 & 0x20) != 0)
+      operand_types |= 0x20000000;
+    else
+      operand_types |= 0x10000000;
+  }
+
+  // Now, somewhere in the if/else lines above, the instruction_form might 
+  // not have been set. Just to be sure, we check that here.
+  if (*z_instr_form == INSTRUCTION_UNDEF)
+    i18n_translate_and_exit(
+        libfizmo_module_name,
+        i18n_libfizmo_INSTRUCTION_FORM_NOT_INITIALIZED,
+        -1);
+
+  // 4.4.3: Example: $$00101111 means large constant followed by
+  // variable (and no third or fourth opcode).
+
+  TRACE_LOG("Parsing Operands by code %x.\n", (unsigned)operand_types);
+  operand_index = 0;
+  while ((current_operand_type = (operand_types &0xc0000000) >> 30) != 0x3)
+  {
+    TRACE_LOG("Current Operand code: %x.\n", current_operand_type);
+    //current_instruction.operand_type[operand_index] = current_operand;
+
+    if (current_operand_type == OPERAND_TYPE_LARGE_CONSTANT)
+    {
+      TRACE_LOG("Reading large constant.\n");
+      current_operand_value  = (**instr_ptr << 8);
+      current_operand_value |= *(++(*instr_ptr));
+    }
+    else if (current_operand_type == OPERAND_TYPE_SMALL_CONSTANT)
+    {
+      TRACE_LOG("Reading small constant.\n");
+      current_operand_value = **instr_ptr;
+    }
+    else if (current_operand_type == OPERAND_TYPE_VARIABLE)
+    {
+      variable_number = **instr_ptr;
+      TRACE_LOG("Reading variable with code %x.\n", variable_number);
+      current_operand_value = get_variable(variable_number, false);
+    }
+    else
+      i18n_translate_and_exit(
+          libfizmo_module_name,
+          i18n_libfizmo_UNKNOWN_OPERAND_TYPE_P0D,
+          -1,
+          (long int)current_operand_type);
+
+    (*instr_ptr)++;
+    TRACE_LOG("op[%d] = %x.\n", operand_index, current_operand_value);
+    op[operand_index++] = current_operand_value;
+
+    operand_types <<= 2;
+  }
+
+  TRACE_LOG("Opcode code: %x.\n", *z_instr);
+
+  *result_number_of_operands = operand_index;
+}
+
+
+// This function is not called directly, but invoked from a call
+// to "interpret_from_address", "interpret_from_call" or from
+// "interpret_from_call_without_result".
+static void interpret(/*@null@*/ int frame_index_to_quit_on)
+{
   z_opcode_function current_z_opcode_function;
   uint16_t start_interrupt_routine;
   //uint16_t start_interrupt_routine_buf;
@@ -222,156 +377,15 @@ static void interpret(/*@null@*/ int frame_index_to_quit_on)
 #endif /* ENABLE_TRACING */
     zpu_step_number++;
 
-    z_instr_form = INSTRUCTION_UNDEF;
-
     // Remember PC for output of warnings and save-on-read.
     current_instruction_location = pc;
 
-    instrbyte0 = *(pc++);
+    parse_opcode(
+        &z_instr,
+        &z_instr_form,
+        &number_of_operands,
+        &pc);
 
-    TRACE_LOG("Instruction-Byte 0: %x.\n", instrbyte0);
-
-    if ((instrbyte0 & 0xc0) == 0xc0)
-    {
-      TRACE_LOG("Instruction has variable form.\n");
-      z_instr = instrbyte0 & 0x1f;
-
-      if ((instrbyte0 == 236) || (instrbyte0 == 250))
-      {
-        // 8 operands, so interpret 2nd operand byte, too.
-        z_instr_form = INSTRUCTION_VAR;
-        operand_types  = (*(pc++) << 24);
-        operand_types |= (*(pc++) << 16);
-        operand_types |= 0xffff;
-      }
-      else if ((instrbyte0 & 0x20) == 0)
-      {
-        // 4.3.3 In variable form, if bit 5 is 0 then the count is 2OP; [...]
-        z_instr_form = INSTRUCTION_2OP;
-        operand_types = (*(pc++) << 24) | 0xffffff;
-      }
-      else
-      {
-        // ... if it is 1, then the count is VAR. The opcode number is given
-        // in the bottom 5 bits.
-        z_instr_form = INSTRUCTION_VAR;
-        operand_types = ((*pc++) << 24) | 0xffffff;
-      }
-    }
-
-    else if ((instrbyte0 & 0xc0) == 0x80)
-    {
-      // 4.3.1 In short form, bits 4 and 5 of the opcode byte give an
-      // operand type as above. If this is $11 then the operand count
-      // is 0OP; otherwise, 1OP. In either case the opcode number is
-      // given in the bottom 4 bits.
-
-      // (except $be extended opcode given in next byte)
-      if ((instrbyte0 == 0xbe) && (active_z_story->version >= 5))
-      {
-        TRACE_LOG("Instruction has extended form.\n");
-
-        z_instr_form = INSTRUCTION_EXT;
-        z_instr = *pc++;
-        operand_types = ((*pc++) << 24) | 0xffffff;
-      }
-      else
-      {
-        TRACE_LOG("Instruction has short form.\n");
-
-        z_instr = instrbyte0 & 0xf;
-
-        if ((instrbyte0 & 0x30) == 0x30)
-        {
-          z_instr_form = INSTRUCTION_0OP;
-          operand_types = 0xffffffff;
-        }
-        else
-        {
-          z_instr_form = INSTRUCTION_1OP;
-          operand_types = (uint32_t)(0x3fffffff | ((instrbyte0 & 0x30) << 26));
-        }
-      }
-    }
-
-    else
-    {
-      TRACE_LOG("Instruction has long form.\n");
-
-      // 4.3.2 In long form the operand count is always 2OP. The opcode
-      // number is given in the bottom 5 bits.
-
-      z_instr_form = INSTRUCTION_2OP;
-      z_instr = instrbyte0 & 0x1f;
-
-      // 4.4.2 In long form, bit 6 of the opcode gives the type of the
-      // first operand, bit 5 of the second. A value of 0 means a small
-      // constant and 1 means a variable. (If a 2OP instruction needs a
-      // large constant as operand, then it should be assembled in
-      // variable rather than long form.)
-      if ((instrbyte0 & 0x40) != 0)
-        operand_types = 0x8fffffff;
-      else
-        operand_types = 0x4fffffff;
-
-      if ((instrbyte0 & 0x20) != 0)
-        operand_types |= 0x20000000;
-      else
-        operand_types |= 0x10000000;
-    }
-
-    // Now, somewhere in the if/else lines above, the instruction_form might 
-    // not have been set. Just to be sure, we check that here.
-    if (z_instr_form == INSTRUCTION_UNDEF)
-      i18n_translate_and_exit(
-          libfizmo_module_name,
-          i18n_libfizmo_INSTRUCTION_FORM_NOT_INITIALIZED,
-          -1);
-
-    // 4.4.3: Example: $$00101111 means large constant followed by
-    // variable (and no third or fourth opcode).
-
-    TRACE_LOG("Parsing Operands by code %x.\n", (unsigned)operand_types);
-    operand_index = 0;
-    while ((current_operand_type = (operand_types &0xc0000000) >> 30) != 0x3)
-    {
-      TRACE_LOG("Current Operand code: %x.\n", current_operand_type);
-      //current_instruction.operand_type[operand_index] = current_operand;
-
-      if (current_operand_type == OPERAND_TYPE_LARGE_CONSTANT)
-      {
-        TRACE_LOG("Reading large constant.\n");
-        current_operand_value  = (*pc << 8);
-        current_operand_value |= *(++pc);
-      }
-      else if (current_operand_type == OPERAND_TYPE_SMALL_CONSTANT)
-      {
-        TRACE_LOG("Reading small constant.\n");
-        current_operand_value = *pc;
-      }
-      else if (current_operand_type == OPERAND_TYPE_VARIABLE)
-      {
-        variable_number = *pc;
-        TRACE_LOG("Reading variable with code %x.\n", variable_number);
-        current_operand_value = get_variable(variable_number);
-      }
-      else
-        i18n_translate_and_exit(
-            libfizmo_module_name,
-            i18n_libfizmo_UNKNOWN_OPERAND_TYPE_P0D,
-            -1,
-            (long int)current_operand_type);
-
-      pc++;
-      TRACE_LOG("op[%d] = %x.\n", operand_index, current_operand_value);
-      op[operand_index++] = current_operand_value;
-
-      operand_types <<= 2;
-    }
-
-    TRACE_LOG("Opcode code: %x.\n", z_instr);
-
-    number_of_operands = operand_index;
     current_z_opcode_function = z_opcode_functions[z_instr_form + z_instr];
 
     if (current_z_opcode_function == NULL)
@@ -437,7 +451,7 @@ uint16_t interpret_from_call(uint32_t routine_address)
 {
   call_routine(routine_address, 0, false, 0);
   interpret(number_of_stack_frames - 1);
-  return get_variable(0);
+  return get_variable(0, false);
 }
 
 

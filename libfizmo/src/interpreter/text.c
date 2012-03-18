@@ -1647,18 +1647,16 @@ int save_and_quit_if_required(bool force_save)
 {
   uint8_t *filename;
   char *save_and_quit_file;
+  char *autosave_filename;
   uint8_t *pc_buf;
-  int length;
 
-  save_and_quit_file
-    = get_configuration_value("save-and-quit-file-before-read");
+  autosave_filename
+    = get_configuration_value("autosave-filename");
 
-  TRACE_LOG("save_and_quit_file: %s.\n", save_and_quit_file);
+  TRACE_LOG("autosave_filename: %s.\n", autosave_filename);
 
   if (
-      (save_and_quit_file != NULL)
-      &&
-      (strcmp(save_and_quit_file, "true") == 0)
+      (autosave_filename != NULL)
       &&
       (
        (zpu_step_number != 1)
@@ -1673,25 +1671,31 @@ int save_and_quit_if_required(bool force_save)
     TRACE_LOG("current_instruction_location: %lx\n",
       (unsigned long int)(current_instruction_location - z_mem));
 
-    length = strlen(save_and_quit_file) + 1;
-
-    filename = (uint8_t*)fizmo_malloc(length);
-
-    length--;
-    memcpy(filename + 1, save_and_quit_file, length);
-    *filename = length;
+    filename = fizmo_strdup(autosave_filename);
 
     save_game(
       0,
       (uint16_t)(active_z_story->dynamic_memory_end - z_mem + 1),
-      save_and_quit_file,
+      filename,
       true,
       false,
       NULL);
 
     pc = pc_buf;
-    terminate_interpreter = INTERPRETER_QUIT_SAVE_BEFORE_READ;
-    return 1;
+
+    save_and_quit_file
+      = get_configuration_value("save-and-quit-file-before-read");
+    if (
+        (save_and_quit_file != NULL)
+        &&
+        (strcmp(save_and_quit_file, "true") == 0)) 
+    {
+      terminate_interpreter = INTERPRETER_QUIT_SAVE_BEFORE_READ;
+      return 1;
+    }
+    else {
+      return 0;
+    }
   }
   else
     return 0;

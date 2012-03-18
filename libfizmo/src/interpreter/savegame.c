@@ -512,6 +512,7 @@ void save_game(uint16_t address, uint16_t length, char *filename,
   save_game_to_stream(address, length, save_file, evaluate_result);
 }
 
+/* This closes the save_file. */
 void save_game_to_stream(uint16_t address, uint16_t length, z_file *save_file,
   bool evaluate_result)
 {

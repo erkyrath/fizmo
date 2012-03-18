@@ -452,27 +452,14 @@ int get_paragraph_save_amount()
     return strtol(nof_paragraphs_as_string, NULL, 10);
 }
 
-
 void save_game(uint16_t address, uint16_t length, char *filename,
     bool skip_asking_for_filename, bool evaluate_result, char *directory)
 {
-  uint32_t pc_on_restore = (uint32_t)(pc - z_mem);
   z_file *save_file;
-  uint8_t *dynamic_index;
-  uint16_t consecutive_zeros;
-  int data;
   char *system_filename;
-  uint8_t *ptr;
   char *str;
-#ifndef DISABLE_OUTPUT_HISTORY
-  z_ucs *hst_ptr;
-  int nof_paragraphs_to_save;
-  history_output *history;
-  int return_code;
-#endif // DISABLE_OUTPUT_HISTORY
 
   TRACE_LOG("Save %d bytes from address %d.\n", length, address);
-  TRACE_LOG("PC at: %x.\n", pc_on_restore);
 
   if (filename != NULL)
   {
@@ -521,6 +508,26 @@ void save_game(uint16_t address, uint16_t length, char *filename,
     str = save_file->filename;
     TRACE_LOG("filename from ask_for_filename: \"%s\".\n", str);
   }
+
+  save_game_to_stream(address, length, save_file, evaluate_result);
+}
+
+void save_game_to_stream(uint16_t address, uint16_t length, z_file *save_file,
+  bool evaluate_result)
+{
+  uint32_t pc_on_restore = (uint32_t)(pc - z_mem);
+  uint8_t *dynamic_index;
+  uint16_t consecutive_zeros;
+  int data;
+  uint8_t *ptr;
+#ifndef DISABLE_OUTPUT_HISTORY
+  z_ucs *hst_ptr;
+  int nof_paragraphs_to_save;
+  history_output *history;
+  int return_code;
+#endif // DISABLE_OUTPUT_HISTORY
+
+  TRACE_LOG("PC at: %x.\n", pc_on_restore);
 
   if (address != 0)
   {

@@ -1645,7 +1645,7 @@ static bool process_interpreter_command()
 
 int save_and_quit_if_required(bool force_save)
 {
-  uint8_t *filename;
+  char *filename;
   char *save_and_quit_file;
   char *autosave_filename;
   uint8_t *pc_buf;

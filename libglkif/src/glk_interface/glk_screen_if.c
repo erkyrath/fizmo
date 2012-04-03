@@ -60,10 +60,13 @@ static winid_t mainwin = NULL;
 static winid_t statusline = NULL;
 static winid_t statuswin = NULL;
 static bool instatuswin = false;
+static int statuscurheight = 0; /* what the VM thinks the height is */
+static int statusmaxheight = 0; /* height including possible quote box */
 static int inputbuffer_size = 0;
 static glui32 *inputbuffer = NULL;
 
 static void glkint_get_screen_size(glui32 *, glui32 *);
+static void glkint_resolve_status_height(void);
 
 void glkint_open_interface()
 {
@@ -200,6 +203,8 @@ int16_t glkint_interface_read_line(zscii *dest, uint16_t maximum_length,
   zscii zch;
   int i;
 
+  glkint_resolve_status_height();
+
   if (!inputbuffer) {
     inputbuffer_size = maximum_length+16;
     inputbuffer = malloc(inputbuffer_size * sizeof(glui32));
@@ -277,7 +282,11 @@ int glkint_interface_read_char(uint16_t tenth_seconds,
   event_t event;
   int timercount = 0;
   int timed_routine_retval;
-  winid_t win = (instatuswin ? statuswin : mainwin);
+  winid_t win;
+
+  glkint_resolve_status_height();
+
+  win = (instatuswin ? statuswin : mainwin);
 
   if (win) {
     glk_request_char_event_uni(win);
@@ -402,20 +411,53 @@ void glkint_set_font(z_font font_type)
 
 void glkint_split_window(int16_t nof_lines)
 { 
-  if (!nof_lines) {
-    if (statuswin) {
+  int oldvmheight = statuscurheight;
+  statuscurheight = nof_lines;
+
+  /* We do not decrease the height at this time -- it can only increase.
+     This ensures that quote boxes don't vanish. */
+  if (statuscurheight > statusmaxheight)
+    statusmaxheight = statuscurheight;
+
+  /* However, if the VM thinks it's increasing the height, we must be
+     careful to clear the "newly created" space. */
+  if (statuswin && statuscurheight > oldvmheight) {
+    strid_t stream = glk_window_get_stream(statuswin);
+    int ix, jx;
+    glui32 truewidth, trueheight;
+    glk_window_get_size(statuswin, &truewidth, &trueheight);
+    for (jx=oldvmheight; jx<(int)trueheight; jx++) {
+      glk_window_move_cursor(statuswin, 0, jx);
+      for (ix=0; ix<(int)truewidth; ix++) {
+        glk_put_char_stream(stream, ' ');
+      }
+    }
+    glk_window_move_cursor(statuswin, 0, 0);
+  }
+
+  if (!statuswin) {
+    statuswin = glk_window_open(mainwin, winmethod_Above | winmethod_Fixed, statusmaxheight, wintype_TextGrid, 2);
+  }
+  else {
+    glk_window_set_arrangement(glk_window_get_parent(statuswin), winmethod_Above | winmethod_Fixed, statusmaxheight, statuswin);
+  }
+}
+
+/* If the status height is too large because of last turn's quote box,
+   shrink it down now. */
+static void glkint_resolve_status_height()
+{
+  if (statuswin) {
+    if (statusmaxheight == 0) {
       glk_window_close(statuswin, NULL);
       statuswin = NULL;
     }
-  }
-  else {
-    if (!statuswin) {
-      statuswin = glk_window_open(mainwin, winmethod_Above | winmethod_Fixed, nof_lines, wintype_TextGrid, 2);
-    }
     else {
-      glk_window_set_arrangement(glk_window_get_parent(statuswin), winmethod_Above | winmethod_Fixed, nof_lines, statuswin);
+      glk_window_set_arrangement(glk_window_get_parent(statuswin), winmethod_Above | winmethod_Fixed, statusmaxheight, statuswin);
     }
   }
+
+  statusmaxheight = statuscurheight;    
 }
 
 /* 1 is the status window; 0 is the story window. */

@@ -62,6 +62,7 @@ static winid_t statuswin = NULL;
 static bool instatuswin = false;
 static int statuscurheight = 0; /* what the VM thinks the height is */
 static int statusmaxheight = 0; /* height including possible quote box */
+static int statusseenheight = 0; /* last height the user saw */
 static int inputbuffer_size = 0;
 static glui32 *inputbuffer = NULL;
 
@@ -447,6 +448,9 @@ void glkint_split_window(int16_t nof_lines)
    shrink it down now. */
 static void glkint_resolve_status_height()
 {
+  if (statusseenheight == statusmaxheight)
+    statusmaxheight = statuscurheight;
+
   if (statuswin) {
     if (statusmaxheight == 0) {
       glk_window_close(statuswin, NULL);
@@ -457,7 +461,8 @@ static void glkint_resolve_status_height()
     }
   }
 
-  statusmaxheight = statuscurheight;    
+  statusseenheight = statusmaxheight;
+  statusmaxheight = statuscurheight;
 }
 
 /* 1 is the status window; 0 is the story window. */

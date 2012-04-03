@@ -29,6 +29,8 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#import "FizmoGlkDelegate.h"
+#import "GlkLibrary.h"
 #import "GlkStream.h"
 
 #include "glk.h"
@@ -49,30 +51,25 @@ static char *init_err2 = NULL; /*### use this */
 static strid_t gamefilestream = nil;
 static NSString *gamepathname = nil;
 
-/* This may be called (before iosglk_startup_code()!) to set the game file pathname. Calling it more than once is okay.
+/* Called in the VM thread before glk_main. This sets up variables which will be used to launch the Fizmo core.
  */
-void iosglk_set_game_path(NSString *path)
-{
-	if (path == gamepathname)
-		return;
-	if (gamepathname) {
-		[gamepathname release];
-		gamepathname = nil;
-	}
-	if (path) {
-		gamepathname = path;
-		[gamepathname retain]; // retain forever
-	}
-}
-
 void iosglk_startup_code()
 {
-	NSBundle *bundle = [NSBundle mainBundle];
+	GlkLibrary *library = [GlkLibrary singleton];
+	FizmoGlkDelegate *libdelegate = library.glkdelegate;
+	if (libdelegate) {
+		NSString *path = [libdelegate gamePath];
+		gamepathname = [path retain]; // retain forever
+	}
+	
 	if (!gamepathname)
-		gamepathname = [[bundle pathForResource:@"Game" ofType:@"z5"] retain]; // retain forever
+		glkint_fatal_error_handler("Unable to locate game file", NULL, NULL, FALSE, 0);
+	
 	gamefilestream = [[GlkStreamFile alloc] initWithMode:filemode_Read rock:1 unicode:NO textmode:NO dirname:@"." pathname:gamepathname]; // retain forever
 }
 
+/* Called in the VM thread. This is the VM main function.
+ */
 void glk_main(void)
 {
 	z_file *story_stream;

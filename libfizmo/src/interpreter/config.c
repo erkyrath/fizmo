@@ -69,26 +69,29 @@ struct configuration_option configuration_options[] = {
   // String values:
   { "autosave-filename", NULL },
   { "background-color", NULL },
-  { "input-command-filename", NULL },
-  { "record-command-filename", NULL },
   { "foreground-color", NULL },
   { "i18n-search-path", NULL },
+  { "input-command-filename", NULL },
   { "locale", NULL },
   { "random-mode", NULL },
+  { "record-command-filename", NULL },
   { "save-text-history-paragraphs", NULL },
-  { "savegame-path", NULL },
   { "savegame-default-filename", NULL },
+  { "savegame-path", NULL },
+  { "stream-2-left-margin", NULL },
+  { "stream-2-line-width", NULL },
   { "transcript-filename", NULL },
   { "z-code-path", NULL },
   { "z-code-root-path", NULL },
-  { "stream-2-line-width", NULL },
-  { "stream-2-left-margin", NULL },
 
   // Boolean values:
   { "disable-external-streams", NULL },
   { "disable-restore", NULL },
   { "disable-save", NULL },
   { "disable-sound", NULL },
+  { "disable-stream-2-hyphenation", NULL },
+  { "disable-stream-2-wrap", NULL },
+  { "dont-set-locale-from-config", NULL },
   { "enable-font3-conversion", NULL },
   { "quetzal-umem", NULL },
   { "restore-after-save-and-quit-file-before-read", NULL },
@@ -97,10 +100,7 @@ struct configuration_option configuration_options[] = {
   { "start-command-recording-when-story-starts", NULL },
   { "start-file-input-when-story-starts", NULL },
   { "start-script-when-story-starts", NULL },
-  { "disable-stream-2-hyphenation", NULL },
   { "sync-transcript", NULL },
-  { "disable-stream-2-wrap", NULL },
-  { "dont-set-locale-from-config", NULL },
 
   // NULL terminates the option list.
   { NULL, NULL }
@@ -423,9 +423,9 @@ int set_configuration_value(char *key, char* new_unexpanded_value)
           ||
           (strcmp(key, "disable-stream-2-hyphenation") == 0)
           ||
-          (strcmp(key, "sync-transcript") == 0)
-          ||
           (strcmp(key, "disable-stream-2-wrap") == 0)
+          ||
+          (strcmp(key, "sync-transcript") == 0)
           ||
           (strcmp(key, "dont-set-locale-from-config") == 0)
           )
@@ -577,9 +577,9 @@ char *get_configuration_value(char *key)
             ||
             (strcmp(key, "disable-stream-2-hyphenation") == 0)
             ||
-            (strcmp(key, "sync-transcript") == 0)
-            ||
             (strcmp(key, "disable-stream-2-wrap") == 0)
+            ||
+            (strcmp(key, "sync-transcript") == 0)
             ||
             (strcmp(key, "dont-set-locale-from-config") == 0)
            )

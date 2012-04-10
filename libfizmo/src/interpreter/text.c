@@ -1710,20 +1710,37 @@ int read_command_from_file(zscii *input_buffer, int input_buffer_size,
   long filepos;
   int milliseconds;
   int res;
+  int return_code;
 
   if (input_stream_1 == NULL)
   {
     if (input_stream_1_was_already_active == false)
-      ask_for_input_stream_filename();
-    TRACE_LOG("Trying to open \"%s\"\n", input_stream_1_filename);
-    if ((input_stream_1 = fsi->openfile(input_stream_1_filename,
-            FILETYPE_INPUTRECORD, FILEACCESS_READ)) == NULL)
     {
-      TRACE_LOG("Could not open input file for stream 1.\n");
-      input_stream_1_active = false;
-      input_stream_1_filename_size = 0;
-      free(input_stream_1_filename);
-      return -1;
+      return_code = active_interface->prompt_for_filename(
+          "transcript",
+          &input_stream_1,
+          NULL,
+          FILETYPE_TRANSCRIPT,
+          FILEACCESS_READ);
+
+      if (return_code == -3)
+      {
+        ask_for_input_stream_filename();
+        TRACE_LOG("Trying to open \"%s\"\n", input_stream_1_filename);
+        if ((input_stream_1 = fsi->openfile(input_stream_1_filename,
+                FILETYPE_INPUTRECORD, FILEACCESS_READ)) == NULL)
+        {
+          TRACE_LOG("Could not open input file for stream 1.\n");
+          input_stream_1_active = false;
+          input_stream_1_filename_size = 0;
+          free(input_stream_1_filename);
+          return -1;
+        }
+      }
+      else if (return_code < 0)
+      {
+        return -1;
+      }
     }
   }
 

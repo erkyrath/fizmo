@@ -1850,6 +1850,13 @@ static z_colour get_default_background_colour()
   return Z_COLOUR_BLACK;
 }
 
+static int prompt_for_filename(char *UNUSED(filename_suggestion),
+    z_file **UNUSED(result_file), char *UNUSED(directory),
+    int UNUSED(filetype_or_mode), int UNUSED(fileaccess))
+{
+  return -3;
+}
+
 
 static struct z_screen_cell_interface ncursesw_interface =
 {
@@ -1882,7 +1889,8 @@ static struct z_screen_cell_interface ncursesw_interface =
   &clear_area,
   &set_cursor_visibility,
   &get_default_foreground_colour,
-  &get_default_background_colour
+  &get_default_background_colour,
+  &prompt_for_filename
 };
 
 
@@ -1943,7 +1951,6 @@ static char *select_story_from_menu()
   sigaction(SIGWINCH, &default_sigaction, NULL);
 
   infowin_output_wordwrapper = wordwrap_new_wrapper(
-      true,
       80,
       &infowin_z_ucs_output_wordwrap_destination,
       (void*)NULL,

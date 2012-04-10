@@ -56,7 +56,7 @@ static z_ucs word_split_chars[] = {
   (z_ucs)'"', 0 };
 
 
-WORDWRAP *wordwrap_new_wrapper(bool enable, size_t line_length,
+WORDWRAP *wordwrap_new_wrapper(size_t line_length,
     void (*wrapped_text_output_destination)(z_ucs *output, void *parameter),
     void *destination_parameter, bool add_newline_after_full_line,
     int left_side_padding, bool flush_after_newline, bool enable_hyphenation)
@@ -64,21 +64,9 @@ WORDWRAP *wordwrap_new_wrapper(bool enable, size_t line_length,
   WORDWRAP *result = fizmo_malloc(sizeof(WORDWRAP));
   int i;
 
-  result->enable = enable;
+  result->line_length = line_length;
   result->wrapped_text_output_destination = wrapped_text_output_destination;
   result->destination_parameter = destination_parameter;
-
-  if (!enable) {
-    /* If the enable flag is false, this is a raw pass-through, and we 
-       need no further parameters. */
-    result->input_buffer = NULL;
-    result->padding_buffer = NULL;
-    result->metadata = NULL;
-    result->left_side_padding = 0;
-    return result;
-  }
-
-  result->line_length = line_length;
   result->add_newline_after_full_line = add_newline_after_full_line;
   result->left_side_padding = left_side_padding;
   if (left_side_padding > 0)
@@ -106,8 +94,7 @@ WORDWRAP *wordwrap_new_wrapper(bool enable, size_t line_length,
 
 void wordwrap_destroy_wrapper(WORDWRAP *wrapper_to_destroy)
 {
-  if (wrapper_to_destroy->input_buffer != NULL)
-    free(wrapper_to_destroy->input_buffer);
+  free(wrapper_to_destroy->input_buffer);
   if (wrapper_to_destroy->padding_buffer != NULL)
     free(wrapper_to_destroy->padding_buffer);
   if (wrapper_to_destroy->metadata != NULL)
@@ -417,9 +404,9 @@ static void flush_input_buffer(WORDWRAP *wrapper, bool force_flush)
           {
             TRACE_LOG("Error hyphenating.\n");
             i18n_translate_and_exit(
-              libfizmo_module_name,
-              i18n_libfizmo_UNKNOWN_ERROR_CASE,
-              -1);
+                libfizmo_module_name,
+                i18n_libfizmo_UNKNOWN_ERROR_CASE,
+                -1);
           }
           *word_end_without_split_chars = buf;
 
@@ -463,8 +450,7 @@ static void flush_input_buffer(WORDWRAP *wrapper, bool force_flush)
       // Output everything before *index and a newline after.
 
       buf2 = *index;
-      if (wrapper->add_newline_after_full_line)
-        *index = Z_UCS_NEWLINE;
+      *index = Z_UCS_NEWLINE;
       buf = *(index + 1);
       *(index + 1) = 0;
 
@@ -522,8 +508,7 @@ static void flush_input_buffer(WORDWRAP *wrapper, bool force_flush)
         index = input + wrapper->line_length;
 
       buf = *index;
-      if (wrapper->add_newline_after_full_line)
-        *index = Z_UCS_NEWLINE;
+      *index = Z_UCS_NEWLINE;
       buf2 = *(index+1);
       *(index+1) = 0;
 
@@ -588,14 +573,6 @@ void wordwrap_wrap_z_ucs(WORDWRAP *wrapper, z_ucs *input)
 {
   size_t len, chars_to_copy, space_in_buffer;
 
-  if (!wrapper->enable)
-  {
-    wrapper->wrapped_text_output_destination(
-        input,
-        wrapper->destination_parameter);
-    return;
-  }
-
   len = z_ucs_len(input);
 
   while (len > 0)
@@ -643,11 +620,6 @@ void wordwrap_wrap_z_ucs(WORDWRAP *wrapper, z_ucs *input)
 
 void wordwrap_flush_output(WORDWRAP *wrapper)
 {
-  if (!wrapper->enable)
-  {
-    return;
-  }
-
   flush_input_buffer(wrapper, true);
 }
 
@@ -657,11 +629,6 @@ void wordwrap_insert_metadata(WORDWRAP *wrapper,
     void *ptr_parameter, uint32_t int_parameter)
 {
   size_t bytes_to_allocate;
-
-  if (!wrapper->enable)
-  {
-    return;
-  }
 
   // Before adding new metadata, check if we need to allocate more space.
   if (wrapper->metadata_index == wrapper->metadata_size)
@@ -703,6 +670,7 @@ void wordwrap_insert_metadata(WORDWRAP *wrapper,
 }
 
 
+/*
 void wordwrap_output_left_padding(WORDWRAP *wrapper)
 {
   if (wrapper->left_side_padding > 0)
@@ -710,6 +678,7 @@ void wordwrap_output_left_padding(WORDWRAP *wrapper)
         wrapper->padding_buffer,
         wrapper->destination_parameter);
 }
+*/
 
 
 void wordwrap_adjust_line_length(WORDWRAP *wrapper, size_t new_line_length)

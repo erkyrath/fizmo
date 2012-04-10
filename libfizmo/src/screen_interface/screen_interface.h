@@ -119,6 +119,10 @@ struct z_screen_interface
   bool (*input_must_be_repeated_by_story)();
   void (*game_was_restored_and_history_modified)(); // interface might want
   // to redraw the screen
+  int (*prompt_for_filename)(char *filename_suggestion, z_file **result_file,
+      char *directory, int filetype_or_mode, int fileaccess); // optional
+  // UI-specific filename dialog. If not implemented, return -3. Return >=0 on
+  // k, -1 on error or -2 in case user cancelled (ESC or similar).
 };
 
 #endif /* screen_interface_h_INCLUDED */

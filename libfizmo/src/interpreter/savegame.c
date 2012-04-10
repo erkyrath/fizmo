@@ -185,6 +185,59 @@ static int save_stack_frame(uint16_t *current_frame_index,
 }
 
 
+int ask_user_for_file(zscii *filename_buffer, int buffer_len,
+    int preload_len, int filetype_or_mode, int fileaccess, z_file **result_file,
+    char *directory)
+{
+  int input_length;
+  z_ucs filename[buffer_len + 1];
+  char *filename_utf8, *prefixed_filename;
+  int i;
+
+  input_length = active_interface->read_line(
+      (uint8_t*)filename_buffer,
+      buffer_len,
+      0,
+      0,
+      preload_len,
+      NULL,
+      true,
+      true);
+
+  if (input_length == 0)
+    *result_file = NULL;
+
+  if (input_length < 1)
+    return input_length;
+
+  for (i=0; i<(int)input_length; i++)
+    filename[i] = zscii_input_char_to_z_ucs(filename_buffer[i]);
+  filename[i] = 0;
+  filename_utf8 = dup_zucs_string_to_utf8_string(filename);
+
+  if (directory != NULL)
+  {
+    prefixed_filename
+      = fizmo_malloc(strlen(filename_utf8) + strlen(directory) + 2);
+    strcpy(prefixed_filename, directory);
+    strcat(prefixed_filename, "/");
+    strcat(prefixed_filename, filename_utf8);
+  }
+  else
+    prefixed_filename = filename_utf8;
+
+  TRACE_LOG("prefixed filename: \"%s\"\n.", prefixed_filename);
+
+  *result_file = fsi->openfile(prefixed_filename, filetype_or_mode, fileaccess);
+
+  if (directory != NULL)
+    free(prefixed_filename);
+  free(filename_utf8);
+
+  return input_length;
+}
+
+
 static int ask_for_filename(char *filename_suggestion, z_file **result_file,
     char *directory, int filetype_or_mode, int fileaccess)
 {
@@ -193,16 +246,22 @@ static int ask_for_filename(char *filename_suggestion, z_file **result_file,
   bool stream_1_active_buf;
   char *filename_utf8;
   int i;
+  int return_code;
 
-  /* The prompt_for_file entry in fsi is optional. If it's not NULL, call
-     it now. */
-  if (fsi->prompt_for_file) {
-    *result_file = (fsi->prompt_for_file)(filename_suggestion, filetype_or_mode, fileaccess);
-    return 0;
-  }
+  return_code = active_interface->prompt_for_filename(
+      filename_suggestion,
+      result_file,
+      directory,
+      filetype_or_mode,
+      fileaccess);
+
+  // If return_code is == -3, this function is not implemented in the current
+  // screen interface.
+  if (return_code != -3)
+    return return_code;
 
   /* There was no prompt_for_file, so the interpreter will have to ask for
-     a filename directly. */
+   * a filename directly. */
 
   TRACE_LOG("last:\"");
   TRACE_LOG_Z_UCS(last_savegame_filename);

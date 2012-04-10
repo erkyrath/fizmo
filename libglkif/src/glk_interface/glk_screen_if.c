@@ -524,6 +524,66 @@ void glkint_output_interface_info()
 void glkint_game_was_restored_and_history_modified()
 { }
 
+int glkint_prompt_for_filename(char *UNUSED(filename_suggestion),
+    z_file **result, char *UNUSED(directory), int filetype, int fileaccess)
+{
+  frefid_t fileref = NULL;
+  strid_t str = NULL;
+  glui32 usage, fmode;
+
+  if (filetype == FILETYPE_SAVEGAME)
+  {
+    usage = fileusage_SavedGame | fileusage_BinaryMode;
+  }
+  else if (filetype == FILETYPE_TRANSCRIPT)
+  {
+    usage = fileusage_Transcript | fileusage_TextMode;
+  }
+  else if (filetype == FILETYPE_INPUTRECORD)
+  {
+    usage = fileusage_InputRecord | fileusage_TextMode;
+  }
+  else if (filetype == FILETYPE_DATA)
+  {
+    usage = fileusage_Data | fileusage_BinaryMode;
+  }
+  else if (filetype == FILETYPE_TEXT)
+  {
+    usage = fileusage_Data | fileusage_TextMode;
+  }
+  else
+    return -1;
+
+  if (fileaccess == FILEACCESS_READ)
+    fmode = filemode_Read;
+  else if (fileaccess == FILEACCESS_WRITE)
+    fmode = filemode_Write;
+  else if (fileaccess == FILEACCESS_APPEND)
+    fmode = filemode_WriteAppend;
+  else
+    return -1;
+
+  fileref = glk_fileref_create_by_prompt(usage, fmode, 0);
+
+  if (!fileref)
+    return -1;
+
+  str = glk_stream_open_file(fileref, fmode, 0);
+  /* Dispose of the fileref, whether the stream opened successfully
+   * or not. */
+  glk_fileref_destroy(fileref);
+
+  if (!str)
+    return -1;
+
+  *result = zfile_from_glk_strid(
+      str, NULL, // cannot fetch filename from fileref?
+      filetype, fileaccess);
+
+  return 0;
+}
+
+
 struct z_screen_interface glkint_screen_interface =
 {
   &glkint_get_interface_name,
@@ -572,7 +632,8 @@ struct z_screen_interface glkint_screen_interface =
   &glkint_erase_line_pixels,
   &glkint_output_interface_info,
   &glkint_return_false, /* input_must_be_repeated_by_story */
-  &glkint_game_was_restored_and_history_modified
+  &glkint_game_was_restored_and_history_modified,
+  &glkint_prompt_for_filename
 };
 
 #endif // glk_screen_if_c_INCLUDED

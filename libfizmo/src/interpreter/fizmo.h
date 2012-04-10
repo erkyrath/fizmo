@@ -41,8 +41,8 @@
 #include "../blorb_interface/blorb_interface.h"
 #include "blockbuf.h"
 
-#define FIZMO_VERSION "0.7.2"
-#define LIBFIZMO_VERSION "0.7.2"
+#define FIZMO_VERSION "0.7.3"
+#define LIBFIZMO_VERSION "0.7.3"
 
 #define FIZMO_INTERPRETER_NUMBER 6
 /*
@@ -77,14 +77,6 @@ void fizmo_register_sound_interface(
 void fizmo_register_blorb_interface(
     struct z_blorb_interface *blorb_interface);
 
-int (*ask_user_for_file)(zscii *filename_buffer, int buffer_len,
-    int preload_len, int filetype_or_mode, int fileaccess, z_file **result_file,
-    char *directory);
-void fizmo_register_ask_user_for_file_function(
-    int (*ask_user_for_file)(zscii *filename_suggestion,
-      int buffer_len, int preload_len, int filetype_or_mode, int fileaccess,
-      z_file **result_file, char* directory));
-   
 void fizmo_start(z_file* story_stream, z_file *blorb_stream,
     z_file *restore_on_start_file, z_colour screen_default_foreground_color,
     z_colour screen_default_background_color);

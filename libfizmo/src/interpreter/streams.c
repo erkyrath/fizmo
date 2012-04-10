@@ -610,7 +610,7 @@ static void stream_2_output(z_ucs *z_ucs_output)
     {
       stream_2 = transcript_stream;
       stream_2_was_already_active = true;
-      stream_2_print_header(stream2margin);
+      stream_2_print_header();
     }
   }
 
@@ -621,7 +621,7 @@ static void stream_2_output(z_ucs *z_ucs_output)
       TRACE_LOG("Opening script-file '%s' for writing.\n", stream_2_filename);
       stream_2 = fsi->openfile(
           stream_2_filename, FILETYPE_TRANSCRIPT, FILEACCESS_APPEND);
-      stream_2_print_header(stream2margin);
+      stream_2_print_header();
     }
 
     if (bool_equal(lower_window_buffering_active, true))

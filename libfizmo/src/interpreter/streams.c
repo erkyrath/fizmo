@@ -551,7 +551,7 @@ static void stream_2_print_header() //int stream2margin)
 {
   z_ucs dashes[] = { '-', '-', '-', '\n', '\n', 0 };
   //z_ucs space[] = { ' ', 0 };
-  int i;
+  //int i;
 
   //z_ucs stream_2_header[] = { '\n', '-', '-', '-', '\n', '\n', 0 };
   //

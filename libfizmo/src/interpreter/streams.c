@@ -94,6 +94,8 @@ bool input_stream_1_was_already_active = false;
 bool stream_output_has_occured = false;
 static bool stream_2_init_underway = false;
 static bool stream_4_was_already_active = false;
+static bool stream_2_wrapping_disabled;
+static int stream2margin;
 
 
 
@@ -149,7 +151,9 @@ void init_streams()
   size_t bytes_required;
   char *stream_2_line_width = get_configuration_value("stream-2-line-width");
   char *stream_2_left_margin = get_configuration_value("stream-2-left-margin");
-  int stream2width, stream2margin;
+  stream_2_wrapping_disabled
+    = (strcmp(get_configuration_value("disable-stream-2-wrap"), "true") == 0);
+  int stream2width;
 
   stream2width
     = stream_2_line_width != NULL       
@@ -161,21 +165,20 @@ void init_streams()
     ? atoi(stream_2_left_margin)
     : DEFAULT_STREAM_2_LEFT_PADDING;
 
-  stream_2_wrapper = wordwrap_new_wrapper(
-      (strcmp(get_configuration_value("disable-stream-2-wrap"),"true")==0
-       ? false
-       : true),
-      stream2width,
-      &stream_2_wrapped_output_destination,
-      NULL,
-      true,
-      stream2margin,
-      (strcmp(get_configuration_value("sync-transcript"), "true") == 0
-       ? true
-       : false),
-      (strcmp(get_configuration_value("disable-stream-2-hyphenation"),"true")==0
-       ? false
-       : true));
+  if (stream_2_wrapping_disabled == false)
+    stream_2_wrapper = wordwrap_new_wrapper(
+        stream2width,
+        &stream_2_wrapped_output_destination,
+        NULL,
+        true,
+        stream2margin,
+        (strcmp(get_configuration_value("sync-transcript"), "true") == 0
+         ? true
+         : false),
+        (strcmp(get_configuration_value("disable-stream-2-hyphenation")
+                ,"true") == 0
+         ? false
+         : true));
 
   if (strcmp(get_configuration_value("start-script-when-story-starts"),
         "true") == 0)
@@ -535,8 +538,41 @@ void ask_for_stream2_filename()
 }
 
 
+static void stream_2_output_write(z_ucs *z_ucs_output)
+{
+  if (stream_2_wrapping_disabled == true)
+    stream_2_wrapped_output_destination(z_ucs_output, NULL);
+  else
+    wordwrap_wrap_z_ucs(stream_2_wrapper, z_ucs_output);
+}
+
+
+static void stream_2_print_header() //int stream2margin)
+{
+  z_ucs dashes[] = { '-', '-', '-', '\n', '\n', 0 };
+  //z_ucs space[] = { ' ', 0 };
+  int i;
+
+  //z_ucs stream_2_header[] = { '\n', '-', '-', '-', '\n', '\n', 0 };
+  //
+  stream_2_output_write(z_ucs_newline_string);
+  /*
+  for (i=0; i<stream2margin; i++)
+    stream_2_output_write(space);
+    */
+  stream_2_output_write(dashes);
+  /*
+  for (i=0; i<stream2margin; i++)
+    stream_2_output_write(space);
+    */
+}
+
+
 static void stream_2_output(z_ucs *z_ucs_output)
 {
+  int return_code;
+  z_file *transcript_stream = NULL;
+
   if (
       (active_interface == NULL)
       ||
@@ -548,40 +584,44 @@ static void stream_2_output(z_ucs *z_ucs_output)
       (stream_2_was_already_active == false)
       &&
       (stream_2_init_underway == false)
-      &&
-      (!fsi->prompt_for_file)
      )
   {
-    ask_for_stream2_filename();
+    return_code = active_interface->prompt_for_filename(
+        "transcript",
+        &transcript_stream,
+        NULL,
+        FILETYPE_TRANSCRIPT,
+        FILEACCESS_APPEND);
+
+    if (return_code == -3)
+    {
+      ask_for_stream2_filename();
+    }
+    else if (return_code < 0)
+    {
+      printf("### prompt_for_file failed ###\n");
+      /* The user cancelled out. We'll have to silently turn off stream 2.
+         Not the best option, but the best option I can see how to
+         do. */
+      z_mem[0x11] &= 0xfe;
+      return;
+    }
+    else
+    {
+      stream_2 = transcript_stream;
+      stream_2_was_already_active = true;
+      stream_2_print_header(stream2margin);
+    }
   }
 
   if (stream_2_init_underway == false)
   {
     if (stream_2 == NULL)
     {
-      /* The prompt_for_file entry in fsi is optional. If it's not NULL, call
-         it now. */
-      if (fsi->prompt_for_file) {
-        stream_2 = (fsi->prompt_for_file)("transcript", FILETYPE_TRANSCRIPT, FILEACCESS_APPEND);
-        if (!stream_2) {
-          /* The user cancelled out. We'll have to silently turn off stream 2.
-             Not the best option, but the best option I can see how to
-             do. */
-          z_mem[0x11] &= 0xfe;
-          return;
-        }
-      }
-      else {
-        TRACE_LOG("Opening script-file '%s' for writing.\n", stream_2_filename);
-        stream_2 = fsi->openfile(
-            stream_2_filename, FILETYPE_TRANSCRIPT, FILEACCESS_APPEND);
-      }
-      fsi->writechar('\n', stream_2);
-      wordwrap_output_left_padding(stream_2_wrapper);
-      fsi->writestring("---\n\n", stream_2);
-      wordwrap_output_left_padding(stream_2_wrapper);
-      if (strcmp(get_configuration_value("sync-transcript"), "true") == 0)
-        fsi->flushfile(stream_2);
+      TRACE_LOG("Opening script-file '%s' for writing.\n", stream_2_filename);
+      stream_2 = fsi->openfile(
+          stream_2_filename, FILETYPE_TRANSCRIPT, FILEACCESS_APPEND);
+      stream_2_print_header(stream2margin);
     }
 
     if (bool_equal(lower_window_buffering_active, true))
@@ -590,13 +630,14 @@ static void stream_2_output(z_ucs *z_ucs_output)
       {
         script_wrapper_active = true;
       }
-      wordwrap_wrap_z_ucs(stream_2_wrapper, z_ucs_output);
+      stream_2_output_write(z_ucs_output);
     }
     else
     {
       if (bool_equal(script_wrapper_active, true))
       {
-        wordwrap_flush_output(stream_2_wrapper);
+        if (stream_2_wrapping_disabled == false)
+          wordwrap_flush_output(stream_2_wrapper);
         script_wrapper_active = false;
       }
       stream_2_wrapped_output_destination(z_ucs_output, NULL);
@@ -618,6 +659,7 @@ void ask_for_stream4_filename_if_required(bool UNUSED(dont_output_current_line))
   size_t bytes_required;
   z_ucs *ptr;
   int len;
+  int return_code;
 
   if (
       (bool_equal(stream_4_active, true))
@@ -637,116 +679,138 @@ void ask_for_stream4_filename_if_required(bool UNUSED(dont_output_current_line))
     }
 #endif /* DISABLE_OUTPUT_HISTORY */
 
-    stream_1_active_buf = stream_1_active;
-    stream_1_active = true;
+    return_code = active_interface->prompt_for_filename(
+        "transcript",
+        &stream_4,
+        NULL,
+        FILETYPE_INPUTRECORD,
+        FILEACCESS_APPEND);
 
-    do
+    if (return_code >= 0)
     {
-      (void)streams_latin1_output("\n");
+      // Success.
+      stream_4_was_already_active = true;
+      stream_4_init_underway = false;
+    }
+    else if ( (return_code == -1) || (return_code == -2) )
+    {
+      stream_4_active = false;
+    }
+    else if (return_code == -3)
+    {
+      // No support for UI-specific filename prompt.
 
-      (void)i18n_translate(
-          libfizmo_module_name,
-          i18n_libfizmo_PLEASE_ENTER_NAME_FOR_COMMANDFILE);
+      stream_1_active_buf = stream_1_active;
+      stream_1_active = true;
 
-      (void)streams_latin1_output("\n>");
+      do
+      {
+        (void)streams_latin1_output("\n");
 
-      (void)streams_z_ucs_output(last_stream_4_filename);
+        (void)i18n_translate(
+            libfizmo_module_name,
+            i18n_libfizmo_PLEASE_ENTER_NAME_FOR_COMMANDFILE);
 
-      len = z_ucs_len(last_stream_4_filename);
+        (void)streams_latin1_output("\n>");
+
+        (void)streams_z_ucs_output(last_stream_4_filename);
+
+        len = z_ucs_len(last_stream_4_filename);
 #ifndef DISABLE_OUTPUT_HISTORY
-      remove_chars_from_history(outputhistory[active_window_number], len);
+        remove_chars_from_history(outputhistory[active_window_number], len);
 #endif /* DISABLE_OUTPUT_HISTORY */
 
-      for (i=0; i<len; i++)
+        for (i=0; i<len; i++)
+        {
+          current_filename_buffer[i]
+            = unicode_char_to_zscii_input_char(last_stream_4_filename[i]);
+        }
+
+        input_length
+          = active_interface->read_line(
+              (zscii*)current_filename_buffer,
+              MAXIMUM_SCRIPT_FILE_NAME_LENGTH,
+              0,
+              0,
+              len,
+              NULL,
+              true,
+              false);
+
+        if (input_length == 0)
+        {
+          if (streams_latin1_output("\n") != 0)
+            i18n_translate_and_exit(
+                libfizmo_module_name,
+                i18n_libfizmo_FUNCTION_CALL_P0S_ABORTED_DUE_TO_ERROR,
+                -0x0100,
+                "streams_latin1_output");
+
+          if (i18n_translate(
+                libfizmo_module_name,
+                i18n_libfizmo_FILENAME_MUST_NOT_BE_EMPTY) == (size_t)-1)
+            i18n_translate_and_exit(
+                libfizmo_module_name,
+                i18n_libfizmo_FUNCTION_CALL_P0S_ABORTED_DUE_TO_ERROR,
+                -0x0100,
+                "i18n_translate");
+
+          if (streams_latin1_output("\n") != 0)
+            i18n_translate_and_exit(
+                libfizmo_module_name,
+                i18n_libfizmo_FUNCTION_CALL_P0S_ABORTED_DUE_TO_ERROR,
+                -0x0100,
+                "streams_latin1_output");
+        }
+      }
+      while (input_length == 0);
+
+      stream_1_active = stream_1_active_buf;
+
+      for (i=0; i<input_length; i++)
+        last_stream_4_filename[i]
+          = zscii_input_char_to_z_ucs(current_filename_buffer[i]);
+      last_stream_4_filename[i] = 0;
+
+      (void)streams_z_ucs_output(last_stream_4_filename);
+      (void)streams_latin1_output("\n\n");
+
+      TRACE_LOG("From ZSCII translated filename: \"");
+      TRACE_LOG_Z_UCS(last_stream_4_filename);
+      TRACE_LOG("\".\n");
+
+      ptr = last_stream_4_filename;
+      bytes_required = (size_t)zucs_string_to_utf8_string(NULL, &ptr, 0);
+
+      if (
+          (stream_4_filename == NULL)
+          ||
+          (bytes_required > stream_4_filename_size)
+         )
       {
-        current_filename_buffer[i]
-          = unicode_char_to_zscii_input_char(last_stream_4_filename[i]);
+        TRACE_LOG("(Re-)allocating %zd bytes.\n", bytes_required);
+
+        stream_4_filename
+          = (char*)fizmo_realloc(stream_4_filename, bytes_required);
+
+        stream_4_filename_size = bytes_required;
       }
 
-      input_length
-        = active_interface->read_line(
-            (zscii*)current_filename_buffer,
-            MAXIMUM_SCRIPT_FILE_NAME_LENGTH,
-            0,
-            0,
-            len,
-            NULL,
-            true,
-            false);
+      // FIXME: Charsets may differ on operating systems.
+      ptr = last_stream_4_filename;
+      (void)zucs_string_to_utf8_string(
+          stream_4_filename,
+          &ptr,
+          bytes_required);
 
-      if (input_length == 0)
+      if (current_line != NULL)
       {
-        if (streams_latin1_output("\n") != 0)
-          i18n_translate_and_exit(
-              libfizmo_module_name,
-              i18n_libfizmo_FUNCTION_CALL_P0S_ABORTED_DUE_TO_ERROR,
-              -0x0100,
-              "streams_latin1_output");
-
-        if (i18n_translate(
-              libfizmo_module_name,
-              i18n_libfizmo_FILENAME_MUST_NOT_BE_EMPTY) == (size_t)-1)
-          i18n_translate_and_exit(
-              libfizmo_module_name,
-              i18n_libfizmo_FUNCTION_CALL_P0S_ABORTED_DUE_TO_ERROR,
-              -0x0100,
-              "i18n_translate");
-
-        if (streams_latin1_output("\n") != 0)
-          i18n_translate_and_exit(
-              libfizmo_module_name,
-              i18n_libfizmo_FUNCTION_CALL_P0S_ABORTED_DUE_TO_ERROR,
-              -0x0100,
-              "streams_latin1_output");
+        (void)streams_z_ucs_output(current_line);
+        free(current_line);
       }
+      stream_4_was_already_active = true;
+      stream_4_init_underway = false;
     }
-    while (input_length == 0);
-
-    stream_1_active = stream_1_active_buf;
-
-    for (i=0; i<input_length; i++)
-      last_stream_4_filename[i]
-        = zscii_input_char_to_z_ucs(current_filename_buffer[i]);
-    last_stream_4_filename[i] = 0;
-
-    (void)streams_z_ucs_output(last_stream_4_filename);
-    (void)streams_latin1_output("\n\n");
-
-    TRACE_LOG("From ZSCII translated filename: \"");
-    TRACE_LOG_Z_UCS(last_stream_4_filename);
-    TRACE_LOG("\".\n");
-
-    ptr = last_stream_4_filename;
-    bytes_required = (size_t)zucs_string_to_utf8_string(NULL, &ptr, 0);
-
-    if (
-        (stream_4_filename == NULL)
-        ||
-        (bytes_required > stream_4_filename_size)
-       )
-    {
-      TRACE_LOG("(Re-)allocating %zd bytes.\n", bytes_required);
-
-      stream_4_filename
-        = (char*)fizmo_realloc(stream_4_filename, bytes_required);
-
-      stream_4_filename_size = bytes_required;
-    }
-
-    // FIXME: Charsets may differ on operating systems.
-    ptr = last_stream_4_filename;
-    (void)zucs_string_to_utf8_string(
-        stream_4_filename,
-        &ptr,
-        bytes_required);
-
-    if (current_line != NULL)
-    {
-      (void)streams_z_ucs_output(current_line);
-      free(current_line);
-    }
-    stream_4_was_already_active = true;
-    stream_4_init_underway = false;
   }
 }
 
@@ -762,7 +826,7 @@ void stream_4_latin1_output(char *latin1_output)
 
   // We'll ask at this point for the filename, since asking directly when
   // the OUTPUT_STREAM opcode is processed might garble then screen output.
-  // So we'll just wair until the user has finished with the input and ask
+  // So we'll just wait until the user has finished with the input and ask
   // for the filename to save to once he's finished.
   ask_for_stream4_filename_if_required(false);
 
@@ -798,7 +862,8 @@ static void close_script_file()
   {
     TRACE_LOG("Closing script-file.\n");
 
-    wordwrap_flush_output(stream_2_wrapper);
+    if (stream_2_wrapping_disabled == false)
+      wordwrap_flush_output(stream_2_wrapper);
     fsi->writechar('\n', stream_2);
     (void)fsi->closefile(stream_2);
     stream_2 = NULL;

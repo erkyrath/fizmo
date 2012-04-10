@@ -1,4 +1,9 @@
 
+   Version 0.1.3
+ + 0.1.3 was finished at about (?).
+   Merged with Andrew Plotkin's iOS-fizmo implementation: Moved functionality
+   of "glk_ask_user_for_file" into libglkif.
+
    Version 0.1.2
  + 0.1.2 was finished at about Fri Mar 9 21:01:12 CET 2012.
  - Fixed missing $(DESTDIR) variable -- should already have been present

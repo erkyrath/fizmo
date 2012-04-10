@@ -33,7 +33,7 @@
 #ifndef libglkif_locales_h_INCLUDED 
 #define libglkif_locales_h_INCLUDED
 
-#define i18n_libglkif_NOT_YET_IMPLEMENTED 0
+#define i18n_libglkif_NOT_YET_IMPLEMENTED_IN_LIBGLKIF 0
 
 extern z_ucs libglkif_module_name[];
 

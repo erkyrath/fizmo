@@ -1,4 +1,10 @@
 
+   Version 0.1.3
+ + 0.1.3 was finished at about (?).
+   Merged with Andrew Plotkin's iOS-fizmo implementation: replaced old
+  "fizmo_register_ask_user_for_file_function" with "prompt_for_file"
+   implementation in "glk_screen_if.c", added quote box support.
+
    Version 0.1.2
  + 0.1.2 was finished at about Fri Mar 9 21:01:12 CET 2012.
  - Merged zarf's GLK changes into "glk_screen_if.c". The new version 0.1.2

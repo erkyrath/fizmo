@@ -88,6 +88,10 @@ struct z_screen_cell_interface
   void (*set_cursor_visibility)(bool visible);
   z_colour (*get_default_foreground_colour)();
   z_colour (*get_default_background_colour)();
+  int (*prompt_for_filename)(char *filename_suggestion, z_file **result_file,
+      char *directory, int filetype_or_mode, int fileaccess); // optional
+  // UI-specific filename dialog. If not implemented, return -3. Return >=0 on
+  // k, -1 on error or -2 in case user cancelled (ESC or similar).
 };
 
 #endif /* screen_cell_interface_h_INCLUDED */

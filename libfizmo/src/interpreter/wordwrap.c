@@ -45,6 +45,7 @@
 #include "../tools/types.h"
 #include "../tools/i18n.h"
 #include "../tools/z_ucs.h"
+#include "../locales/libfizmo_locales.h"
 #include "wordwrap.h"
 #include "fizmo.h"
 #include "hyphenation.h"
@@ -402,7 +403,10 @@ static void flush_input_buffer(WORDWRAP *wrapper, bool force_flush)
           if ((hyphenated_word = hyphenate(index)) == NULL)
           {
             TRACE_LOG("Error hyphenating.\n");
-            exit(-1);
+            i18n_translate_and_exit(
+                libfizmo_module_name,
+                i18n_libfizmo_UNKNOWN_ERROR_CASE,
+                -1);
           }
           *word_end_without_split_chars = buf;
 
@@ -666,6 +670,7 @@ void wordwrap_insert_metadata(WORDWRAP *wrapper,
 }
 
 
+/*
 void wordwrap_output_left_padding(WORDWRAP *wrapper)
 {
   if (wrapper->left_side_padding > 0)
@@ -673,6 +678,7 @@ void wordwrap_output_left_padding(WORDWRAP *wrapper)
         wrapper->padding_buffer,
         wrapper->destination_parameter);
 }
+*/
 
 
 void wordwrap_adjust_line_length(WORDWRAP *wrapper, size_t new_line_length)

@@ -1341,7 +1341,6 @@ void opcode_new_line(void)
   (void)streams_latin1_output("\n");
 }
 
-
 #ifndef DISABLE_PREFIX_COMMANDS
 
 static bool process_interpreter_command()
@@ -1646,20 +1645,18 @@ static bool process_interpreter_command()
 
 int save_and_quit_if_required(bool force_save)
 {
-  uint8_t *filename;
+  char *filename;
   char *save_and_quit_file;
+  char *autosave_filename;
   uint8_t *pc_buf;
-  int length;
 
-  save_and_quit_file
-    = get_configuration_value("save-and-quit-file-before-read");
+  autosave_filename
+    = get_configuration_value("autosave-filename");
 
-  TRACE_LOG("save_and_quit_file: %s.\n", save_and_quit_file);
+  TRACE_LOG("autosave_filename: %s.\n", autosave_filename);
 
   if (
-      (save_and_quit_file != NULL)
-      &&
-      (strcmp(save_and_quit_file, "true") == 0)
+      (autosave_filename != NULL)
       &&
       (
        (zpu_step_number != 1)
@@ -1674,25 +1671,31 @@ int save_and_quit_if_required(bool force_save)
     TRACE_LOG("current_instruction_location: %lx\n",
       (unsigned long int)(current_instruction_location - z_mem));
 
-    length = strlen(save_and_quit_file) + 1;
-
-    filename = (uint8_t*)fizmo_malloc(length);
-
-    length--;
-    memcpy(filename + 1, save_and_quit_file, length);
-    *filename = length;
+    filename = fizmo_strdup(autosave_filename);
 
     save_game(
       0,
       (uint16_t)(active_z_story->dynamic_memory_end - z_mem + 1),
-      save_and_quit_file,
+      filename,
       true,
       false,
       NULL);
 
     pc = pc_buf;
-    terminate_interpreter = INTERPRETER_QUIT_SAVE_BEFORE_READ;
-    return 1;
+
+    save_and_quit_file
+      = get_configuration_value("save-and-quit-file-before-read");
+    if (
+        (save_and_quit_file != NULL)
+        &&
+        (strcmp(save_and_quit_file, "true") == 0)) 
+    {
+      terminate_interpreter = INTERPRETER_QUIT_SAVE_BEFORE_READ;
+      return 1;
+    }
+    else {
+      return 0;
+    }
   }
   else
     return 0;
@@ -1707,20 +1710,37 @@ int read_command_from_file(zscii *input_buffer, int input_buffer_size,
   long filepos;
   int milliseconds;
   int res;
+  int return_code;
 
   if (input_stream_1 == NULL)
   {
     if (input_stream_1_was_already_active == false)
-      ask_for_input_stream_filename();
-    TRACE_LOG("Trying to open \"%s\"\n", input_stream_1_filename);
-    if ((input_stream_1 = fsi->openfile(input_stream_1_filename,
-            FILETYPE_INPUTRECORD, FILEACCESS_READ)) == NULL)
     {
-      TRACE_LOG("Could not open input file for stream 1.\n");
-      input_stream_1_active = false;
-      input_stream_1_filename_size = 0;
-      free(input_stream_1_filename);
-      return -1;
+      return_code = active_interface->prompt_for_filename(
+          "transcript",
+          &input_stream_1,
+          NULL,
+          FILETYPE_TRANSCRIPT,
+          FILEACCESS_READ);
+
+      if (return_code == -3)
+      {
+        ask_for_input_stream_filename();
+        TRACE_LOG("Trying to open \"%s\"\n", input_stream_1_filename);
+        if ((input_stream_1 = fsi->openfile(input_stream_1_filename,
+                FILETYPE_INPUTRECORD, FILEACCESS_READ)) == NULL)
+        {
+          TRACE_LOG("Could not open input file for stream 1.\n");
+          input_stream_1_active = false;
+          input_stream_1_filename_size = 0;
+          free(input_stream_1_filename);
+          return -1;
+        }
+      }
+      else if (return_code < 0)
+      {
+        return -1;
+      }
     }
   }
 

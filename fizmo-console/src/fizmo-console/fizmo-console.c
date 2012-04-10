@@ -48,7 +48,7 @@
 #include <tools/tracelog.h>
 
 static char* interface_name = "fizmo-console";
-static char* interface_version = "0.7.2";
+static char* interface_version = "0.7.3";
 int line_length = -1;
 bool disable_hyphenation = false;
 static WORDWRAP *output_wordwrapper;
@@ -276,6 +276,12 @@ static void simple_c_output_interface_info()
 static void simple_c_game_was_restored_and_history_modified()
 { }
 
+static int simple_c_prompt_for_filename(char *UNUSED(filename_suggestion),
+    z_file **UNUSED(result_file), char *UNUSED(directory),
+    int UNUSED(filetype_or_mode), int UNUSED(fileaccess))
+{ return -3; }
+
+
 struct z_screen_interface simple_c_interface =
 {
   &simple_c_get_interface_name,
@@ -324,7 +330,8 @@ struct z_screen_interface simple_c_interface =
   &simple_c_erase_line_pixels,
   &simple_c_output_interface_info,
   &simple_c_return_false,
-  &simple_c_game_was_restored_and_history_modified
+  &simple_c_game_was_restored_and_history_modified,
+  &simple_c_prompt_for_filename
 };
 
 

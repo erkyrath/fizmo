@@ -477,7 +477,7 @@ int zucs_string_to_utf8_string(char *dst, z_ucs **src, size_t max_dst_size)
     {
       printf("Illegal code: %c/%x\n", (char)**src, (unsigned)**src);
       printf("&0xfffff800: %x.\n", (unsigned)(**src & 0xfffff800));
-      exit(EXIT_FAILURE);
+      return -1;
     }
 
     if (dst != NULL)

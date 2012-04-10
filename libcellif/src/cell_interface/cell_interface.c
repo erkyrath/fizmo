@@ -3007,6 +3007,15 @@ static void game_was_restored_and_history_modified()
 }
 
 
+static int prompt_for_filename(char *filename_suggestion,
+    z_file **result_file, char *directory, int filetype_or_mode,
+    int fileaccess)
+{
+  return screen_cell_interface->prompt_for_filename(filename_suggestion,
+      result_file, directory, filetype_or_mode, fileaccess);
+}
+
+
 static struct z_screen_interface z_cell_interface =
 {
   &get_interface_name,
@@ -3055,7 +3064,8 @@ static struct z_screen_interface z_cell_interface =
   &erase_line_pixels,
   &output_interface_info,
   &input_must_be_repeated_by_story,
-  &game_was_restored_and_history_modified
+  &game_was_restored_and_history_modified,
+  &prompt_for_filename
 };
 
 

@@ -84,14 +84,6 @@ struct z_story *active_z_story;
 struct z_screen_interface *active_interface = NULL;
 struct z_sound_interface *active_sound_interface = NULL;
 
-int ask_user_for_file_default_function(zscii *filename_buffer, int buffer_len,
-    int preload_len, int filetype_or_mode, int fileaccess, z_file **result_file,
-    char *directory);
-int (*ask_user_for_file)(zscii *filename_buffer, int buffer_len,
-    int preload_len, int filetype_or_mode, int fileaccess, z_file **result_file,
-    char *directory
-    ) = &ask_user_for_file_default_function;
-
 uint8_t ver = 0;
 uint8_t *header_extension_table;
 uint8_t header_extension_table_size;
@@ -847,69 +839,6 @@ void fizmo_register_blorb_interface(
 {
   TRACE_LOG("Registered blorb interface at %p.\n", blorb_interface);
   active_blorb_interface = blorb_interface;
-}
-
-
-void fizmo_register_ask_user_for_file_function(
-    int (*ask_user_for_file_function)(zscii *filename_buffer,
-      int buffer_len, int preload_len, int filetype_or_mode,
-      int fileaccess, z_file **result_file,
-      char *directory))
-{
-  ask_user_for_file = ask_user_for_file_function;
-}
-
-
-int ask_user_for_file_default_function(zscii *filename_buffer, int buffer_len,
-    int preload_len, int filetype_or_mode, int fileaccess, z_file **result_file,
-    char *directory)
-{
-  int input_length;
-  z_ucs filename[buffer_len + 1];
-  char *filename_utf8, *prefixed_filename;
-  int i;
-
-  input_length = active_interface->read_line(
-      (uint8_t*)filename_buffer,
-      buffer_len,
-      0,
-      0,
-      preload_len,
-      NULL,
-      true,
-      true);
-
-  if (input_length == 0)
-    *result_file = NULL;
-
-  if (input_length < 1)
-    return input_length;
-
-  for (i=0; i<(int)input_length; i++)
-    filename[i] = zscii_input_char_to_z_ucs(filename_buffer[i]);
-  filename[i] = 0;
-  filename_utf8 = dup_zucs_string_to_utf8_string(filename);
-
-  if (directory != NULL)
-  {
-    prefixed_filename
-      = fizmo_malloc(strlen(filename_utf8) + strlen(directory) + 2);
-    strcpy(prefixed_filename, directory);
-    strcat(prefixed_filename, "/");
-    strcat(prefixed_filename, filename_utf8);
-  }
-  else
-    prefixed_filename = filename_utf8;
-
-  TRACE_LOG("prefixed filename: \"%s\"\n.", prefixed_filename);
-
-  *result_file = fsi->openfile(prefixed_filename, filetype_or_mode, fileaccess);
-
-  if (directory != NULL)
-    free(prefixed_filename);
-  free(filename_utf8);
-
-  return input_length;
 }
 
 

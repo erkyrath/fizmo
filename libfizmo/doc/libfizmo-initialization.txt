@@ -60,9 +60,3 @@
 
 
 
-
- ---------
-
- CVS-Id: $Id: libfizmo-initialization.txt,v 1.3 2011-08-23 10:01:13 chrender Exp $
- CVS-Revision: $Revision: 1.3 $
-

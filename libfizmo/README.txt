@@ -15,7 +15,7 @@
 
  Please send bug reports (or other requests) to fizmo@spellbreaker.org.
 
- libfizmo was written by Christoph Ender in 2005-2011.
+ libfizmo was written by Christoph Ender in 2005-2012.
 
  For the latest version, see http://spellbreaker.org/~chrender/fizmo/
 

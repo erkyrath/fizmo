@@ -48,6 +48,12 @@
 
 #define LATIN1_TO_Z_UCS_BUFFER_SIZE 64
 
+static z_ucs i18n_fallback_error_message[] = {
+   'U', 'n', 'k', 'n', 'o', 'w', 'n', ' ',
+   'i', '1', '8', 'n', ' ',
+   'e', 'r', 'r', 'o', 'r', '.',
+   0 };
+
 static char *locale_aliases[4][5] =
 {
   { "en_US", "en-GB", "en-US", "en", NULL },
@@ -648,6 +654,10 @@ static locale_module *get_locale_module(z_ucs *locale_name,
 static void i18n_exit(int exit_code, z_ucs *error_message)
 {
   char *output;
+
+  if ( (error_message == NULL)
+      || (*error_message == 0) )
+    error_message = i18n_fallback_error_message;
 
   if (abort_function != NULL)
   {

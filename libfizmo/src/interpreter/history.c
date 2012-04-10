@@ -71,6 +71,8 @@
 #include "../tools/tracelog.h"
 #include "../tools/types.h"
 #include "../tools/z_ucs.h"
+#include "../tools/i18n.h"
+#include "../locales/libfizmo_locales.h"
 #include "history.h"
 #include "fizmo.h"
 #include "config.h"
@@ -214,7 +216,11 @@ static void process_buffer_back(OUTPUTHISTORY *h, long nof_zucs_chars)
       else
       {
         TRACE_LOG("Inconsistent history metadata.\n");
-        exit(-1);
+        i18n_translate_and_exit(
+            libfizmo_module_name,
+            i18n_libfizmo_INVALID_PARAMETER_TYPE_P0S,
+            -1,
+            "metadata");
       }
     }
 
@@ -590,7 +596,11 @@ int store_metadata_in_history(OUTPUTHISTORY *h, int metadata_type, ...)
     // -2 is the lowest allowed value for Z_COLOUR_UNDEFINED, 15 the maximum
     // for all combinations of Z_STYLE.
     TRACE_LOG("Parameter value %d outside valid range.\n", parameter);
-    exit(-1);
+    i18n_translate_and_exit(
+        libfizmo_module_name,
+        i18n_libfizmo_INVALID_PARAMETER_TYPE_P0S,
+        -1,
+        "parameter");
   }
 
   if (metadata_type == HISTORY_METADATA_TYPE_FONT)
@@ -622,7 +632,11 @@ int store_metadata_in_history(OUTPUTHISTORY *h, int metadata_type, ...)
     if ( (parameter < -2) || (parameter > 15 ) )
     {
       TRACE_LOG("Parameter value %d outside valid range.\n", parameter);
-      exit(-1);
+      i18n_translate_and_exit(
+          libfizmo_module_name,
+          i18n_libfizmo_INVALID_PARAMETER_TYPE_P0S,
+          -1,
+          "parameter");
     }
     h->history_buffer_front_index_background = parameter;
     output_buffer[3] = (z_ucs)(parameter + HISTORY_METADATA_DATA_OFFSET);
@@ -1175,7 +1189,11 @@ int output_rewind_paragraph(history_output *output)
       else
       {
         TRACE_LOG("Invalid metadata type %d\n", metadata_type);
-        exit(-1);
+        i18n_translate_and_exit(
+            libfizmo_module_name,
+            i18n_libfizmo_INVALID_PARAMETER_TYPE_P0S,
+            -1,
+            "metadata");
       }
     }
      */
@@ -1300,7 +1318,11 @@ int output_repeat_paragraphs(history_output *output, int n,
         else
         {
           TRACE_LOG("Invalid metadata type %d\n", metadata_type);
-          exit(-1);
+          i18n_translate_and_exit(
+              libfizmo_module_name,
+              i18n_libfizmo_INVALID_PARAMETER_TYPE_P0S,
+              -1,
+              "metadata");
         }
       }
     }

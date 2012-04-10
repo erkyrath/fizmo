@@ -265,7 +265,7 @@ int glkint_vfilescanf(z_file *fileref, char *format, va_list ap)
   {
     i18n_translate_and_exit(
         libglkif_module_name,
-        i18n_libglkif_NOT_YET_IMPLEMENTED,
+        i18n_libglkif_NOT_YET_IMPLEMENTED_IN_LIBGLKIF,
         -0x010d);
     return -1;
   }
@@ -321,7 +321,7 @@ int glkint_ungetchar(int c, z_file *fileref)
   {
     i18n_translate_and_exit(
         libglkif_module_name,
-        i18n_libglkif_NOT_YET_IMPLEMENTED,
+        i18n_libglkif_NOT_YET_IMPLEMENTED_IN_LIBGLKIF,
         -0x010d);
     return -1;
   }
@@ -336,7 +336,7 @@ int glkint_flushfile(z_file *fileref)
   {
     i18n_translate_and_exit(
         libglkif_module_name,
-        i18n_libglkif_NOT_YET_IMPLEMENTED,
+        i18n_libglkif_NOT_YET_IMPLEMENTED_IN_LIBGLKIF,
         -0x010d);
     return -1;
   }
@@ -351,7 +351,7 @@ time_t glkint_get_last_file_mod_timestamp(z_file *fileref)
   {
     i18n_translate_and_exit(
         libglkif_module_name,
-        i18n_libglkif_NOT_YET_IMPLEMENTED,
+        i18n_libglkif_NOT_YET_IMPLEMENTED_IN_LIBGLKIF,
         -0x010d);
     return -1;
   }
@@ -366,7 +366,7 @@ int glkint_get_fileno(z_file *fileref)
   {
     i18n_translate_and_exit(
         libglkif_module_name,
-        i18n_libglkif_NOT_YET_IMPLEMENTED,
+        i18n_libglkif_NOT_YET_IMPLEMENTED_IN_LIBGLKIF,
         -0x010d);
     return -1;
   }
@@ -381,7 +381,7 @@ FILE* glkint_get_stdio_stream(z_file *fileref)
   {
     i18n_translate_and_exit(
         libglkif_module_name,
-        i18n_libglkif_NOT_YET_IMPLEMENTED,
+        i18n_libglkif_NOT_YET_IMPLEMENTED_IN_LIBGLKIF,
         -0x010d);
     return NULL;
   }

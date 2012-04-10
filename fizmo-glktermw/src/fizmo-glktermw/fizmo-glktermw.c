@@ -103,48 +103,6 @@ int glkunix_startup_code(glkunix_startup_t *data)
 }
 
 
-int glk_ask_user_for_file(zscii *UNUSED(filename_buffer),
-    int UNUSED(buffer_len), int UNUSED(preload_len), int filetype,
-    int fileaccess, z_file **result_file, char *UNUSED(directory))
-{
-  frefid_t fileref = NULL;
-  glui32 usage, fmode;
-  strid_t str = NULL;
-
-  if (filetype == FILETYPE_SAVEGAME)
-    usage = fileusage_SavedGame | fileusage_BinaryMode;
-  else if (filetype == FILETYPE_TRANSCRIPT)
-    usage = fileusage_Transcript | fileusage_TextMode;
-  else if (filetype == FILETYPE_INPUTRECORD)
-    usage = fileusage_InputRecord | fileusage_TextMode;
-  else
-    return -1;
-
-  if (fileaccess == FILEACCESS_READ)
-    fmode = filemode_Read;
-  else if (fileaccess == FILEACCESS_WRITE)
-    fmode = filemode_Write;
-  else if (fileaccess == FILEACCESS_APPEND)
-    fmode = filemode_WriteAppend;
-  else
-    return -1;
-
-  fileref = glk_fileref_create_by_prompt(usage, fmode, 0);
-
-  if (!fileref)
-    return -1;
-
-  str = glk_stream_open_file(fileref, fmode, 0);
-  glk_fileref_destroy(fileref);
-  if (!str)
-    return -1;
-
-  *result_file = zfile_from_glk_strid(str, NULL, filetype, fileaccess);
-
-  return 1;
-}
-
-
 void glk_main(void)
 {
   z_file *story_stream;
@@ -155,12 +113,11 @@ void glk_main(void)
   }
 
   set_configuration_value("savegame-path", NULL);
-  set_configuration_value("transcript-filename", "transcript.txt");
+  /*set_configuration_value("transcript-filename", "transcript.txt");*/
   set_configuration_value("savegame-default-filename", "");
 
   fizmo_register_screen_interface(&glkint_screen_interface);
   fizmo_register_blorb_interface(&glkint_blorb_interface);
-  fizmo_register_ask_user_for_file_function(&glk_ask_user_for_file);
 
   glkint_open_interface();
   story_stream = zfile_from_glk_strid(gamefilestream, gamefilename,

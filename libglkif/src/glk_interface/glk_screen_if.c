@@ -60,10 +60,13 @@ static winid_t mainwin = NULL;
 static winid_t statusline = NULL;
 static winid_t statuswin = NULL;
 static bool instatuswin = false;
+static int statuscurheight = 0; /* what the VM thinks the height is */
+static int statusmaxheight = 0; /* height including possible quote box */
 static int inputbuffer_size = 0;
 static glui32 *inputbuffer = NULL;
 
 static void glkint_get_screen_size(glui32 *, glui32 *);
+static void glkint_resolve_status_height(void);
 
 void glkint_open_interface()
 {
@@ -177,6 +180,8 @@ int glkint_close_interface(z_ucs *error_message)
 { 
   if (error_message)
     glkint_fatal_error_handler(NULL, error_message, NULL, 0, 0);
+  else
+    glk_exit();
   return 0;
 }
 
@@ -197,6 +202,8 @@ int16_t glkint_interface_read_line(zscii *dest, uint16_t maximum_length,
   int ix;
   zscii zch;
   int i;
+
+  glkint_resolve_status_height();
 
   if (!inputbuffer) {
     inputbuffer_size = maximum_length+16;
@@ -275,7 +282,11 @@ int glkint_interface_read_char(uint16_t tenth_seconds,
   event_t event;
   int timercount = 0;
   int timed_routine_retval;
-  winid_t win = (instatuswin ? statuswin : mainwin);
+  winid_t win;
+
+  glkint_resolve_status_height();
+
+  win = (instatuswin ? statuswin : mainwin);
 
   if (win) {
     glk_request_char_event_uni(win);
@@ -400,20 +411,53 @@ void glkint_set_font(z_font font_type)
 
 void glkint_split_window(int16_t nof_lines)
 { 
-  if (!nof_lines) {
-    if (statuswin) {
+  int oldvmheight = statuscurheight;
+  statuscurheight = nof_lines;
+
+  /* We do not decrease the height at this time -- it can only increase.
+     This ensures that quote boxes don't vanish. */
+  if (statuscurheight > statusmaxheight)
+    statusmaxheight = statuscurheight;
+
+  /* However, if the VM thinks it's increasing the height, we must be
+     careful to clear the "newly created" space. */
+  if (statuswin && statuscurheight > oldvmheight) {
+    strid_t stream = glk_window_get_stream(statuswin);
+    int ix, jx;
+    glui32 truewidth, trueheight;
+    glk_window_get_size(statuswin, &truewidth, &trueheight);
+    for (jx=oldvmheight; jx<(int)trueheight; jx++) {
+      glk_window_move_cursor(statuswin, 0, jx);
+      for (ix=0; ix<(int)truewidth; ix++) {
+        glk_put_char_stream(stream, ' ');
+      }
+    }
+    glk_window_move_cursor(statuswin, 0, 0);
+  }
+
+  if (!statuswin) {
+    statuswin = glk_window_open(mainwin, winmethod_Above | winmethod_Fixed, statusmaxheight, wintype_TextGrid, 2);
+  }
+  else {
+    glk_window_set_arrangement(glk_window_get_parent(statuswin), winmethod_Above | winmethod_Fixed, statusmaxheight, statuswin);
+  }
+}
+
+/* If the status height is too large because of last turn's quote box,
+   shrink it down now. */
+static void glkint_resolve_status_height()
+{
+  if (statuswin) {
+    if (statusmaxheight == 0) {
       glk_window_close(statuswin, NULL);
       statuswin = NULL;
     }
-  }
-  else {
-    if (!statuswin) {
-      statuswin = glk_window_open(mainwin, winmethod_Above | winmethod_Fixed, nof_lines, wintype_TextGrid, 2);
-    }
     else {
-      glk_window_set_arrangement(glk_window_get_parent(statuswin), winmethod_Above | winmethod_Fixed, nof_lines, statuswin);
+      glk_window_set_arrangement(glk_window_get_parent(statuswin), winmethod_Above | winmethod_Fixed, statusmaxheight, statuswin);
     }
   }
+
+  statusmaxheight = statuscurheight;    
 }
 
 /* 1 is the status window; 0 is the story window. */
@@ -475,6 +519,66 @@ void glkint_output_interface_info()
 void glkint_game_was_restored_and_history_modified()
 { }
 
+int glkint_prompt_for_filename(char *UNUSED(filename_suggestion),
+    z_file **result, char *UNUSED(directory), int filetype, int fileaccess)
+{
+  frefid_t fileref = NULL;
+  strid_t str = NULL;
+  glui32 usage, fmode;
+
+  if (filetype == FILETYPE_SAVEGAME)
+  {
+    usage = fileusage_SavedGame | fileusage_BinaryMode;
+  }
+  else if (filetype == FILETYPE_TRANSCRIPT)
+  {
+    usage = fileusage_Transcript | fileusage_TextMode;
+  }
+  else if (filetype == FILETYPE_INPUTRECORD)
+  {
+    usage = fileusage_InputRecord | fileusage_TextMode;
+  }
+  else if (filetype == FILETYPE_DATA)
+  {
+    usage = fileusage_Data | fileusage_BinaryMode;
+  }
+  else if (filetype == FILETYPE_TEXT)
+  {
+    usage = fileusage_Data | fileusage_TextMode;
+  }
+  else
+    return -1;
+
+  if (fileaccess == FILEACCESS_READ)
+    fmode = filemode_Read;
+  else if (fileaccess == FILEACCESS_WRITE)
+    fmode = filemode_Write;
+  else if (fileaccess == FILEACCESS_APPEND)
+    fmode = filemode_WriteAppend;
+  else
+    return -1;
+
+  fileref = glk_fileref_create_by_prompt(usage, fmode, 0);
+
+  if (!fileref)
+    return -1;
+
+  str = glk_stream_open_file(fileref, fmode, 0);
+  /* Dispose of the fileref, whether the stream opened successfully
+   * or not. */
+  glk_fileref_destroy(fileref);
+
+  if (!str)
+    return -1;
+
+  *result = zfile_from_glk_strid(
+      str, NULL, // cannot fetch filename from fileref?
+      filetype, fileaccess);
+
+  return 0;
+}
+
+
 struct z_screen_interface glkint_screen_interface =
 {
   &glkint_get_interface_name,
@@ -523,7 +627,8 @@ struct z_screen_interface glkint_screen_interface =
   &glkint_erase_line_pixels,
   &glkint_output_interface_info,
   &glkint_return_false, /* input_must_be_repeated_by_story */
-  &glkint_game_was_restored_and_history_modified
+  &glkint_game_was_restored_and_history_modified,
+  &glkint_prompt_for_filename
 };
 
 #endif // glk_screen_if_c_INCLUDED

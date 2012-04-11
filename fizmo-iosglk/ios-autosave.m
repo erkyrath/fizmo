@@ -30,6 +30,7 @@
  */
 
 #import "GlkStream.h"
+#import "GlkLibrary.h"
 #include "fizmo.h"
 #include "savegame.h"
 #include "zpu.h"
@@ -42,8 +43,11 @@
 	The game goes into $DOCS/autosave.glksave; the library state into $DOCS/autosave.plist. However, we do this as atomically as possible -- we write to temp files and then rename.
  
 	Returns 0 to indicate that the interpreter should not exit after saving. (If Fizmo is invoked from a CGI script, it can exit after every command cycle. But we're not doing that.)
+ 
+	This is called in the VM thread, just before setting up line input and calling glk_select(). (So no window will actually be requesting line input at this time.)
  */
 int iosglk_autosave() {
+	GlkLibrary *library = [GlkLibrary singleton];
 	uint8_t *orig_pc;
 
 	/* We use an old-fashioned way of locating the Documents directory. (The NSManager method for this is iOS 4.0 and later.) */
@@ -54,9 +58,10 @@ int iosglk_autosave() {
 		return 0;
 	}
 	NSString *dirname = [dirlist objectAtIndex:0];
-	NSString *pathname = [dirname stringByAppendingPathComponent:@"autosave-tmp.glksave"];
-	char *cpathname = (char *)[pathname cStringUsingEncoding:NSUTF8StringEncoding]; 
-	// cpathname will be freed when the pathname is freed; openfile() will strdup it.
+	
+	NSString *tmpgamepath = [dirname stringByAppendingPathComponent:@"autosave-tmp.glksave"];
+	char *cpathname = (char *)[tmpgamepath cStringUsingEncoding:NSUTF8StringEncoding]; 
+	// cpathname will be freed when the pathname is freed; openfile() will strdup it before that happens.
 	z_file *save_file = fsi->openfile(cpathname, FILETYPE_DATA, FILEACCESS_WRITE);
 	if (!save_file) {
 		NSLog(@"### unable to create z_file!");
@@ -76,6 +81,32 @@ int iosglk_autosave() {
 		return 0;
 	}
 	
+	NSString *tmplibpath = [dirname stringByAppendingPathComponent:@"autosave-tmp.plist"];
+	res = [NSKeyedArchiver archiveRootObject:library toFile:tmplibpath];
+
+	if (!res) {
+		NSLog(@"### library serialize failed!");
+		return 0;
+	}
+
+	NSString *finalgamepath = [dirname stringByAppendingPathComponent:@"autosave.glksave"];
+	NSString *finallibpath = [dirname stringByAppendingPathComponent:@"autosave.plist"];
+
+	/* This is not really atomic, but we're already past the serious failure modes. */
+	[library.filemanager removeItemAtPath:finallibpath error:nil];
+	[library.filemanager removeItemAtPath:finalgamepath error:nil];
+
+	res = [library.filemanager moveItemAtPath:tmpgamepath toPath:finalgamepath error:nil];
+	if (!res) {
+		NSLog(@"### could not move game autosave to final position!");
+		return 0;
+	}
+	res = [library.filemanager moveItemAtPath:tmplibpath toPath:finallibpath error:nil];
+	if (!res) {
+		/* We don't abort out in this case; we leave the game autosave in place by itself, which is not ideal but better than data loss. */
+		NSLog(@"### could not move library autosave to final position (continuing)");
+	}
+
 	return 0;
 }
 

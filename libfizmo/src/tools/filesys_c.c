@@ -320,6 +320,7 @@ struct z_filesys_interface z_filesys_interface_c =
   &read_dir_c,
   &make_dir_c,
   &is_filename_directory_c,
+  NULL, /* autosave */
 };
 
 

@@ -29,11 +29,53 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#import "GlkStream.h"
+#include "fizmo.h"
+#include "savegame.h"
+#include "zpu.h"
+#include "filesys_interface.h"
+#include "glk_interface.h"
+#include "filesys.h"
+
 /* Do an auto-save of the game state, to an iOS-appropriate location. This also saves the Glk library state.
+ 
+	The game goes into $DOCS/autosave.glksave; the library state into $DOCS/autosave.plist. However, we do this as atomically as possible -- we write to temp files and then rename.
  
 	Returns 0 to indicate that the interpreter should not exit after saving. (If Fizmo is invoked from a CGI script, it can exit after every command cycle. But we're not doing that.)
  */
 int iosglk_autosave() {
+	uint8_t *orig_pc;
+
+	/* We use an old-fashioned way of locating the Documents directory. (The NSManager method for this is iOS 4.0 and later.) */
+	
+	NSArray *dirlist = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+	if (!dirlist || [dirlist count] == 0) {
+		NSLog(@"### unable to locate Documents directory.");
+		return 0;
+	}
+	NSString *dirname = [dirlist objectAtIndex:0];
+	NSString *pathname = [dirname stringByAppendingPathComponent:@"autosave-tmp.glksave"];
+	char *cpathname = (char *)[pathname cStringUsingEncoding:NSUTF8StringEncoding]; 
+	// cpathname will be freed when the pathname is freed; openfile() will strdup it.
+	z_file *save_file = fsi->openfile(cpathname, FILETYPE_DATA, FILEACCESS_WRITE);
+	if (!save_file) {
+		NSLog(@"### unable to create z_file!");
+		return 0;
+	}
+	
+	orig_pc = pc;
+    pc = current_instruction_location;
+
+	int res = save_game_to_stream(0, (active_z_story->dynamic_memory_end - z_mem + 1), save_file, false);
+	/* save_file is now closed */
+	
+	pc = orig_pc;
+	
+	if (!res) {
+		NSLog(@"### save_game_to_stream failed!");
+		return 0;
+	}
+	
 	return 0;
 }
 

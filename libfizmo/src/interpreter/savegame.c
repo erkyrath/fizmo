@@ -464,9 +464,10 @@ static int _store_save_or_restore_result(uint16_t result_code)
 }
 
 
-// Returns 0 for failure,  1 for "save succeeded" and 2 for "the game is
-// being restored and is resuming execution again from here, the point where
-// it was saved".
+// Handle an error in the save or restore process. This always returns 0,
+// indicating failure.
+// If evaluate_result is true, this does a Z-machine store of 0.
+// If close_stream is true, this closes the file.
 static int _handle_save_or_restore_failure(bool evaluate_result,
     int i18n_message_code, z_file *iff_file, bool close_stream)
 {

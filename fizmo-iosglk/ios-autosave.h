@@ -29,4 +29,6 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-extern int iosglk_autosave(void);
+extern int iosglk_do_autosave(void);
+extern z_file *iosglk_find_autosave(void);
+extern int iosglk_restore_autosave(z_file *savefile);

@@ -38,6 +38,18 @@
 #include "glk_interface.h"
 #include "filesys.h"
 
+static NSString *documents_dir() {
+	/* We use an old-fashioned way of locating the Documents directory. (The NSManager method for this is iOS 4.0 and later.) */
+	
+	NSArray *dirlist = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+	if (!dirlist || [dirlist count] == 0) {
+		NSLog(@"### unable to locate Documents directory.");
+		return nil;
+	}
+	
+	return [dirlist objectAtIndex:0];
+}
+
 /* Do an auto-save of the game state, to an iOS-appropriate location. This also saves the Glk library state.
  
 	The game goes into $DOCS/autosave.glksave; the library state into $DOCS/autosave.plist. However, we do this as atomically as possible -- we write to temp files and then rename.
@@ -46,19 +58,13 @@
  
 	This is called in the VM thread, just before setting up line input and calling glk_select(). (So no window will actually be requesting line input at this time.)
  */
-int iosglk_autosave() {
+int iosglk_do_autosave() {
 	GlkLibrary *library = [GlkLibrary singleton];
 	uint8_t *orig_pc;
 
-	/* We use an old-fashioned way of locating the Documents directory. (The NSManager method for this is iOS 4.0 and later.) */
-	
-	NSArray *dirlist = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-	if (!dirlist || [dirlist count] == 0) {
-		NSLog(@"### unable to locate Documents directory.");
+	NSString *dirname = documents_dir();
+	if (!dirname)
 		return 0;
-	}
-	NSString *dirname = [dirlist objectAtIndex:0];
-	
 	NSString *tmpgamepath = [dirname stringByAppendingPathComponent:@"autosave-tmp.glksave"];
 	char *cpathname = (char *)[tmpgamepath cStringUsingEncoding:NSUTF8StringEncoding]; 
 	// cpathname will be freed when the pathname is freed; openfile() will strdup it before that happens.
@@ -108,5 +114,39 @@ int iosglk_autosave() {
 	}
 
 	return 0;
+}
+
+extern z_file *iosglk_find_autosave() {
+	NSString *dirname = documents_dir();	
+	if (!dirname)
+		return nil;
+	NSString *finalgamepath = [dirname stringByAppendingPathComponent:@"autosave.glksave"];
+
+	char *cpathname = (char *)[finalgamepath cStringUsingEncoding:NSUTF8StringEncoding]; 
+	// cpathname will be freed when the pathname is freed; openfile() will strdup it before that happens.
+	z_file *save_file = fsi->openfile(cpathname, FILETYPE_DATA, FILEACCESS_READ);
+	return save_file;
+}
+
+/* Restore an autosaved game, if one exists. The file argument is closed in the process.
+ 
+	Returns 1 if a game was restored successfully, 0 if not.
+ 
+	This is called in the VM thread, from inside fizmo_start(). glkint_open_interface() has already happened, so we're going to have to replace the initial library state with the autosaved state.
+ */
+int iosglk_restore_autosave(z_file *save_file) {
+	GlkLibrary *library = [GlkLibrary singleton];
+	
+	int res = restore_game_from_stream(0,
+		(uint16_t)(active_z_story->dynamic_memory_end - z_mem + 1),
+		save_file, false);
+	/* save_file is now closed */
+	
+	if (!res) {
+		NSLog(@"### unable to restore autosave file.");
+		return 0;
+	}
+
+	return 1;
 }
 

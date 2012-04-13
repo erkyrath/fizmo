@@ -74,6 +74,7 @@ void iosglk_startup_code()
 void glk_main(void)
 {
 	z_file *story_stream;
+	z_file *autosave_stream;
 	
 	if (init_err) {
 		glkint_fatal_error_handler(init_err, NULL, init_err2, FALSE, 0);
@@ -93,8 +94,9 @@ void glk_main(void)
 	NSString *locales = [approot stringByAppendingPathComponent:@"FizmoLocales"];
 	set_configuration_value("i18n-search-path", (char *)locales.UTF8String);
 
-	/* Add the iOS-specific autosave function to the filesys interface. */
-	glkint_filesys_interface.autosave = iosglk_autosave;
+	/* Add the iOS-specific autosave functions to the screen interface. */
+	glkint_screen_interface.do_autosave = iosglk_do_autosave;
+	glkint_screen_interface.restore_autosave = iosglk_restore_autosave;
 	
 	/* Install the interface objects. */
 	fizmo_register_filesys_interface(&glkint_filesys_interface);
@@ -105,6 +107,7 @@ void glk_main(void)
 	glkint_open_interface();
 	story_stream = zfile_from_glk_strid(gamefilestream, "Game",
 										FILETYPE_DATA, FILEACCESS_READ);
-	fizmo_start(story_stream, NULL, NULL, -1, -1);
+	autosave_stream = iosglk_find_autosave();
+	fizmo_start(story_stream, NULL, autosave_stream, -1, -1);
 }
 

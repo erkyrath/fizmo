@@ -1249,7 +1249,15 @@ void fizmo_start(z_file* story_stream, z_file *blorb_stream,
   {
     while (terminate_interpreter == INTERPRETER_QUIT_NONE)
     {
-      if (restore_on_start_file != NULL)
+      if (active_interface->restore_autosave) 
+      {
+        /* Use the interface's restore routine. */
+        if (active_interface->restore_autosave(restore_on_start_file))
+          interpret_resume();
+        else
+          interpret_from_address(load_word(z_mem + 0x6));
+      }
+      else if (restore_on_start_file != NULL)
       {
         value = get_configuration_value(
             "restore-after-save-and-quit-file-before-read");

@@ -633,7 +633,9 @@ struct z_screen_interface glkint_screen_interface =
   &glkint_output_interface_info,
   &glkint_return_false, /* input_must_be_repeated_by_story */
   &glkint_game_was_restored_and_history_modified,
-  &glkint_prompt_for_filename
+  &glkint_prompt_for_filename,
+  NULL, /* do_autosave */
+  NULL, /* restore_autosave */
 };
 
 #endif // glk_screen_if_c_INCLUDED

@@ -40,7 +40,6 @@
 #include "../tools/i18n.h"
 #include "../tools/types.h"
 #include "../tools/z_ucs.h"
-#include "../tools/filesys.h"
 #include "text.h"
 #include "fizmo.h"
 #include "routine.h"
@@ -1650,8 +1649,8 @@ int save_and_quit_if_required(bool force_save)
   char *autosave_filename;
   uint8_t *pc_buf;
   
-  if (fsi->autosave) {
-    return fsi->autosave();
+  if (active_interface->do_autosave) {
+    return active_interface->do_autosave();
   }
 
   autosave_filename

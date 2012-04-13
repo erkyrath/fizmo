@@ -3065,7 +3065,9 @@ static struct z_screen_interface z_cell_interface =
   &output_interface_info,
   &input_must_be_repeated_by_story,
   &game_was_restored_and_history_modified,
-  &prompt_for_filename
+  &prompt_for_filename,
+  NULL, /* do_autosave */
+  NULL, /* restore_autosave */
 };
 
 

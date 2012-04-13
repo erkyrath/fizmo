@@ -36,6 +36,7 @@
 #include "zpu.h"
 #include "filesys_interface.h"
 #include "glk_interface.h"
+#include "glk_screen_if.h"
 #include "filesys.h"
 
 static NSString *documents_dir() {
@@ -147,6 +148,25 @@ int iosglk_restore_autosave(z_file *save_file) {
 		return 0;
 	}
 
+	GlkLibrary *newlib = nil;
+	NSString *dirname = documents_dir();	
+	if (dirname) {
+		NSString *finallibpath = [dirname stringByAppendingPathComponent:@"autosave.plist"];
+		
+		@try {
+			newlib = [NSKeyedUnarchiver unarchiveObjectWithFile:finallibpath];
+		}
+		@catch (NSException *ex) {
+			// leave newlib as nil
+			NSLog(@"Unable to restore autosave library: %@", ex);
+		}
+	}
+	
+	if (newlib) {
+		[library updateFromLibrary:newlib];
+		glkint_recover_library_state();
+	}
+	
 	return 1;
 }
 

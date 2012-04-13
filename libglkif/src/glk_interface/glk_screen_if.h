@@ -39,6 +39,7 @@ extern struct z_screen_interface glkint_screen_interface;
 #endif // glk_screen_if_c_INCLUDED
 
 void glkint_open_interface();
+void glkint_recover_library_state();
 
 #endif // glk_screen_if_h_INCLUDED
 

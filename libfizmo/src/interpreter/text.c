@@ -40,6 +40,7 @@
 #include "../tools/i18n.h"
 #include "../tools/types.h"
 #include "../tools/z_ucs.h"
+#include "../tools/filesys.h"
 #include "text.h"
 #include "fizmo.h"
 #include "routine.h"

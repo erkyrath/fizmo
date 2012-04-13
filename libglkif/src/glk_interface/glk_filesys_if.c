@@ -492,7 +492,6 @@ struct z_filesys_interface glkint_filesys_interface =
   &glkint_read_dir,
   &glkint_make_dir,
   &glkint_is_filename_directory,
-  NULL, /* autosave */
 };
 
 #endif // glk_filesys_c_INCLUDED 

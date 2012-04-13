@@ -88,8 +88,6 @@ struct z_filesys_interface
   int (*make_dir)(char *path);
 
   bool (*is_filename_directory)(char *filename);
-  
-  int (*autosave)();
 };
 
 #endif /* filesys_interface_h_INCLUDED */

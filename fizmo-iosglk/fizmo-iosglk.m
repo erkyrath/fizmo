@@ -39,6 +39,7 @@
 #include "glk_blorb_if.h"
 #include "glk_filesys_if.h"
 #include "glkstart.h" /* This comes with the Glk library. */
+#include "ios-autosave.h"
 
 #include <interpreter/fizmo.h>
 #include <interpreter/config.h>
@@ -79,6 +80,8 @@ void glk_main(void)
 		return;
 	}
 	
+	/* Set up all the configuration for Fizmo that we care about. */
+	
 	set_configuration_value("savegame-path", NULL);
 	//set_configuration_value("transcript-filename", "transcript");
 	set_configuration_value("savegame-default-filename", "");
@@ -90,10 +93,15 @@ void glk_main(void)
 	NSString *locales = [approot stringByAppendingPathComponent:@"FizmoLocales"];
 	set_configuration_value("i18n-search-path", (char *)locales.UTF8String);
 
+	/* Add the iOS-specific autosave function to the filesys interface. */
+	glkint_filesys_interface.autosave = iosglk_autosave;
+	
+	/* Install the interface objects. */
 	fizmo_register_filesys_interface(&glkint_filesys_interface);
 	fizmo_register_screen_interface(&glkint_screen_interface);
 	fizmo_register_blorb_interface(&glkint_blorb_interface);
 	
+	/* Begin. */
 	glkint_open_interface();
 	story_stream = zfile_from_glk_strid(gamefilestream, "Game",
 										FILETYPE_DATA, FILEACCESS_READ);

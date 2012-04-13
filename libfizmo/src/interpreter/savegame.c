@@ -1031,8 +1031,9 @@ void opcode_save_ext(void)
 }
 
 
-// Returns 0 for failure, 2 for successful restore. (These values match
-// the Z-machine @save result codes.)
+/* Returns 0 for failure, 2 for successful restore. (These values match
+   the Z-machine @save result codes.)
+   This closes the iff_file. */
 int restore_game_from_stream(uint16_t address, uint16_t length,
     z_file *iff_file, bool evaluate_result)
 {

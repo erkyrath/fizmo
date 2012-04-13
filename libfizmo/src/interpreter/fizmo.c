@@ -1249,10 +1249,12 @@ void fizmo_start(z_file* story_stream, z_file *blorb_stream,
   {
     while (terminate_interpreter == INTERPRETER_QUIT_NONE)
     {
-      if (active_interface->restore_autosave) 
+      if (restore_on_start_file != NULL && active_interface->restore_autosave) 
       {
         /* Use the interface's restore routine. */
-        if (active_interface->restore_autosave(restore_on_start_file))
+        int res = active_interface->restore_autosave(restore_on_start_file);
+        restore_on_start_file = NULL;
+        if (res)
           interpret_resume();
         else
           interpret_from_address(load_word(z_mem + 0x6));

@@ -96,6 +96,8 @@ static int closefile_c(z_file *file_to_close)
   // clear up the z_file structure.
   int result = fclose((FILE*)file_to_close->file_object);
   free(file_to_close->filename);
+  file_to_close->file_object = NULL;
+  file_to_close->filename = NULL;
   free(file_to_close);
   return result;
 }

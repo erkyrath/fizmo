@@ -56,6 +56,9 @@
 static char* interface_name = "glk-screen";
 static char* interface_version = "0.1.2";
 
+static z_file *(*game_open_interface)(z_file *) = NULL;
+static z_file *story_stream = NULL;
+
 static winid_t mainwin = NULL;
 static winid_t statusline = NULL;
 static winid_t statuswin = NULL;
@@ -69,8 +72,17 @@ static glui32 *inputbuffer = NULL;
 static void glkint_get_screen_size(glui32 *, glui32 *);
 static void glkint_resolve_status_height(void);
 
-void glkint_open_interface()
+z_file *glkint_open_interface(z_file *(*game_open_func)(z_file *))
 {
+  /* The awkward nature of iOS autosave-restore means that we need to
+     retain a reference to the story_stream, and possibly fix it up
+     later on. If this isn't iOS, just ignore this juggling. */
+  game_open_interface = game_open_func;
+  story_stream = game_open_interface(NULL);
+  if (!story_stream) {
+    return NULL;
+  }
+
   mainwin = glk_window_open(NULL, 0, 0, wintype_TextBuffer, 1);
   glk_set_window(mainwin);
   instatuswin = false;
@@ -78,6 +90,8 @@ void glkint_open_interface()
   glui32 width, height;
   glkint_get_screen_size( &width, &height);
   fizmo_new_screen_size(width, height);
+
+  return story_stream;
 }
 
 char *glkint_get_interface_name()
@@ -94,6 +108,47 @@ uint8_t glkint_return_0()
 
 uint8_t glkint_return_1()
 { return 1; }
+
+/* This is called after an autosave-restore (iOS only). We've just
+   pulled a new Glk library state from disk. We need to go through it
+   and set mainwin, statuswin, etc appropriately.
+ */
+void glkint_recover_library_state()
+{
+  winid_t win;
+  glui32 rock;
+  
+  mainwin = NULL;
+  statusline = NULL;
+  statuswin = NULL;
+  instatuswin = false;
+  zfile_replace_glk_strid(story_stream, NULL);
+  
+  statuscurheight = 0;
+  statusmaxheight = 0;
+  statusseenheight = 0;
+  
+  win = NULL;
+  while ((win=glk_window_iterate(win, &rock)) != NULL) {
+    if (rock == 1)
+      mainwin = win;
+    else if (rock == 2)
+      statuswin = win;
+    else if (rock == 3)
+      statusline = win;
+  }
+  
+  if (statuswin) {
+    glui32 truewidth, trueheight;
+    glk_window_get_size(statuswin, &truewidth, &trueheight);
+    statuscurheight = trueheight;
+    statusmaxheight = trueheight;
+    statusseenheight = trueheight;
+  }
+  
+  //### recover the story stream!
+  //### recover the transcript stream!
+}
 
 static void glkint_get_screen_size(glui32 *width, glui32 *height)
 {

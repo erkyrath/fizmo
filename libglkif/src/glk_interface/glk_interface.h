@@ -37,8 +37,9 @@
 
 void glkint_fatal_error_handler(char *str, glui32 *ustr, char *arg,
     int useval, glsi32 val);
-z_file *zfile_from_glk_strid(strid_t std, char *filename, int filetype,
+z_file *zfile_from_glk_strid(strid_t str, char *filename, int filetype,
     int fileaccess);
+void zfile_replace_glk_strid(z_file *file, strid_t str);
 
 #endif // glk_interface_h_INCLUDED
 

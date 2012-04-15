@@ -54,13 +54,6 @@ glkunix_argumentlist_t glkunix_arguments[] = {
 };
 
 
-void glkint_set_startup_params(strid_t gamefile, char *filename)
-{
-  gamefilestream = gamefile;
-  gamefilename = filename;
-}
-
-
 int glkunix_startup_code(glkunix_startup_t *data)
 {
   /* It turns out to be more convenient if we return TRUE from here, even 
@@ -97,7 +90,8 @@ int glkunix_startup_code(glkunix_startup_t *data)
     return TRUE;
   }
 
-  glkint_set_startup_params(gamefile, filename);
+  gamefilestream = gamefile;
+  gamefilename = filename;
 
   return TRUE;
 }

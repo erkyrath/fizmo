@@ -94,44 +94,6 @@ z_file *glkint_open_interface(z_file *(*game_open_func)(z_file *))
   return story_stream;
 }
 
-/* This is called after an autosave-restore; we've just pulled a new Glk library state from disk. We need to go through it and set mainwin, statuswin, etc appropriately. 
- */
-void glkint_recover_library_state()
-{
-  winid_t win;
-  glui32 rock;
-  
-  mainwin = NULL;
-  statusline = NULL;
-  statuswin = NULL;
-  instatuswin = false;
-  
-  statuscurheight = 0;
-  statusmaxheight = 0;
-  statusseenheight = 0;
-  
-  win = NULL;
-  while ((win=glk_window_iterate(win, &rock)) != NULL) {
-    if (rock == 1)
-      mainwin = win;
-    else if (rock == 2)
-      statuswin = win;
-    else if (rock == 3)
-      statusline = win;
-  }
-  
-  if (statuswin) {
-    glui32 truewidth, trueheight;
-    glk_window_get_size(statuswin, &truewidth, &trueheight);
-    statuscurheight = trueheight;
-    statusmaxheight = trueheight;
-    statusseenheight = trueheight;
-  }
-
-  //### recover the story stream!
-  //### recover the transcript stream!
-}
-
 char *glkint_get_interface_name()
 { return interface_name; }
 

@@ -160,6 +160,8 @@ int glkint_closefile(z_file *file_to_close)
   {
     glk_stream_close((strid_t)file_to_close->file_object, NULL);
     free(file_to_close->filename);
+    file_to_close->file_object = NULL;
+    file_to_close->filename = NULL;
     free(file_to_close);
     return 0;
   }

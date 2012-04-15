@@ -46,8 +46,7 @@
 #include <tools/tracelog.h>
 #include <tools/unused.h>
 
-static char *init_err = NULL; /*### use this */
-static char *init_err2 = NULL; /*### use this */
+static char *init_err = NULL;
 
 static strid_t gamefilestream = nil;
 static NSString *gamepathname = nil;
@@ -63,10 +62,30 @@ void iosglk_startup_code()
 		gamepathname = [path retain]; // retain forever
 	}
 	
-	if (!gamepathname)
-		glkint_fatal_error_handler("Unable to locate game file", NULL, NULL, FALSE, 0);
+	if (!gamepathname || ![library.filemanager isReadableFileAtPath:gamepathname])
+		init_err = "Unable to locate game file";
+}
+
+/* This callback has the job of opening a Glk stream to the game file, and embedding it into a z_file object. If you pass in a z_file object, it uses that rather than allocating a new one.
+ */
+static z_file *iosglk_open_game_stream(z_file *current_stream)
+{
+	if (gamefilestream) {
+		// This has just been closed. Discard it.
+		[gamefilestream release];
+		gamefilestream = nil;
+	}
 	
-	gamefilestream = [[GlkStreamFile alloc] initWithMode:filemode_Read rock:1 unicode:NO textmode:NO dirname:@"." pathname:gamepathname]; // retain forever
+	gamefilestream = [[GlkStreamFile alloc] initWithMode:filemode_Read rock:1 unicode:NO textmode:NO dirname:@"." pathname:gamepathname]; // retain forever, or until the next call of this function.
+	if (!gamefilestream)
+		return nil;
+	
+	if (!current_stream)
+		current_stream = zfile_from_glk_strid(gamefilestream, "Game", FILETYPE_DATA, FILEACCESS_READ);
+	else
+		zfile_replace_glk_strid(current_stream, gamefilestream);
+	
+	return current_stream;
 }
 
 /* Called in the VM thread. This is the VM main function.
@@ -77,7 +96,7 @@ void glk_main(void)
 	z_file *autosave_stream;
 	
 	if (init_err) {
-		glkint_fatal_error_handler(init_err, NULL, init_err2, FALSE, 0);
+		glkint_fatal_error_handler(init_err, NULL, NULL, FALSE, 0);
 		return;
 	}
 	
@@ -104,9 +123,10 @@ void glk_main(void)
 	fizmo_register_blorb_interface(&glkint_blorb_interface);
 	
 	/* Begin. */
-	glkint_open_interface();
-	story_stream = zfile_from_glk_strid(gamefilestream, "Game",
-										FILETYPE_DATA, FILEACCESS_READ);
+	story_stream = glkint_open_interface(&iosglk_open_game_stream);
+	if (!story_stream) {
+		return;
+	}
 	autosave_stream = iosglk_find_autosave();
 	fizmo_start(story_stream, NULL, autosave_stream, -1, -1);
 }

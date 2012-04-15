@@ -145,7 +145,9 @@ void glkint_recover_library_state()
     statusmaxheight = trueheight;
     statusseenheight = trueheight;
   }
-  
+
+  game_open_interface(story_stream);
+
   //### recover the story stream!
   //### recover the transcript stream!
 }

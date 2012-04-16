@@ -61,7 +61,7 @@
 
 //int stream_active[5] = { 0, 1, 0, 0, 0 };
 bool stream_1_active = true;
-bool stream_2_was_already_active = false;
+bool stream_2_filename_stored = false;
 // stream2 is stored in dynamic memory at z_mem[0x11].
 // stream3 is active when stream_3_current_depth >= -1
 bool stream_4_active = false;
@@ -199,7 +199,7 @@ void init_streams()
     }
 
     strcpy(stream_2_filename, src);
-    stream_2_was_already_active = true;
+    stream_2_filename_stored = true;
   }
   else
     src = fizmo_strdup(DEFAULT_TRANSCRIPT_FILE_NAME);
@@ -533,7 +533,7 @@ void ask_for_stream2_filename()
     (void)streams_z_ucs_output(current_line);
     free(current_line);
   }
-  stream_2_was_already_active = true;
+  stream_2_filename_stored = true;
   stream_2_init_underway = false;
 }
 
@@ -547,24 +547,12 @@ static void stream_2_output_write(z_ucs *z_ucs_output)
 }
 
 
-static void stream_2_print_header() //int stream2margin)
+static void stream_2_print_header()
 {
   z_ucs dashes[] = { '-', '-', '-', '\n', '\n', 0 };
-  //z_ucs space[] = { ' ', 0 };
-  int i;
 
-  //z_ucs stream_2_header[] = { '\n', '-', '-', '-', '\n', '\n', 0 };
-  //
   stream_2_output_write(z_ucs_newline_string);
-  /*
-  for (i=0; i<stream2margin; i++)
-    stream_2_output_write(space);
-    */
   stream_2_output_write(dashes);
-  /*
-  for (i=0; i<stream2margin; i++)
-    stream_2_output_write(space);
-    */
 }
 
 
@@ -577,71 +565,73 @@ static void stream_2_output(z_ucs *z_ucs_output)
       (active_interface == NULL)
       ||
       (active_window_number != 0)
+      ||
+      (stream_2_init_underway == true)
      )
     return ;
 
-  if (
-      (stream_2_was_already_active == false)
-      &&
-      (stream_2_init_underway == false)
-     )
+  if (stream_2 == NULL)
   {
-    return_code = active_interface->prompt_for_filename(
-        "transcript",
-        &transcript_stream,
-        NULL,
-        FILETYPE_TRANSCRIPT,
-        FILEACCESS_APPEND);
+    if (stream_2_filename_stored == false)
+    {
+      return_code = active_interface->prompt_for_filename(
+          "transcript",
+          &transcript_stream,
+          NULL,
+          FILETYPE_TRANSCRIPT,
+          FILEACCESS_APPEND);
 
-    if (return_code == -3)
-    {
-      ask_for_stream2_filename();
-    }
-    else if (return_code < 0)
-    {
-      printf("### prompt_for_file failed ###\n");
-      /* The user cancelled out. We'll have to silently turn off stream 2.
-         Not the best option, but the best option I can see how to
-         do. */
-      z_mem[0x11] &= 0xfe;
-      return;
+      if (return_code == -3)
+      {
+        // No support for "prompt_for_filename" in screen_interface, default
+        // to built-in method.
+        ask_for_stream2_filename();
+        // This method will not open a file, but instead store the filename in
+        //"stream_2_filename".
+        TRACE_LOG("Opening script-file '%s' for writing.\n", stream_2_filename);
+        stream_2 = fsi->openfile(
+            stream_2_filename, FILETYPE_TRANSCRIPT, FILEACCESS_APPEND);
+      }
+      else if (return_code < 0)
+      {
+        printf("### prompt_for_file failed ###\n");
+        /* The user cancelled out. We'll have to silently turn off stream 2.
+           Not the best option, but the best option I can see how to
+           do. */
+        z_mem[0x11] &= 0xfe;
+        return;
+      }
+      else
+      {
+        stream_2 = transcript_stream;
+      }
     }
     else
     {
-      stream_2 = transcript_stream;
-      stream_2_was_already_active = true;
-      stream_2_print_header(stream2margin);
-    }
-  }
-
-  if (stream_2_init_underway == false)
-  {
-    if (stream_2 == NULL)
-    {
-      TRACE_LOG("Opening script-file '%s' for writing.\n", stream_2_filename);
       stream_2 = fsi->openfile(
           stream_2_filename, FILETYPE_TRANSCRIPT, FILEACCESS_APPEND);
-      stream_2_print_header(stream2margin);
     }
 
-    if (bool_equal(lower_window_buffering_active, true))
+    stream_2_print_header();
+  }
+
+  if (bool_equal(lower_window_buffering_active, true))
+  {
+    if (script_wrapper_active == false)
     {
-      if (script_wrapper_active == false)
-      {
-        script_wrapper_active = true;
-      }
-      stream_2_output_write(z_ucs_output);
+      script_wrapper_active = true;
     }
-    else
+    stream_2_output_write(z_ucs_output);
+  }
+  else
+  {
+    if (bool_equal(script_wrapper_active, true))
     {
-      if (bool_equal(script_wrapper_active, true))
-      {
-        if (stream_2_wrapping_disabled == false)
-          wordwrap_flush_output(stream_2_wrapper);
-        script_wrapper_active = false;
-      }
-      stream_2_wrapped_output_destination(z_ucs_output, NULL);
+      if (stream_2_wrapping_disabled == false)
+        wordwrap_flush_output(stream_2_wrapper);
+      script_wrapper_active = false;
     }
+    stream_2_wrapped_output_destination(z_ucs_output, NULL);
   }
 }
 

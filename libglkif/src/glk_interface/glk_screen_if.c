@@ -116,6 +116,7 @@ uint8_t glkint_return_1()
 void glkint_recover_library_state()
 {
   winid_t win;
+  strid_t str;
   glui32 rock;
   
   mainwin = NULL;
@@ -146,7 +147,18 @@ void glkint_recover_library_state()
     statusseenheight = trueheight;
   }
   
-  //### recover the story stream!
+  /* Close the old story stream which we found in the library state. (We're
+     about to open a new copy.) */
+  str = NULL;
+  while ((str=glk_stream_iterate(str, &rock)) != NULL) {
+    if (rock == 1) {
+      glk_stream_close(str, NULL);
+      break;
+    }
+  }
+
+  game_open_interface(story_stream);
+
   //### recover the transcript stream!
 }
 

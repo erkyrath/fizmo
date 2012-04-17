@@ -47,6 +47,8 @@ void opcode_output_stream(void);
 void open_streams(void);
 void close_streams(/*@null@*/ z_ucs *error_message);
 void opcode_input_stream(void);
+z_file *get_stream_2(void);
+void restore_stream_2(z_file *str);
 void ask_for_stream2_filename(void);
 void ask_for_stream4_filename_if_required(bool dont_output_current_line);
 void stream_4_latin1_output(char *latin1_output);

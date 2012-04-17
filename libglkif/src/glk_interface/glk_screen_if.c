@@ -112,10 +112,18 @@ uint8_t glkint_return_1()
 /* This is called after an autosave-restore (iOS only). We've just
    pulled a new Glk library state from disk. We need to go through it
    and set mainwin, statuswin, etc appropriately.
+
+   Note that at this point, the Glk streams opened by the interpreter
+   (the original story file, and a transcript stream if any) have been
+   closed. We'll need to update the interpreter with replacements.
  */
 void glkint_recover_library_state()
 {
+  strid_t storystream = NULL;
+  strid_t transcriptstream = NULL;
+  z_file *transcriptzfile = NULL;
   winid_t win;
+  strid_t str;
   glui32 rock;
   
   mainwin = NULL;
@@ -123,6 +131,16 @@ void glkint_recover_library_state()
   statuswin = NULL;
   instatuswin = false;
   zfile_replace_glk_strid(story_stream, NULL);
+
+  /* Close the old transcript stream, if there was one. */
+  transcriptzfile = get_stream_2();
+  /* This is a little bit fiddly, because the underlying Glk stream is
+     already gone. We mark this by removing the pointer to it, and
+     then the z_file can be closed safely. */
+  if (transcriptzfile) {
+    zfile_replace_glk_strid(transcriptzfile, NULL);
+    restore_stream_2(NULL);
+  }
   
   statuscurheight = 0;
   statusmaxheight = 0;
@@ -146,8 +164,28 @@ void glkint_recover_library_state()
     statusseenheight = trueheight;
   }
   
-  //### recover the story stream!
-  //### recover the transcript stream!
+  str = NULL;
+  while ((str=glk_stream_iterate(str, &rock)) != NULL) {
+    if (rock == 1)
+      storystream = str;
+    else if (rock == 2)
+      transcriptstream = str;
+  }
+
+  /* Close the old story stream which we found in the library state. (We're
+     about to open a fresh version.) */
+  if (storystream) {
+    glk_stream_close(str, NULL);
+  }
+
+  game_open_interface(story_stream);
+
+  /* If we found a transcript stream, pass it to the library. */
+  if (transcriptstream) {
+    transcriptzfile = zfile_from_glk_strid(transcriptstream, NULL,
+      FILETYPE_TRANSCRIPT, FILEACCESS_APPEND);
+    restore_stream_2(transcriptzfile);
+  }
 }
 
 static void glkint_get_screen_size(glui32 *width, glui32 *height)

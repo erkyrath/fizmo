@@ -71,15 +71,17 @@ void iosglk_startup_code()
 static z_file *iosglk_open_game_stream(z_file *current_stream)
 {
 	if (gamefilestream) {
-		// This has just been closed. Discard it.
+		// This is the old stream object; it's just been closed. Discard it.
 		[gamefilestream release];
 		gamefilestream = nil;
 	}
 	
+	// Open a new stream object.
 	gamefilestream = [[GlkStreamFile alloc] initWithMode:filemode_Read rock:1 unicode:NO textmode:NO dirname:@"." pathname:gamepathname]; // retain forever, or until the next call of this function.
 	if (!gamefilestream)
 		return nil;
 	
+	// Create a z_file for the stream, or stick it into the existing z_file.
 	if (!current_stream)
 		current_stream = zfile_from_glk_strid(gamefilestream, "Game", FILETYPE_DATA, FILEACCESS_READ);
 	else

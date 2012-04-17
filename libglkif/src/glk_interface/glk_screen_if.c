@@ -175,7 +175,7 @@ void glkint_recover_library_state()
   /* Close the old story stream which we found in the library state. (We're
      about to open a fresh version.) */
   if (storystream) {
-    glk_stream_close(str, NULL);
+    glk_stream_close(storystream, NULL);
   }
 
   game_open_interface(story_stream);

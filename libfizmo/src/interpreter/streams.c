@@ -594,7 +594,6 @@ static void stream_2_output(z_ucs *z_ucs_output)
       }
       else if (return_code < 0)
       {
-        printf("### prompt_for_file failed ###\n");
         /* The user cancelled out. We'll have to silently turn off stream 2.
            Not the best option, but the best option I can see how to
            do. */

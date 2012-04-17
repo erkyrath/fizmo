@@ -231,13 +231,23 @@ void glkint_reset_interface()
   glk_window_clear(mainwin);
 }
 
-/* Called at @quit time, or if the interpreter hits a fatal error. */
+/* This is called from two points: abort_interpreter() with an error message,
+   and close_streams() with no error message.
+
+   For the abort case, we call glkint_fatal_error_handler(), which does a
+   glk_exit. This is necessary because abort_interpreter() is going to do
+   a libc exit(), and we need to get Glk shut down first.
+
+   However, close_streams() is different -- that's the normal interpreter
+   exit (a @quit opcode). For that case, it's better to return and do nothing,
+   so that close_streams() can flush fizmo's buffers. It will immediately
+   exit through the end of fizmo_main(), which is the end of glk_main(),
+   so we'll get a normal Glk shut down anyway.
+*/
 int glkint_close_interface(z_ucs *error_message)
 { 
   if (error_message)
     glkint_fatal_error_handler(NULL, error_message, NULL, 0, 0);
-  else
-    glk_exit();
   return 0;
 }
 

@@ -121,7 +121,7 @@ static z_file *glkint_openfile(char *filename, int filetype, int fileaccess)
       return NULL;
 
     TRACE_LOG("new open file: %s\n", filename);
-    str = glk_stream_open_file(fileref, fmode, 0);
+    str = glk_stream_open_file(fileref, fmode, 2);
     /* Dispose of the fileref, whether the stream opened successfully
      * or not. */
     glk_fileref_destroy(fileref);
@@ -158,8 +158,10 @@ int glkint_closefile(z_file *file_to_close)
     return z_filesys_interface_c.closefile(file_to_close);
   else
   {
-    glk_stream_close((strid_t)file_to_close->file_object, NULL);
-    free(file_to_close->filename);
+    if (file_to_close->file_object)
+      glk_stream_close((strid_t)file_to_close->file_object, NULL);
+    if (file_to_close->filename)
+      free(file_to_close->filename);
     file_to_close->file_object = NULL;
     file_to_close->filename = NULL;
     free(file_to_close);

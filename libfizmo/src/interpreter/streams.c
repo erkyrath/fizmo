@@ -261,6 +261,27 @@ void init_streams()
     input_stream_1_active = true;
 }
 
+z_file *get_stream_2(void)
+{
+  return stream_2;
+}
+
+/* Accept a new open stream as the current stream_2. The previous stream_2
+   is closed. Pass in NULL to just close the previous stream_2.
+   The interpreter's transcript bit is set appropriately. 
+*/
+void restore_stream_2(z_file *str)
+{
+  if (stream_2) {
+    (void)fsi->closefile(stream_2);
+    stream_2 = NULL;
+    z_mem[0x11] &= 0xfe;
+  }
+  if (str) {
+    stream_2 = str;
+    z_mem[0x11] |= 1;
+  }
+}
 
 void ask_for_input_stream_filename(void)
 {
@@ -1262,7 +1283,7 @@ static int _streams_z_ucs_output(z_ucs *z_ucs_output, bool is_user_input)
         {
           (void)fsi->closefile(stream_4);
           stream_4 = NULL;
-	}
+        }
       }
     }
   }

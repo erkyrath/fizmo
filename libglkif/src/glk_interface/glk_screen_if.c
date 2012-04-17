@@ -168,7 +168,7 @@ void glkint_recover_library_state()
   while ((str=glk_stream_iterate(str, &rock)) != NULL) {
     if (rock == 1)
       storystream = str;
-    else if (rock == 2)
+    else if (rock == 4)
       transcriptstream = str;
   }
 
@@ -632,27 +632,32 @@ int glkint_prompt_for_filename(char *UNUSED(filename_suggestion),
 {
   frefid_t fileref = NULL;
   strid_t str = NULL;
-  glui32 usage, fmode;
+  glui32 usage, fmode, strrock;
 
   if (filetype == FILETYPE_SAVEGAME)
   {
     usage = fileusage_SavedGame | fileusage_BinaryMode;
+    strrock = 3;
   }
   else if (filetype == FILETYPE_TRANSCRIPT)
   {
     usage = fileusage_Transcript | fileusage_TextMode;
+    strrock = 4;
   }
   else if (filetype == FILETYPE_INPUTRECORD)
   {
     usage = fileusage_InputRecord | fileusage_TextMode;
+    strrock = 5;
   }
   else if (filetype == FILETYPE_DATA)
   {
     usage = fileusage_Data | fileusage_BinaryMode;
+    strrock = 6;
   }
   else if (filetype == FILETYPE_TEXT)
   {
     usage = fileusage_Data | fileusage_TextMode;
+    strrock = 7;
   }
   else
     return -1;
@@ -671,7 +676,7 @@ int glkint_prompt_for_filename(char *UNUSED(filename_suggestion),
   if (!fileref)
     return -1;
 
-  str = glk_stream_open_file(fileref, fmode, 0);
+  str = glk_stream_open_file(fileref, fmode, strrock);
   /* Dispose of the fileref, whether the stream opened successfully
    * or not. */
   glk_fileref_destroy(fileref);

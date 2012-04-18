@@ -45,6 +45,7 @@
 #include "filesys_c.h"
 #include "tracelog.h"
 #include "types.h"
+#include "z_ucs.h"
 #include "../filesys_interface/filesys_interface.h"
 
 #if defined (__WIN32__)
@@ -133,6 +134,22 @@ int writestring_c(char *s, z_file *fileref)
   return writechars_c(s, strlen(s), fileref);
 }
 
+int writeucsstring_c(z_ucs *s, z_file *fileref)
+{
+  char buf[128];
+  int len;
+  int res = 0;
+
+  // FIMXE: Re-implement for various output charsets.
+
+  while (*s != 0)
+  {
+    len = zucs_string_to_utf8_string(buf, &s, 128);
+    res += writechars_c(buf, len-1, fileref);
+  }
+
+  return res;
+}
 
 static int fileprintf_c(z_file *fileref, char *format, ...)
 {
@@ -304,6 +321,7 @@ struct z_filesys_interface z_filesys_interface_c =
   &writechar_c,
   &writechars_c,
   &writestring_c,
+  &writeucsstring_c,
   &fileprintf_c,
   &vfileprintf_c,
   &filescanf_c,

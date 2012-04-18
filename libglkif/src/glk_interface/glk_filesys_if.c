@@ -220,6 +220,18 @@ int glkint_writestring(char *s, z_file *fileref)
     return glkint_writechars(s, strlen(s), fileref);
 }
 
+int glkint_writeucsstring(z_ucs *s, z_file *fileref)
+{
+  if (fileref->implementation == FILE_IMPLEMENTATION_STDIO)
+    return z_filesys_interface_c.writeucsstring(s, fileref);
+  else {
+    int len;
+    for (len=0; s[len]; len++) { };
+    glk_put_buffer_stream_uni((strid_t)fileref->file_object, s, len);
+    return len;
+  }
+}
+
 int glkint_vfileprintf(z_file *fileref, char *format, va_list ap)
 {
   long ret_val;
@@ -478,6 +490,7 @@ struct z_filesys_interface glkint_filesys_interface =
   &glkint_writechar,
   &glkint_writechars,
   &glkint_writestring,
+  &glkint_writeucsstring,
   &glkint_fileprintf,
   &glkint_vfileprintf,
   &glkint_filescanf,

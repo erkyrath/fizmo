@@ -111,18 +111,9 @@ void open_streams()
 static void stream_2_wrapped_output_destination(z_ucs *z_ucs_output,
     void *UNUSED(dummy))
 {
-  char buf[128];
-  int len;
-
-  // FIMXE: Re-implement for various output charsets.
-
   if (*z_ucs_output != 0)
   {
-    while (*z_ucs_output != 0)
-    {
-      len = zucs_string_to_utf8_string(buf, &z_ucs_output, 128);
-      fsi->writechars(buf, len-1, stream_2);
-    }
+    fsi->writeucsstring(z_ucs_output, stream_2);
     if (strcmp(get_configuration_value("sync-transcript"), "true") == 0)
       fsi->flushfile(stream_2);
   }

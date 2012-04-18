@@ -65,6 +65,7 @@ struct z_filesys_interface
   size_t (*writechars)(void *ptr, size_t len, z_file *fileref);
 
   int (*writestring)(char *s, z_file *fileref);
+  int (*writeucsstring)(z_ucs *s, z_file *fileref);
   int (*fileprintf)(z_file *fileref, char *format, ...);
   int (*vfileprintf)(z_file *fileref, char *format, va_list ap);
   int (*filescanf)(z_file *fileref, char *format, ...);

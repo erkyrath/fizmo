@@ -220,6 +220,7 @@ int glkint_writestring(char *s, z_file *fileref)
     return glkint_writechars(s, strlen(s), fileref);
 }
 
+
 int glkint_writeucsstring(z_ucs *s, z_file *fileref)
 {
   if (fileref->implementation == FILE_IMPLEMENTATION_STDIO)
@@ -231,6 +232,7 @@ int glkint_writeucsstring(z_ucs *s, z_file *fileref)
     return len;
   }
 }
+
 
 int glkint_vfileprintf(z_file *fileref, char *format, va_list ap)
 {
@@ -481,6 +483,7 @@ bool glkint_is_filename_directory(char *filename)
   return result;
 }
 
+
 struct z_filesys_interface glkint_filesys_interface =
 {
   &glkint_openfile,
@@ -508,7 +511,7 @@ struct z_filesys_interface glkint_filesys_interface =
   &glkint_close_dir,
   &glkint_read_dir,
   &glkint_make_dir,
-  &glkint_is_filename_directory,
+  &glkint_is_filename_directory
 };
 
 #endif // glk_filesys_c_INCLUDED 

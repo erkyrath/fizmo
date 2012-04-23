@@ -16,7 +16,7 @@
  *    documentation and/or other materials provided with the distribution.
  * 3. The name of the author may not be used to endorse or promote products
  *    derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
  * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
@@ -125,7 +125,7 @@ void glkint_recover_library_state()
   winid_t win;
   strid_t str;
   glui32 rock;
-  
+
   mainwin = NULL;
   statusline = NULL;
   statuswin = NULL;
@@ -141,11 +141,11 @@ void glkint_recover_library_state()
     zfile_replace_glk_strid(transcriptzfile, NULL);
     restore_stream_2(NULL);
   }
-  
+
   statuscurheight = 0;
   statusmaxheight = 0;
   statusseenheight = 0;
-  
+
   win = NULL;
   while ((win=glk_window_iterate(win, &rock)) != NULL) {
     if (rock == 1)
@@ -155,7 +155,7 @@ void glkint_recover_library_state()
     else if (rock == 3)
       statusline = win;
   }
-  
+
   if (statuswin) {
     glui32 truewidth, trueheight;
     glk_window_get_size(statuswin, &truewidth, &trueheight);
@@ -163,7 +163,7 @@ void glkint_recover_library_state()
     statusmaxheight = trueheight;
     statusseenheight = trueheight;
   }
-  
+
   str = NULL;
   while ((str=glk_stream_iterate(str, &rock)) != NULL) {
     if (rock == 1)
@@ -205,14 +205,14 @@ static void glkint_get_screen_size(glui32 *width, glui32 *height)
 }
 
 uint8_t glkint_get_screen_height()
-{ 
+{
   glui32 width, height;
   glkint_get_screen_size(&width, &height);
   return height;
 }
 
 uint8_t glkint_get_screen_width()
-{ 
+{
   glui32 width, height;
   glkint_get_screen_size(&width, &height);
   return width;
@@ -238,7 +238,7 @@ char **glkint_get_config_option_names()
 }
 
 void glkint_link_interface_to_story(struct z_story *UNUSED(story))
-{ 
+{
   if (ver <= 3)
   {
     if (statusline) {
@@ -247,10 +247,10 @@ void glkint_link_interface_to_story(struct z_story *UNUSED(story))
     statusline = glk_window_open(
         mainwin, winmethod_Above | winmethod_Fixed, 1, wintype_TextGrid, 3);
     /*
-    glk_set_window(statusline);    
+    glk_set_window(statusline);
     glk_set_style(style_Normal | stylehint_ReverseColor);
     glk_window_clear(statusline);
-    glk_set_window(mainwin);    
+    glk_set_window(mainwin);
     */
   }
 }
@@ -264,7 +264,7 @@ void glkint_reset_interface()
   }
 
   instatuswin = false;
-  glk_set_window(mainwin);    
+  glk_set_window(mainwin);
   glk_set_style(style_Normal);
   glk_window_clear(mainwin);
 }
@@ -281,9 +281,9 @@ void glkint_reset_interface()
    so that close_streams() can flush fizmo's buffers. It will immediately
    exit through the end of fizmo_main(), which is the end of glk_main(),
    so we'll get a normal Glk shut down anyway.
-*/
+   */
 int glkint_close_interface(z_ucs *error_message)
-{ 
+{
   if (error_message)
     glkint_fatal_error_handler(NULL, error_message, NULL, 0, 0);
   return 0;
@@ -463,7 +463,7 @@ void glkint_show_status(z_ucs *room_description,
 {
   char buf[128];
 
-  glk_set_window(statusline);    
+  glk_set_window(statusline);
   glk_window_clear(statusline);
   glk_set_style(style_Subheader);
   glk_put_string_uni(room_description);
@@ -480,11 +480,11 @@ void glkint_show_status(z_ucs *room_description,
     glk_put_string(buf);
   }
 
-  glk_set_window(mainwin);    
+  glk_set_window(mainwin);
 }
 
 void glkint_set_text_style(z_style text_style)
-{ 
+{
   if (text_style & Z_STYLE_FIXED_PITCH) {
     glk_set_style(style_Preformatted);
   }
@@ -504,7 +504,7 @@ void glkint_set_colour(z_colour UNUSED(foreground),
 { }
 
 void glkint_set_font(z_font font_type)
-{ 
+{
   if (instatuswin)
     return;
   if (font_type == Z_FONT_COURIER_FIXED_PITCH)
@@ -514,7 +514,7 @@ void glkint_set_font(z_font font_type)
 }
 
 void glkint_split_window(int16_t nof_lines)
-{ 
+{
   int oldvmheight = statuscurheight;
   statuscurheight = nof_lines;
 
@@ -570,18 +570,18 @@ static void glkint_resolve_status_height()
 
 /* 1 is the status window; 0 is the story window. */
 void glkint_set_window(int16_t window_number)
-{ 
+{
   if (!window_number) {
     glk_set_window(mainwin);
     instatuswin = false;
   }
   else {
-    if (statuswin) 
+    if (statuswin)
       glk_set_window(statuswin);
     else
       glk_set_window(NULL);
     instatuswin = true;
-  }    
+  }
 }
 
 void glkint_erase_window(int16_t window_number)
@@ -597,7 +597,7 @@ void glkint_erase_window(int16_t window_number)
 
 void glkint_set_cursor(int16_t line, int16_t column,
     int16_t window)
-{ 
+{
   if (window && statuswin)
     glk_window_move_cursor(statuswin, column-1, line-1);
 }
@@ -738,7 +738,7 @@ struct z_screen_interface glkint_screen_interface =
   &glkint_game_was_restored_and_history_modified,
   &glkint_prompt_for_filename,
   NULL, /* do_autosave */
-  NULL, /* restore_autosave */
+  NULL /* restore_autosave */
 };
 
 #endif // glk_screen_if_c_INCLUDED

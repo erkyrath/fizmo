@@ -107,7 +107,6 @@ void open_streams()
 }
 
 
-/*@-paramuse@*/
 static void stream_2_wrapped_output_destination(z_ucs *z_ucs_output,
     void *UNUSED(dummy))
 {
@@ -118,22 +117,6 @@ static void stream_2_wrapped_output_destination(z_ucs *z_ucs_output,
       fsi->flushfile(stream_2);
   }
 }
-/*@+paramuse@*/
-
-
-/*
-static void stream_2_do_nothing(void *UNUSED(destination_parameter))
-{
-};
-
-
-static struct wordwrap_target streams_wordwrap_target =
-{
-  &stream_2_wrapped_output_destination,
-  &stream_2_do_nothing,
-  &stream_2_do_nothing
-};
-*/
 
 
 void init_streams()
@@ -257,10 +240,11 @@ z_file *get_stream_2(void)
   return stream_2;
 }
 
+
 /* Accept a new open stream as the current stream_2. The previous stream_2
    is closed. Pass in NULL to just close the previous stream_2.
-   The interpreter's transcript bit is set appropriately. 
-*/
+   The interpreter's transcript bit is set appropriately.
+ */
 void restore_stream_2(z_file *str)
 {
   if (stream_2) {
@@ -1274,7 +1258,7 @@ static int _streams_z_ucs_output(z_ucs *z_ucs_output, bool is_user_input)
         {
           (void)fsi->closefile(stream_4);
           stream_4 = NULL;
-        }
+	}
       }
     }
   }

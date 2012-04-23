@@ -151,6 +151,23 @@ int writeucsstring_c(z_ucs *s, z_file *fileref)
   return res;
 }
 
+int writeucsstring_c(z_ucs *s, z_file *fileref)
+{
+  char buf[128];
+  int len;
+  int res = 0;
+
+  // FIMXE: Re-implement for various output charsets.
+  while (*s != 0)
+  {
+    len = zucs_string_to_utf8_string(buf, &s, 128);
+    res += writechars_c(buf, len-1, fileref);
+  }
+
+  return res;
+}
+
+
 static int fileprintf_c(z_file *fileref, char *format, ...)
 {
   va_list args;

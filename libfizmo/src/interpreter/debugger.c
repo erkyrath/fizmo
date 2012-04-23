@@ -242,7 +242,7 @@ void debugger()
     else
       *buffer = 0;
 
-    debugger_ utput(newsockfd, "\n");
+    debugger_output(newsockfd, "\n");
     if ( (strcmp(buffer, "exit") == 0) || (strcmp(buffer, "quit") == 0) )
     {
       break;
@@ -287,7 +287,7 @@ void debugger()
       sprintf(buffer, "Checksum: %d.\n", active_z_story->checksum);
       debugger_output(newsockfd, buffer);
       sprintf(buffer, "Dynamic memory end: $%lx.\n",
-          (long)a(active_z_story->dynamic_memory_end - z_mem));
+          (long)(active_z_story->dynamic_memory_end - z_mem));
       debugger_output(newsockfd, buffer);
       sprintf(buffer, "Static memory end: $%lx.\n",
           (long)(active_z_story->static_memory_end - z_mem));

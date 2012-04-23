@@ -45,6 +45,7 @@
 #include "filesys_c.h"
 #include "tracelog.h"
 #include "types.h"
+#include "z_ucs.h"
 #include "../filesys_interface/filesys_interface.h"
 
 #if defined (__WIN32__)
@@ -96,6 +97,8 @@ static int closefile_c(z_file *file_to_close)
   // clear up the z_file structure.
   int result = fclose((FILE*)file_to_close->file_object);
   free(file_to_close->filename);
+  file_to_close->file_object = NULL;
+  file_to_close->filename = NULL;
   free(file_to_close);
   return result;
 }
@@ -129,6 +132,23 @@ static size_t writechars_c(void *ptr, size_t len, z_file *fileref)
 int writestring_c(char *s, z_file *fileref)
 {
   return writechars_c(s, strlen(s), fileref);
+}
+
+
+int writeucsstring_c(z_ucs *s, z_file *fileref)
+{
+  char buf[128];
+  int len;
+  int res = 0;
+
+  // FIMXE: Re-implement for various output charsets.
+  while (*s != 0)
+  {
+    len = zucs_string_to_utf8_string(buf, &s, 128);
+    res += writechars_c(buf, len-1, fileref);
+  }
+
+  return res;
 }
 
 
@@ -302,6 +322,7 @@ struct z_filesys_interface z_filesys_interface_c =
   &writechar_c,
   &writechars_c,
   &writestring_c,
+  &writeucsstring_c,
   &fileprintf_c,
   &vfileprintf_c,
   &filescanf_c,

@@ -118,6 +118,7 @@ static void stream_hexnum(glsi32 val)
 }
 
 
+/* Write a message to the error window, and exit. */
 void glkint_fatal_error_handler(char *str, glui32 *ustr, char *arg,
     int useval, glsi32 val)
 {
@@ -145,6 +146,7 @@ void glkint_fatal_error_handler(char *str, glui32 *ustr, char *arg,
 }
 
 
+/* Create a Fizmo file for a given Glk stream. */
 z_file *zfile_from_glk_strid(strid_t str, char *filename, int filetype,
     int fileaccess)
 {
@@ -160,5 +162,14 @@ z_file *zfile_from_glk_strid(strid_t str, char *filename, int filetype,
   result->implementation = FILE_IMPLEMENTATION_GLK;
 
   return result;
+}
+
+
+/* Replace the Glk stream in an existing Fizmo file. This awkward
+   maneuver is only necessary because of the way we autosave-restore
+   on iOS. It's not used otherwise. */
+void zfile_replace_glk_strid(z_file *result, strid_t str)
+{
+  result->file_object = str;
 }
 

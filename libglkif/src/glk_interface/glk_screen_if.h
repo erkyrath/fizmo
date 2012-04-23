@@ -38,7 +38,8 @@
 extern struct z_screen_interface glkint_screen_interface;
 #endif // glk_screen_if_c_INCLUDED
 
-void glkint_open_interface();
+z_file *glkint_open_interface(z_file *(*game_open_func)(z_file *));
+void glkint_recover_library_state(void);
 
 #endif // glk_screen_if_h_INCLUDED
 

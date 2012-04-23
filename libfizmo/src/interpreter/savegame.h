@@ -41,7 +41,7 @@
 extern z_ucs last_savegame_filename[];
 #endif /* savegame_c_INCLUDED */
 
-void save_game_to_stream(uint16_t address, uint16_t length, z_file *save_file,
+int save_game_to_stream(uint16_t address, uint16_t length, z_file *save_file,
     bool evaluate_result);
 void save_game(uint16_t address, uint16_t length, char *filename,
     bool skip_asking_for_filename, bool evaluate_result, char *directory);

@@ -107,42 +107,16 @@ void open_streams()
 }
 
 
-/*@-paramuse@*/
 static void stream_2_wrapped_output_destination(z_ucs *z_ucs_output,
     void *UNUSED(dummy))
 {
-  char buf[128];
-  int len;
-
-  // FIMXE: Re-implement for various output charsets.
-
   if (*z_ucs_output != 0)
   {
-    while (*z_ucs_output != 0)
-    {
-      len = zucs_string_to_utf8_string(buf, &z_ucs_output, 128);
-      fsi->writechars(buf, len-1, stream_2);
-    }
+    fsi->writeucsstring(z_ucs_output, stream_2);
     if (strcmp(get_configuration_value("sync-transcript"), "true") == 0)
       fsi->flushfile(stream_2);
   }
 }
-/*@+paramuse@*/
-
-
-/*
-static void stream_2_do_nothing(void *UNUSED(destination_parameter))
-{
-};
-
-
-static struct wordwrap_target streams_wordwrap_target =
-{
-  &stream_2_wrapped_output_destination,
-  &stream_2_do_nothing,
-  &stream_2_do_nothing
-};
-*/
 
 
 void init_streams()
@@ -261,6 +235,28 @@ void init_streams()
     input_stream_1_active = true;
 }
 
+z_file *get_stream_2(void)
+{
+  return stream_2;
+}
+
+
+/* Accept a new open stream as the current stream_2. The previous stream_2
+   is closed. Pass in NULL to just close the previous stream_2.
+   The interpreter's transcript bit is set appropriately.
+ */
+void restore_stream_2(z_file *str)
+{
+  if (stream_2) {
+    (void)fsi->closefile(stream_2);
+    stream_2 = NULL;
+    z_mem[0x11] &= 0xfe;
+  }
+  if (str) {
+    stream_2 = str;
+    z_mem[0x11] |= 1;
+  }
+}
 
 void ask_for_input_stream_filename(void)
 {
@@ -594,7 +590,6 @@ static void stream_2_output(z_ucs *z_ucs_output)
       }
       else if (return_code < 0)
       {
-        printf("### prompt_for_file failed ###\n");
         /* The user cancelled out. We'll have to silently turn off stream 2.
            Not the best option, but the best option I can see how to
            do. */

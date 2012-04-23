@@ -121,7 +121,7 @@ static z_file *glkint_openfile(char *filename, int filetype, int fileaccess)
       return NULL;
 
     TRACE_LOG("new open file: %s\n", filename);
-    str = glk_stream_open_file(fileref, fmode, 0);
+    str = glk_stream_open_file(fileref, fmode, 2);
     /* Dispose of the fileref, whether the stream opened successfully
      * or not. */
     glk_fileref_destroy(fileref);
@@ -158,8 +158,12 @@ int glkint_closefile(z_file *file_to_close)
     return z_filesys_interface_c.closefile(file_to_close);
   else
   {
-    glk_stream_close((strid_t)file_to_close->file_object, NULL);
-    free(file_to_close->filename);
+    if (file_to_close->file_object)
+      glk_stream_close((strid_t)file_to_close->file_object, NULL);
+    if (file_to_close->filename)
+      free(file_to_close->filename);
+    file_to_close->file_object = NULL;
+    file_to_close->filename = NULL;
     free(file_to_close);
     return 0;
   }
@@ -215,6 +219,20 @@ int glkint_writestring(char *s, z_file *fileref)
   else
     return glkint_writechars(s, strlen(s), fileref);
 }
+
+
+int glkint_writeucsstring(z_ucs *s, z_file *fileref)
+{
+  if (fileref->implementation == FILE_IMPLEMENTATION_STDIO)
+    return z_filesys_interface_c.writeucsstring(s, fileref);
+  else {
+    int len;
+    for (len=0; s[len]; len++) { };
+    glk_put_buffer_stream_uni((strid_t)fileref->file_object, s, len);
+    return len;
+  }
+}
+
 
 int glkint_vfileprintf(z_file *fileref, char *format, va_list ap)
 {
@@ -475,6 +493,7 @@ struct z_filesys_interface glkint_filesys_interface =
   &glkint_writechar,
   &glkint_writechars,
   &glkint_writestring,
+  &glkint_writeucsstring,
   &glkint_fileprintf,
   &glkint_vfileprintf,
   &glkint_filescanf,

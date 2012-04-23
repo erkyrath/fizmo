@@ -123,6 +123,10 @@ struct z_screen_interface
       char *directory, int filetype_or_mode, int fileaccess); // optional
   // UI-specific filename dialog. If not implemented, return -3. Return >=0 on
   // k, -1 on error or -2 in case user cancelled (ESC or similar).
+
+  // interface custom procedures for autosave (at @read time) and restore
+  int (*do_autosave)(); // optional
+  int (*restore_autosave)(z_file *savefile); // optional
 };
 
 #endif /* screen_interface_h_INCLUDED */

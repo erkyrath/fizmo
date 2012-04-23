@@ -331,7 +331,9 @@ struct z_screen_interface simple_c_interface =
   &simple_c_output_interface_info,
   &simple_c_return_false,
   &simple_c_game_was_restored_and_history_modified,
-  &simple_c_prompt_for_filename
+  &simple_c_prompt_for_filename,
+  NULL, /* do_autosave */
+  NULL, /* restore_autosave */
 };
 
 

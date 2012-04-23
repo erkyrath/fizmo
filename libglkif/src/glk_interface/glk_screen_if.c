@@ -16,7 +16,7 @@
  *    documentation and/or other materials provided with the distribution.
  * 3. The name of the author may not be used to endorse or promote products
  *    derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
  * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
@@ -56,20 +56,33 @@
 static char* interface_name = "glk-screen";
 static char* interface_version = "0.1.2";
 
+static z_file *(*game_open_interface)(z_file *) = NULL;
+static z_file *story_stream = NULL;
+
 static winid_t mainwin = NULL;
 static winid_t statusline = NULL;
 static winid_t statuswin = NULL;
 static bool instatuswin = false;
 static int statuscurheight = 0; /* what the VM thinks the height is */
 static int statusmaxheight = 0; /* height including possible quote box */
+static int statusseenheight = 0; /* last height the user saw */
 static int inputbuffer_size = 0;
 static glui32 *inputbuffer = NULL;
 
 static void glkint_get_screen_size(glui32 *, glui32 *);
 static void glkint_resolve_status_height(void);
 
-void glkint_open_interface()
+z_file *glkint_open_interface(z_file *(*game_open_func)(z_file *))
 {
+  /* The awkward nature of iOS autosave-restore means that we need to
+     retain a reference to the story_stream, and possibly fix it up
+     later on. If this isn't iOS, just ignore this juggling. */
+  game_open_interface = game_open_func;
+  story_stream = game_open_interface(NULL);
+  if (!story_stream) {
+    return NULL;
+  }
+
   mainwin = glk_window_open(NULL, 0, 0, wintype_TextBuffer, 1);
   glk_set_window(mainwin);
   instatuswin = false;
@@ -77,6 +90,8 @@ void glkint_open_interface()
   glui32 width, height;
   glkint_get_screen_size( &width, &height);
   fizmo_new_screen_size(width, height);
+
+  return story_stream;
 }
 
 char *glkint_get_interface_name()
@@ -93,6 +108,85 @@ uint8_t glkint_return_0()
 
 uint8_t glkint_return_1()
 { return 1; }
+
+/* This is called after an autosave-restore (iOS only). We've just
+   pulled a new Glk library state from disk. We need to go through it
+   and set mainwin, statuswin, etc appropriately.
+
+   Note that at this point, the Glk streams opened by the interpreter
+   (the original story file, and a transcript stream if any) have been
+   closed. We'll need to update the interpreter with replacements.
+ */
+void glkint_recover_library_state()
+{
+  strid_t storystream = NULL;
+  strid_t transcriptstream = NULL;
+  z_file *transcriptzfile = NULL;
+  winid_t win;
+  strid_t str;
+  glui32 rock;
+
+  mainwin = NULL;
+  statusline = NULL;
+  statuswin = NULL;
+  instatuswin = false;
+  zfile_replace_glk_strid(story_stream, NULL);
+
+  /* Close the old transcript stream, if there was one. */
+  transcriptzfile = get_stream_2();
+  /* This is a little bit fiddly, because the underlying Glk stream is
+     already gone. We mark this by removing the pointer to it, and
+     then the z_file can be closed safely. */
+  if (transcriptzfile) {
+    zfile_replace_glk_strid(transcriptzfile, NULL);
+    restore_stream_2(NULL);
+  }
+
+  statuscurheight = 0;
+  statusmaxheight = 0;
+  statusseenheight = 0;
+
+  win = NULL;
+  while ((win=glk_window_iterate(win, &rock)) != NULL) {
+    if (rock == 1)
+      mainwin = win;
+    else if (rock == 2)
+      statuswin = win;
+    else if (rock == 3)
+      statusline = win;
+  }
+
+  if (statuswin) {
+    glui32 truewidth, trueheight;
+    glk_window_get_size(statuswin, &truewidth, &trueheight);
+    statuscurheight = trueheight;
+    statusmaxheight = trueheight;
+    statusseenheight = trueheight;
+  }
+
+  str = NULL;
+  while ((str=glk_stream_iterate(str, &rock)) != NULL) {
+    if (rock == 1)
+      storystream = str;
+    else if (rock == 2)
+      transcriptstream = str;
+  }
+
+  /* Close the old story stream which we found in the library state. (We're
+     about to open a fresh version.) */
+  if (storystream) {
+    glk_stream_close(str, NULL);
+  }
+
+  game_open_interface(story_stream);
+
+  /* If we found a transcript stream, pass it to the library. */
+  if (transcriptstream) {
+    transcriptzfile = zfile_from_glk_strid(transcriptstream, NULL,
+      FILETYPE_TRANSCRIPT, FILEACCESS_APPEND);
+    restore_stream_2(transcriptzfile);
+  }
+}
 
 static void glkint_get_screen_size(glui32 *width, glui32 *height)
 {
@@ -111,14 +205,14 @@ static void glkint_get_screen_size(glui32 *width, glui32 *height)
 }
 
 uint8_t glkint_get_screen_height()
-{ 
+{
   glui32 width, height;
   glkint_get_screen_size(&width, &height);
   return height;
 }
 
 uint8_t glkint_get_screen_width()
-{ 
+{
   glui32 width, height;
   glkint_get_screen_size(&width, &height);
   return width;
@@ -144,7 +238,7 @@ char **glkint_get_config_option_names()
 }
 
 void glkint_link_interface_to_story(struct z_story *UNUSED(story))
-{ 
+{
   if (ver <= 3)
   {
     if (statusline) {
@@ -153,10 +247,10 @@ void glkint_link_interface_to_story(struct z_story *UNUSED(story))
     statusline = glk_window_open(
         mainwin, winmethod_Above | winmethod_Fixed, 1, wintype_TextGrid, 3);
     /*
-    glk_set_window(statusline);    
+    glk_set_window(statusline);
     glk_set_style(style_Normal | stylehint_ReverseColor);
     glk_window_clear(statusline);
-    glk_set_window(mainwin);    
+    glk_set_window(mainwin);
     */
   }
 }
@@ -170,18 +264,28 @@ void glkint_reset_interface()
   }
 
   instatuswin = false;
-  glk_set_window(mainwin);    
+  glk_set_window(mainwin);
   glk_set_style(style_Normal);
   glk_window_clear(mainwin);
 }
 
-/* Called at @quit time, or if the interpreter hits a fatal error. */
+/* This is called from two points: abort_interpreter() with an error message,
+   and close_streams() with no error message.
+
+   For the abort case, we call glkint_fatal_error_handler(), which does a
+   glk_exit. This is necessary because abort_interpreter() is going to do
+   a libc exit(), and we need to get Glk shut down first.
+
+   However, close_streams() is different -- that's the normal interpreter
+   exit (a @quit opcode). For that case, it's better to return and do nothing,
+   so that close_streams() can flush fizmo's buffers. It will immediately
+   exit through the end of fizmo_main(), which is the end of glk_main(),
+   so we'll get a normal Glk shut down anyway.
+   */
 int glkint_close_interface(z_ucs *error_message)
-{ 
+{
   if (error_message)
     glkint_fatal_error_handler(NULL, error_message, NULL, 0, 0);
-  else
-    glk_exit();
   return 0;
 }
 
@@ -359,7 +463,7 @@ void glkint_show_status(z_ucs *room_description,
 {
   char buf[128];
 
-  glk_set_window(statusline);    
+  glk_set_window(statusline);
   glk_window_clear(statusline);
   glk_set_style(style_Subheader);
   glk_put_string_uni(room_description);
@@ -376,11 +480,11 @@ void glkint_show_status(z_ucs *room_description,
     glk_put_string(buf);
   }
 
-  glk_set_window(mainwin);    
+  glk_set_window(mainwin);
 }
 
 void glkint_set_text_style(z_style text_style)
-{ 
+{
   if (text_style & Z_STYLE_FIXED_PITCH) {
     glk_set_style(style_Preformatted);
   }
@@ -400,7 +504,7 @@ void glkint_set_colour(z_colour UNUSED(foreground),
 { }
 
 void glkint_set_font(z_font font_type)
-{ 
+{
   if (instatuswin)
     return;
   if (font_type == Z_FONT_COURIER_FIXED_PITCH)
@@ -410,7 +514,7 @@ void glkint_set_font(z_font font_type)
 }
 
 void glkint_split_window(int16_t nof_lines)
-{ 
+{
   int oldvmheight = statuscurheight;
   statuscurheight = nof_lines;
 
@@ -447,6 +551,9 @@ void glkint_split_window(int16_t nof_lines)
    shrink it down now. */
 static void glkint_resolve_status_height()
 {
+  if (statusseenheight == statusmaxheight)
+    statusmaxheight = statuscurheight;
+
   if (statuswin) {
     if (statusmaxheight == 0) {
       glk_window_close(statuswin, NULL);
@@ -457,23 +564,24 @@ static void glkint_resolve_status_height()
     }
   }
 
-  statusmaxheight = statuscurheight;    
+  statusseenheight = statusmaxheight;
+  statusmaxheight = statuscurheight;
 }
 
 /* 1 is the status window; 0 is the story window. */
 void glkint_set_window(int16_t window_number)
-{ 
+{
   if (!window_number) {
     glk_set_window(mainwin);
     instatuswin = false;
   }
   else {
-    if (statuswin) 
+    if (statuswin)
       glk_set_window(statuswin);
     else
       glk_set_window(NULL);
     instatuswin = true;
-  }    
+  }
 }
 
 void glkint_erase_window(int16_t window_number)
@@ -489,7 +597,7 @@ void glkint_erase_window(int16_t window_number)
 
 void glkint_set_cursor(int16_t line, int16_t column,
     int16_t window)
-{ 
+{
   if (window && statuswin)
     glk_window_move_cursor(statuswin, column-1, line-1);
 }
@@ -628,7 +736,9 @@ struct z_screen_interface glkint_screen_interface =
   &glkint_output_interface_info,
   &glkint_return_false, /* input_must_be_repeated_by_story */
   &glkint_game_was_restored_and_history_modified,
-  &glkint_prompt_for_filename
+  &glkint_prompt_for_filename,
+  NULL, /* do_autosave */
+  NULL /* restore_autosave */
 };
 
 #endif // glk_screen_if_c_INCLUDED

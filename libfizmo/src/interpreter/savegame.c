@@ -464,9 +464,10 @@ static int _store_save_or_restore_result(uint16_t result_code)
 }
 
 
-// Returns 0 for failure,  1 for "save succeeded" and 2 for "the game is
-// being restored and is resuming execution again from here, the point where
-// it was saved".
+// Handle an error in the save or restore process. This always returns 0,
+// indicating failure.
+// If evaluate_result is true, this does a Z-machine store of 0.
+// If close_stream is true, this closes the file.
 static int _handle_save_or_restore_failure(bool evaluate_result,
     int i18n_message_code, z_file *iff_file, bool close_stream)
 {
@@ -571,8 +572,9 @@ void save_game(uint16_t address, uint16_t length, char *filename,
   save_game_to_stream(address, length, save_file, evaluate_result);
 }
 
-/* This closes the save_file. */
-void save_game_to_stream(uint16_t address, uint16_t length, z_file *save_file,
+/* Returns 0 for failure, 1 for success. 
+   This closes the save_file. */
+int save_game_to_stream(uint16_t address, uint16_t length, z_file *save_file,
   bool evaluate_result)
 {
   uint32_t pc_on_restore = (uint32_t)(pc - z_mem);
@@ -593,20 +595,18 @@ void save_game_to_stream(uint16_t address, uint16_t length, z_file *save_file,
   {
     if ((fsi->writechars(z_mem + address, length, save_file)) != length)
     {
-      _handle_save_or_restore_failure(
+      return _handle_save_or_restore_failure(
           evaluate_result,
           i18n_libfizmo_ERROR_WRITING_SAVE_FILE,
           save_file, true);
-      return;
     }
 
     if ((fsi->closefile(save_file)) != 0)
     {
-      _handle_save_or_restore_failure(
+      return _handle_save_or_restore_failure(
           evaluate_result,
           i18n_libfizmo_ERROR_WRITING_SAVE_FILE,
           save_file, true);
-      return;
     }
   }
   else
@@ -615,102 +615,87 @@ void save_game_to_stream(uint16_t address, uint16_t length, z_file *save_file,
 
     if (start_new_chunk("IFhd", save_file) != 0)
     {
-      _handle_save_or_restore_failure(evaluate_result,
+      return _handle_save_or_restore_failure(evaluate_result,
           i18n_libfizmo_ERROR_WRITING_SAVE_FILE, save_file, true);
-      return;
     }
 
     // Save release number
     if ((fsi->writechar((int)z_mem[0x2], save_file)) == EOF)
     {
-      _handle_save_or_restore_failure(evaluate_result,
+      return _handle_save_or_restore_failure(evaluate_result,
           i18n_libfizmo_ERROR_WRITING_SAVE_FILE, save_file, true);
-      return;
     }
     if ((fsi->writechar((int)z_mem[0x3], save_file)) == EOF)
     {
-      _handle_save_or_restore_failure(evaluate_result,
+      return _handle_save_or_restore_failure(evaluate_result,
           i18n_libfizmo_ERROR_WRITING_SAVE_FILE, save_file, true);
-      return;
     }
 
     // Save serial number
     if ((fsi->writechar((int)z_mem[0x12], save_file)) == EOF)
     {
-      _handle_save_or_restore_failure(evaluate_result,
+      return _handle_save_or_restore_failure(evaluate_result,
           i18n_libfizmo_ERROR_WRITING_SAVE_FILE, save_file, true);
-      return;
     }
     if ((fsi->writechar((int)z_mem[0x13], save_file)) == EOF)
     {
-      _handle_save_or_restore_failure(evaluate_result,
+      return _handle_save_or_restore_failure(evaluate_result,
           i18n_libfizmo_ERROR_WRITING_SAVE_FILE, save_file, true);
-      return;
     }
     if ((fsi->writechar((int)z_mem[0x14], save_file)) == EOF)
     {
-      _handle_save_or_restore_failure(evaluate_result,
+      return _handle_save_or_restore_failure(evaluate_result,
           i18n_libfizmo_ERROR_WRITING_SAVE_FILE, save_file, true);
-      return;
     }
     if ((fsi->writechar((int)z_mem[0x15], save_file)) == EOF)
     {
-      _handle_save_or_restore_failure(evaluate_result,
+      return _handle_save_or_restore_failure(evaluate_result,
           i18n_libfizmo_ERROR_WRITING_SAVE_FILE, save_file, true);
-      return;
     }
     if ((fsi->writechar((int)z_mem[0x16], save_file)) == EOF)
     {
-      _handle_save_or_restore_failure(evaluate_result,
+      return _handle_save_or_restore_failure(evaluate_result,
           i18n_libfizmo_ERROR_WRITING_SAVE_FILE, save_file, true);
-      return;
     }
     if ((fsi->writechar((int)z_mem[0x17], save_file)) == EOF)
     {
-      _handle_save_or_restore_failure(evaluate_result,
+      return _handle_save_or_restore_failure(evaluate_result,
           i18n_libfizmo_ERROR_WRITING_SAVE_FILE, save_file, true);
-      return;
     }
 
     // Save checksum
     if ((fsi->writechar((int)z_mem[0x1c], save_file)) == EOF)
     {
-      _handle_save_or_restore_failure(evaluate_result,
+      return _handle_save_or_restore_failure(evaluate_result,
           i18n_libfizmo_ERROR_WRITING_SAVE_FILE, save_file, true);
-      return;
     }
     if ((fsi->writechar((int)z_mem[0x1d], save_file)) == EOF)
     {
-      _handle_save_or_restore_failure(evaluate_result,
+      return _handle_save_or_restore_failure(evaluate_result,
           i18n_libfizmo_ERROR_WRITING_SAVE_FILE, save_file, true);
-      return;
     }
 
     // Save initial PC on restore
     if ((fsi->writechar((int)(pc_on_restore >> 16), save_file)) == EOF)
     {
-      _handle_save_or_restore_failure(evaluate_result,
+      return _handle_save_or_restore_failure(evaluate_result,
           i18n_libfizmo_ERROR_WRITING_SAVE_FILE, save_file, true);
-      return;
     }
     if ((fsi->writechar((int)(pc_on_restore >>  8), save_file)) == EOF)
     {
-      _handle_save_or_restore_failure(evaluate_result,
+      return _handle_save_or_restore_failure(evaluate_result,
           i18n_libfizmo_ERROR_WRITING_SAVE_FILE, save_file, true);
-      return;
     }
     if ((fsi->writechar((int)(pc_on_restore      ), save_file)) == EOF)
     {
-      _handle_save_or_restore_failure(evaluate_result,
+      return _handle_save_or_restore_failure(evaluate_result,
           i18n_libfizmo_ERROR_WRITING_SAVE_FILE, save_file, true);
-      return;
     }
 
     if (end_current_chunk(save_file) != 0)
     {
-      _handle_save_or_restore_failure(evaluate_result,
+      return _handle_save_or_restore_failure(evaluate_result,
           i18n_libfizmo_ERROR_WRITING_SAVE_FILE, save_file, true);
-      return;
     }
 
     dynamic_index = z_mem + address;
@@ -731,9 +716,8 @@ void save_game_to_stream(uint16_t address, uint16_t length, z_file *save_file,
 
       if (start_new_chunk("CMem", save_file) != 0)
       {
-        _handle_save_or_restore_failure(evaluate_result,
+        return _handle_save_or_restore_failure(evaluate_result,
             i18n_libfizmo_ERROR_WRITING_SAVE_FILE, save_file, true);
-        return;
       }
 
       ptr = z_mem + address + length;
@@ -743,9 +727,8 @@ void save_game_to_stream(uint16_t address, uint16_t length, z_file *save_file,
       {
         if ((data = fsi->getchar(active_z_story->z_story_file)) == EOF)
         {
-          _handle_save_or_restore_failure(evaluate_result,
+          return _handle_save_or_restore_failure(evaluate_result,
               i18n_libfizmo_ERROR_WRITING_SAVE_FILE, save_file, true);
-          return;
         }
 
         data ^= *dynamic_index;
@@ -766,19 +749,17 @@ void save_game_to_stream(uint16_t address, uint16_t length, z_file *save_file,
           {
             if (fsi->writechar(0, save_file) == EOF)
             {
-              _handle_save_or_restore_failure(evaluate_result,
+              return _handle_save_or_restore_failure(evaluate_result,
                   i18n_libfizmo_ERROR_WRITING_SAVE_FILE, save_file, true);
-              return;
             }
 
             if (consecutive_zeros > 256)
             {
               if (fsi->writechar(0xff, save_file) == EOF)
               {
-                _handle_save_or_restore_failure(evaluate_result,
+                return _handle_save_or_restore_failure(evaluate_result,
                     i18n_libfizmo_ERROR_WRITING_SAVE_FILE,
                     save_file, true);
-                return;
               }
 
               consecutive_zeros -= 256;
@@ -787,10 +768,9 @@ void save_game_to_stream(uint16_t address, uint16_t length, z_file *save_file,
             {
               if (fsi->writechar((int)(consecutive_zeros - 1),save_file) == EOF)
               {
-                _handle_save_or_restore_failure(evaluate_result,
+                return _handle_save_or_restore_failure(evaluate_result,
                     i18n_libfizmo_ERROR_WRITING_SAVE_FILE,
                     save_file, true);
-                return;
               }
 
               consecutive_zeros = 0;
@@ -799,10 +779,9 @@ void save_game_to_stream(uint16_t address, uint16_t length, z_file *save_file,
 
           if (fsi->writechar(data, save_file) == EOF)
           {
-            _handle_save_or_restore_failure(evaluate_result,
+            return _handle_save_or_restore_failure(evaluate_result,
                 i18n_libfizmo_ERROR_WRITING_SAVE_FILE,
                 save_file, true);
-            return;
           }
         }
 
@@ -812,10 +791,9 @@ void save_game_to_stream(uint16_t address, uint16_t length, z_file *save_file,
 
       if (end_current_chunk(save_file) != 0)
       {
-        _handle_save_or_restore_failure(evaluate_result,
+        return _handle_save_or_restore_failure(evaluate_result,
             i18n_libfizmo_ERROR_WRITING_SAVE_FILE,
             save_file, true);
-        return;
       }
     }
     else
@@ -831,32 +809,29 @@ void save_game_to_stream(uint16_t address, uint16_t length, z_file *save_file,
       {
         if ((fsi->writechar((int)(*dynamic_index), save_file)) == EOF)
         {
-          _handle_save_or_restore_failure(
+          return _handle_save_or_restore_failure(
               evaluate_result,
               i18n_libfizmo_ERROR_WRITING_SAVE_FILE,
               save_file, true);
-          return;
         }
         dynamic_index++;
       }
 
       if (end_current_chunk(save_file) != 0)
       {
-        _handle_save_or_restore_failure(
+        return _handle_save_or_restore_failure(
             evaluate_result,
             i18n_libfizmo_ERROR_WRITING_SAVE_FILE,
             save_file, true);
-        return;
       }
     }
 
     if (start_new_chunk("Stks", save_file) != 0)
     {
-      _handle_save_or_restore_failure(
+      return _handle_save_or_restore_failure(
           evaluate_result,
           i18n_libfizmo_ERROR_WRITING_SAVE_FILE,
           save_file, true);
-      return;
     }
 
 #ifdef ENABLE_TRACING
@@ -871,27 +846,24 @@ void save_game_to_stream(uint16_t address, uint16_t length, z_file *save_file,
           number_of_locals_active,
           save_file) != 0)
     {
-      _handle_save_or_restore_failure(evaluate_result,
+      return _handle_save_or_restore_failure(evaluate_result,
           i18n_libfizmo_ERROR_WRITING_SAVE_FILE,
           save_file, true);
-      return;
     }
 
     if (end_current_chunk(save_file) != 0)
     {
-      _handle_save_or_restore_failure(evaluate_result,
+      return _handle_save_or_restore_failure(evaluate_result,
           i18n_libfizmo_ERROR_WRITING_SAVE_FILE,
           save_file, true);
-      return;
     }
 
     if (start_new_chunk("ANNO", save_file) != 0)
     {
-      _handle_save_or_restore_failure(
+      return _handle_save_or_restore_failure(
           evaluate_result,
           i18n_libfizmo_ERROR_WRITING_SAVE_FILE,
           save_file, true);
-      return;
     }
 
     fsi->fileprintf(save_file,
@@ -899,10 +871,9 @@ void save_game_to_stream(uint16_t address, uint16_t length, z_file *save_file,
 
     if (end_current_chunk(save_file) != 0)
     {
-      _handle_save_or_restore_failure(evaluate_result,
+      return _handle_save_or_restore_failure(evaluate_result,
           i18n_libfizmo_ERROR_WRITING_SAVE_FILE,
           save_file, true);
-      return;
     }
 
 #ifndef DISABLE_OUTPUT_HISTORY
@@ -927,11 +898,10 @@ void save_game_to_stream(uint16_t address, uint16_t length, z_file *save_file,
 
       if (start_new_chunk("TxHs", save_file) != 0)
       {
-        _handle_save_or_restore_failure(
+        return _handle_save_or_restore_failure(
             evaluate_result,
             i18n_libfizmo_ERROR_WRITING_SAVE_FILE,
             save_file, true);
-        return;
       }
 
       hst_ptr = history->current_paragraph_index;
@@ -942,11 +912,10 @@ void save_game_to_stream(uint16_t address, uint16_t length, z_file *save_file,
         {
           if (write_four_byte_number(*hst_ptr, save_file) != 0)
           {
-            _handle_save_or_restore_failure(
+            return _handle_save_or_restore_failure(
                 evaluate_result,
                 i18n_libfizmo_ERROR_WRITING_SAVE_FILE,
                 save_file, true);
-            return;
           }
 
           hst_ptr++;
@@ -959,11 +928,10 @@ void save_game_to_stream(uint16_t address, uint16_t length, z_file *save_file,
       {
         if (write_four_byte_number(*hst_ptr, save_file) != 0)
         {
-          _handle_save_or_restore_failure(
+          return _handle_save_or_restore_failure(
               evaluate_result,
               i18n_libfizmo_ERROR_WRITING_SAVE_FILE,
               save_file, true);
-          return;
         }
 
         hst_ptr++;
@@ -971,25 +939,25 @@ void save_game_to_stream(uint16_t address, uint16_t length, z_file *save_file,
 
       if (end_current_chunk(save_file) != 0)
       {
-        _handle_save_or_restore_failure(evaluate_result,
+        return _handle_save_or_restore_failure(evaluate_result,
             i18n_libfizmo_ERROR_WRITING_SAVE_FILE,
             save_file, true);
-        return;
       }
     }
 #endif // DISABLE_OUTPUT_HISTORY
 
     if (close_simple_iff_file(save_file) != -0)
     {
-      _handle_save_or_restore_failure(evaluate_result,
+      return _handle_save_or_restore_failure(evaluate_result,
           i18n_libfizmo_ERROR_WRITING_SAVE_FILE,
           save_file, true);
-      return;
     }
   }
 
   if (bool_equal(evaluate_result, true))
     _store_save_or_restore_result(1);
+
+  return 1;
 }
 
 
@@ -1063,9 +1031,9 @@ void opcode_save_ext(void)
 }
 
 
-// Returns 0 for failure,  1 for "save succeeded" and 2 for "the game is
-// being restored and is resuming execution again from here, the point where
-// it was saved".
+/* Returns 0 for failure, 2 for successful restore. (These values match
+   the Z-machine @save result codes.)
+   This closes the iff_file. */
 int restore_game_from_stream(uint16_t address, uint16_t length,
     z_file *iff_file, bool evaluate_result)
 {

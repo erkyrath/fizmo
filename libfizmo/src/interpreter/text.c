@@ -1649,6 +1649,10 @@ int save_and_quit_if_required(bool force_save)
   char *save_and_quit_file;
   char *autosave_filename;
   uint8_t *pc_buf;
+  
+  if (active_interface->do_autosave) {
+    return active_interface->do_autosave();
+  }
 
   autosave_filename
     = get_configuration_value("autosave-filename");

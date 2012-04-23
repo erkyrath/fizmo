@@ -54,13 +54,6 @@ glkunix_argumentlist_t glkunix_arguments[] = {
 };
 
 
-void glkint_set_startup_params(strid_t gamefile, char *filename)
-{
-  gamefilestream = gamefile;
-  gamefilename = filename;
-}
-
-
 int glkunix_startup_code(glkunix_startup_t *data)
 {
   /* It turns out to be more convenient if we return TRUE from here, even 
@@ -97,11 +90,31 @@ int glkunix_startup_code(glkunix_startup_t *data)
     return TRUE;
   }
 
-  glkint_set_startup_params(gamefile, filename);
+  gamefilestream = gamefile;
+  gamefilename = filename;
 
   return TRUE;
 }
 
+/* This callback has the job of finding the Glk stream for the game file
+   and embedding it into a z_file object. If you pass in a z_file object,
+   it uses that rather than allocating a new one.
+
+   This should only be called once, because once you close gamefilestream,
+   you can't get it back. For fizmo-glktermw, it will only be called once.
+   (For other strange platforms, the equivalent interface is more 
+   interesting. But that's not important right now.)
+*/
+static z_file *glkunix_open_game_stream(z_file *current_stream)
+{
+  if (!current_stream)
+    current_stream = zfile_from_glk_strid(gamefilestream, "Game", 
+      FILETYPE_DATA, FILEACCESS_READ);
+  else
+    zfile_replace_glk_strid(current_stream, gamefilestream);
+  
+  return current_stream;
+}
 
 void glk_main(void)
 {
@@ -119,9 +132,9 @@ void glk_main(void)
   fizmo_register_screen_interface(&glkint_screen_interface);
   fizmo_register_blorb_interface(&glkint_blorb_interface);
 
-  glkint_open_interface();
-  story_stream = zfile_from_glk_strid(gamefilestream, gamefilename,
-      FILETYPE_DATA, FILEACCESS_READ);
+  story_stream = glkint_open_interface(&glkunix_open_game_stream);
+  if (!story_stream)
+    return;
   fizmo_start(story_stream, NULL, NULL, -1, -1);
 }
 

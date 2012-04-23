@@ -134,22 +134,6 @@ int writestring_c(char *s, z_file *fileref)
   return writechars_c(s, strlen(s), fileref);
 }
 
-int writeucsstring_c(z_ucs *s, z_file *fileref)
-{
-  char buf[128];
-  int len;
-  int res = 0;
-
-  // FIMXE: Re-implement for various output charsets.
-
-  while (*s != 0)
-  {
-    len = zucs_string_to_utf8_string(buf, &s, 128);
-    res += writechars_c(buf, len-1, fileref);
-  }
-
-  return res;
-}
 
 int writeucsstring_c(z_ucs *s, z_file *fileref)
 {
@@ -356,7 +340,7 @@ struct z_filesys_interface z_filesys_interface_c =
   &close_dir_c,
   &read_dir_c,
   &make_dir_c,
-  &is_filename_directory_c,
+  &is_filename_directory_c
 };
 
 

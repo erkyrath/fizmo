@@ -129,6 +129,22 @@ extern z_file *iosglk_find_autosave() {
 	return save_file;
 }
 
+/* Delete an autosaved game, if one exists.
+ */
+void iosglk_clear_autosave() {
+	GlkLibrary *library = [GlkLibrary singleton];
+	
+	NSString *dirname = documents_dir();
+	if (!dirname)
+		return;
+	
+	NSString *finalgamepath = [dirname stringByAppendingPathComponent:@"autosave.glksave"];
+	NSString *finallibpath = [dirname stringByAppendingPathComponent:@"autosave.plist"];
+	
+	[library.filemanager removeItemAtPath:finallibpath error:nil];
+	[library.filemanager removeItemAtPath:finalgamepath error:nil];
+}
+
 /* Restore an autosaved game, if one exists. The file argument is closed in the process.
  
 	Returns 1 if a game was restored successfully, 0 if not.

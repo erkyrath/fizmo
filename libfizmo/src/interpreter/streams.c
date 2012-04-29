@@ -1340,11 +1340,17 @@ void opcode_output_stream(void)
     stream_1_active = false;
 
   else if (stream_number == 2)
+  {
+    z_ucs nullstring = 0;
     z_mem[0x11] |= 1;
-
+    streams_z_ucs_output(&nullstring);
+  }
   else if (stream_number == -2)
+  {
+    z_ucs nullstring = 0;
     z_mem[0x11] &= 0xfe;
-
+    streams_z_ucs_output(&nullstring);
+  }
   else if (stream_number == 3)
   {
     if (++stream_3_current_depth == MAXIMUM_STREAM_3_DEPTH)

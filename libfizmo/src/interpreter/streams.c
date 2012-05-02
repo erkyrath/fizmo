@@ -1398,10 +1398,6 @@ void close_streams(z_ucs *error_message)
     (void)fsi->closefile(stream_4);
     stream_4 = NULL;
   }
-
-#ifdef ENABLE_TRACING
-  turn_off_trace();
-#endif /* ENABLE_TRACING */
 }
 
 

@@ -328,8 +328,6 @@ static void interpret(/*@null@*/ int frame_index_to_quit_on)
   TRACE_LOG("Starting interpreting at %lx.\n",
     (unsigned long int)(pc - z_mem));
 
-  terminate_interpreter = INTERPRETER_QUIT_NONE;
-
   if ((frame_index_to_quit_on != -1)
       && (frame_index_to_quit_on >= number_of_stack_frames))
     terminate_interpreter = INTERPRETER_QUIT_ALL;

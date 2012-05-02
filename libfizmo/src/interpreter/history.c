@@ -551,6 +551,7 @@ void store_z_ucs_output_in_history(OUTPUTHISTORY *h, z_ucs *z_ucs_output)
 
   store_data_in_history(h, z_ucs_output, len, true);
 
+#ifdef ENABLE_TRACING
   cl = get_current_line(h);
   TRACE_LOG("currentline:|");
   if (cl != NULL)
@@ -559,7 +560,7 @@ void store_z_ucs_output_in_history(OUTPUTHISTORY *h, z_ucs *z_ucs_output)
     free(cl);
   }
   TRACE_LOG("|line end.\n");
-
+#endif // ENABLE_TRACING
 }
 
 

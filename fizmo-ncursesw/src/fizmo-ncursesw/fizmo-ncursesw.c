@@ -2903,6 +2903,10 @@ int main(int argc, char *argv[])
   close(ncursesw_if_signalling_pipe[1]);
   close(ncursesw_if_signalling_pipe[0]);
 
+#ifdef ENABLE_TRACING
+  turn_off_trace();
+#endif // ENABLE_TRACING
+
   return 0;
 }
 

@@ -165,7 +165,6 @@ static int add_doc_to_babel_info(xmlDocPtr new_babel_doc,
       // Neither "/ifindex" nor "/if:ifindex" found. Skip this file.
       xmlXPathFreeObject(xpathObj);
       xmlXPathFreeContext(xpathCtx); 
-      xmlFreeDoc(new_babel_doc);
       return -1;
     }
     else
@@ -208,6 +207,7 @@ struct babel_info *load_babel_info_from_blorb(z_file *infile, int length,
   struct babel_info *result;
   char *xmlData = (char*)fizmo_malloc(length + 1);
   xmlDocPtr babel_doc;
+  int return_code;
 
   if (fsi->getchars(xmlData, length, infile) != (size_t)length)
   {
@@ -217,16 +217,16 @@ struct babel_info *load_babel_info_from_blorb(z_file *infile, int length,
 
   xmlData[length] = '\0';
 
-  if ((babel_doc = xmlReadDoc(
-          (xmlChar*)xmlData,
-          NULL,
-          NULL,
-          XML_PARSE_NOWARNING | XML_PARSE_NOERROR))
-      == NULL)
-  {
-    free(xmlData);
+  babel_doc = xmlReadDoc(
+      (xmlChar*)xmlData,
+      NULL,
+      NULL,
+      XML_PARSE_NOWARNING | XML_PARSE_NOERROR);
+
+  free(xmlData);
+
+  if (babel_doc == NULL)
     return NULL;
-  }
 
   result = (struct babel_info*)fizmo_malloc(sizeof(struct babel_info));
   result->entries = NULL;
@@ -236,8 +236,8 @@ struct babel_info *load_babel_info_from_blorb(z_file *infile, int length,
   if (add_doc_to_babel_info(babel_doc, result, last_mod_timestamp, filename)
       != 0)
   {
+    xmlFreeDoc(babel_doc);
     free(result);
-    free(xmlData);
     return NULL;
   }
 
@@ -324,6 +324,7 @@ struct babel_info *load_babel_info()
                 new_babel_doc, result, last_mod_timestamp, z_dir_entry.d_name))
             != 0)
         {
+          xmlFreeDoc(new_babel_doc);
           free_babel_info(result);
           fsi->ch_dir(cwd);
           free(cwd);

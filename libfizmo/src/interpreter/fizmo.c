@@ -481,6 +481,18 @@ static struct z_story *load_z_story(z_file *story_stream, z_file *blorb_stream)
 }
 
 
+static void free_z_story(struct z_story *story)
+{
+  free(story->memory);
+  if (story->title != NULL)
+    free(story->title);
+  if (story->blorb_map != NULL)
+    active_blorb_interface->free_blorb_map(story->blorb_map);
+  free(story->absolute_file_name);
+  free(story);
+}
+
+
 /*
 struct z_story_blorb_image *get_image_blorb_index(struct z_story *story,
     int resource_number)
@@ -1100,11 +1112,11 @@ void fizmo_start(z_file* story_stream, z_file *blorb_stream,
   char *str, *default_savegame_filename = DEFAULT_SAVEGAME_FILENAME;
   z_colour default_colour;
 
-
-  //TRACE_LOG("Startup for input filename \"%s\".\n", input_filename);
-
   if (active_interface == NULL)
+  {
+    TRACE_LOG("No active interface.");
     return;
+  }
 
   register_i18n_stream_output_function(
       streams_z_ucs_output);
@@ -1245,6 +1257,8 @@ void fizmo_start(z_file* story_stream, z_file *blorb_stream,
         Z_STYLE_ROMAN);
 #endif /* DISABLE_OUTPUT_HISTORY */
 
+  terminate_interpreter = INTERPRETER_QUIT_NONE;
+
   if ( (ver <= 8) && (ver != 6) )
   {
     while (terminate_interpreter == INTERPRETER_QUIT_NONE)
@@ -1351,6 +1365,11 @@ void fizmo_start(z_file* story_stream, z_file *blorb_stream,
 #ifdef ENABLE_DEBUGGER
   debugger_interpreter_stopped();
 #endif // ENABLE_DEBUGGER
+
+  free_z_story(active_z_story);
+
+  if (upper_window_buffer != NULL)
+    destroy_blockbuffer(upper_window_buffer);
 
   if (active_sound_interface != NULL)
     active_sound_interface->close_sound();

@@ -420,8 +420,8 @@ int main(int argc, char *argv[])
         disable_hyphenation == false ? true : false);
   }
 
-  if ((story_stream
-      = fsi->openfile(story_filename, FILETYPE_DATA, FILEACCESS_READ)) == NULL)
+  if ((story_stream = fsi->openfile(
+          story_filename, FILETYPE_DATA, FILEACCESS_READ)) == NULL)
   {
     printf("Could not open file \"%s\".\n", argv[1]);
     return -1;
@@ -429,7 +429,12 @@ int main(int argc, char *argv[])
   else
   {
     fizmo_start(story_stream, NULL, NULL, -1, -1);
-    return 0;
   }
+
+#ifdef ENABLE_TRACING
+  turn_off_trace();
+#endif // ENABLE_TRACING
+
+  return 0;
 }
 

@@ -207,7 +207,6 @@ struct babel_info *load_babel_info_from_blorb(z_file *infile, int length,
   struct babel_info *result;
   char *xmlData = (char*)fizmo_malloc(length + 1);
   xmlDocPtr babel_doc;
-  int return_code;
 
   if (fsi->getchars(xmlData, length, infile) != (size_t)length)
   {

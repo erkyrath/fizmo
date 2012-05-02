@@ -39,6 +39,7 @@
 #include "glk_blorb_if.h"
 #include "glk_filesys_if.h"
 #include "glkstart.h" /* This comes with the Glk library. */
+#include "ios-restart.h"
 #include "ios-autosave.h"
 
 #include <interpreter/fizmo.h>
@@ -96,7 +97,9 @@ void glk_main(void)
 {
 	z_file *story_stream;
 	z_file *autosave_stream;
-	
+
+	iosglk_set_can_restart_flag(NO);
+
 	if (init_err) {
 		glkint_fatal_error_handler(init_err, NULL, NULL, FALSE, 0);
 		return;
@@ -131,5 +134,8 @@ void glk_main(void)
 	}
 	autosave_stream = iosglk_find_autosave();
 	fizmo_start(story_stream, NULL, autosave_stream, -1, -1);
+	
+	/* Since fizmo_start() exited nicely, we're allowed to re-enter it. */
+	iosglk_set_can_restart_flag(YES);
 }
 

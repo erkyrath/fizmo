@@ -136,5 +136,9 @@ void glk_main(void)
   if (!story_stream)
     return;
   fizmo_start(story_stream, NULL, NULL, -1, -1);
+
+#ifdef ENABLE_TRACING
+  turn_off_trace();
+#endif // ENABLE_TRACING
 }
 

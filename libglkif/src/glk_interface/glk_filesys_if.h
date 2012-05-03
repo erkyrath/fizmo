@@ -40,6 +40,7 @@
 
 #ifndef glk_filesys_c_INCLUDED
 extern struct z_filesys_interface glkint_filesys_interface;
+extern int glkint_closefile(z_file *file_to_close);
 #endif // glk_filesys_c_INCLUDED
 
 #endif // glk_filesys_h_INCLUDED

@@ -135,6 +135,10 @@ void glk_main(void)
 	autosave_stream = iosglk_find_autosave();
 	fizmo_start(story_stream, NULL, autosave_stream, -1, -1);
 	
+	/* Dispose of the story_stream, in a way that won't conflict with the upcoming close of all Glk streams. */
+	zfile_replace_glk_strid(story_stream, NULL);
+	glkint_closefile(story_stream);
+	
 	/* Since fizmo_start() exited nicely, we're allowed to re-enter it. */
 	iosglk_set_can_restart_flag(YES);
 }

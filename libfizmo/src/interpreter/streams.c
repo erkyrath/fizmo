@@ -176,7 +176,7 @@ void init_streams()
     stream_2_filename_stored = true;
   }
   else
-    src = fizmo_strdup(DEFAULT_TRANSCRIPT_FILE_NAME);
+    src = DEFAULT_TRANSCRIPT_FILE_NAME;
 
   (void)latin1_string_to_zucs_string(
       last_script_filename,
@@ -202,7 +202,7 @@ void init_streams()
     input_stream_1_was_already_active = true;
   }
   else
-    src = fizmo_strdup(DEFAULT_INPUT_COMMAND_FILE_NAME);
+    src = DEFAULT_INPUT_COMMAND_FILE_NAME;
 
   (void)latin1_string_to_zucs_string(
       last_input_stream_filename,
@@ -223,7 +223,7 @@ void init_streams()
     stream_4_was_already_active = true;
   }
   else
-    src = fizmo_strdup(DEFAULT_RECORD_COMMAND_FILE_NAME);
+    src = DEFAULT_RECORD_COMMAND_FILE_NAME;
 
   (void)latin1_string_to_zucs_string(
       last_stream_4_filename,

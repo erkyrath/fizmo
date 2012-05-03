@@ -74,6 +74,18 @@ static void glkint_resolve_status_height(void);
 
 z_file *glkint_open_interface(z_file *(*game_open_func)(z_file *))
 {
+  /* Clear all of the static variables. We might be restarting (on iOS)
+     so we can't rely on the static initializers. */
+  mainwin = NULL;
+  statusline = NULL;
+  statuswin = NULL;
+  instatuswin = false;
+  statuscurheight = 0; 
+  statusmaxheight = 0;
+  statusseenheight = 0;
+  /* Skip inputbuffer; that's just a malloced block and a size, so it can 
+     persist across restarts. */
+
   /* The awkward nature of iOS autosave-restore means that we need to
      retain a reference to the story_stream, and possibly fix it up
      later on. If this isn't iOS, just ignore this juggling. */

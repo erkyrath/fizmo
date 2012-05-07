@@ -34,6 +34,7 @@
 #include "../tools/i18n.h"
 #include "property.h"
 #include "fizmo.h"
+#include "config.h"
 #include "variable.h"
 #include "object.h"
 #include "zpu.h"

@@ -39,6 +39,7 @@
 #include <strings.h>
 
 #include "glk.h"
+#include "gi_dispa.h"
 #include "glkstart.h" /* This comes with the Glk library. */
 
 #include "glk_interface.h"
@@ -71,6 +72,7 @@ static glui32 *inputbuffer = NULL;
 
 static void glkint_get_screen_size(glui32 *, glui32 *);
 static void glkint_resolve_status_height(void);
+static char *glkint_get_game_id(void);
 
 z_file *glkint_open_interface(z_file *(*game_open_func)(z_file *))
 {
@@ -85,6 +87,12 @@ z_file *glkint_open_interface(z_file *(*game_open_func)(z_file *))
   statusseenheight = 0;
   /* Skip inputbuffer; that's just a malloced block and a size, so it can 
      persist across restarts. */
+
+  /* Set up the game-ID hook. (This is ifdeffed because not all Glk
+     libraries have this call.) */
+#ifdef GI_DISPA_GAME_ID_AVAILABLE
+  gidispatch_set_game_id_hook(&glkint_get_game_id);
+#endif /* GI_DISPA_GAME_ID_AVAILABLE */
 
   /* The awkward nature of iOS autosave-restore means that we need to
      retain a reference to the story_stream, and possibly fix it up
@@ -698,6 +706,47 @@ int glkint_prompt_for_filename(char *UNUSED(filename_suggestion),
   return 0;
 }
 
+static char *glkint_get_game_id()
+{
+  /* This buffer gets rewritten on every call, but that's okay -- the caller
+     is supposed to copy out the result. */
+  static char buf[32];
+  char ch;
+  int ix;
+  int jx;
+
+  if (!z_mem)
+    return NULL;
+
+  /* This is computed in a way similar to the game-identifier chunk 
+     for the save file. */
+  
+  jx = 0;
+
+  /* Release number: */
+  for (ix=2; ix<4; ix++) {
+    ch = z_mem[ix];
+    buf[jx++] = (((ch >> 4) & 0x0F) + 'A');
+    buf[jx++] = ((ch & 0x0F) + 'A');
+  }
+
+  /* Serial number: */
+  for (ix=0x12; ix<0x18; ix++) {
+    ch = z_mem[ix];
+    buf[jx++] = (((ch >> 4) & 0x0F) + 'A');
+    buf[jx++] = ((ch & 0x0F) + 'A');
+  }
+
+  /* Checksum: */
+  for (ix=0x1C; ix<0x1E; ix++) {
+    ch = z_mem[ix];
+    buf[jx++] = (((ch >> 4) & 0x0F) + 'A');
+    buf[jx++] = ((ch & 0x0F) + 'A');
+  }
+
+  buf[jx++] = '\0';
+  return buf;
+}
 
 struct z_screen_interface glkint_screen_interface =
 {

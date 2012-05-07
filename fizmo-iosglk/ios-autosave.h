@@ -30,6 +30,7 @@
  */
 
 extern int iosglk_do_autosave(void);
+extern void iosglk_queue_autosave(void *pathname);
 extern z_file *iosglk_find_autosave(void);
 extern int iosglk_restore_autosave(z_file *savefile);
 extern void iosglk_clear_autosave(void);

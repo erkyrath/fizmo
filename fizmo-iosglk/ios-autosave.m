@@ -37,7 +37,10 @@
 #include "filesys_interface.h"
 #include "glk_interface.h"
 #include "glk_screen_if.h"
+#include "glk_filesys_if.h"
 #include "filesys.h"
+
+static NSString *normal_start_save = nil;
 
 static NSString *documents_dir() {
 	/* We use an old-fashioned way of locating the Documents directory. (The NSManager method for this is iOS 4.0 and later.) */
@@ -117,7 +120,26 @@ int iosglk_do_autosave() {
 	return 0;
 }
 
-extern z_file *iosglk_find_autosave() {
+/* The argument is actually an NSString. We retain it for the next iosglk_find_autosave() call.
+ */
+void iosglk_queue_autosave(void *pathnameval) {
+	NSString *pathname = pathnameval;
+	normal_start_save = [pathname retain];
+}
+
+z_file *iosglk_find_autosave() {
+	if (normal_start_save) {
+		strid_t savefile = [[[GlkStreamFile alloc] initWithMode:filemode_Read rock:1 unicode:NO textmode:NO dirname:@"." pathname:normal_start_save] autorelease];
+		[normal_start_save release];
+		normal_start_save = nil;
+		
+		if (savefile) {
+			z_file *zsavefile = zfile_from_glk_strid(savefile, "Restore", FILETYPE_SAVEGAME, FILEACCESS_READ);
+			if (zsavefile)
+				return zsavefile;
+		}
+	}
+	
 	NSString *dirname = documents_dir();	
 	if (!dirname)
 		return nil;
@@ -152,11 +174,15 @@ void iosglk_clear_autosave() {
 	This is called in the VM thread, from inside fizmo_start(). glkint_open_interface() has already happened, so we're going to have to replace the initial library state with the autosaved state.
  */
 int iosglk_restore_autosave(z_file *save_file) {
+	//NSLog(@"### restore_autosave of file (%s)", (save_file->implementation==0) ? "glk" : "stdio");
 	GlkLibrary *library = [GlkLibrary singleton];
+	
+	/* A normal file must be restored with evaluate_result. An autosave file must not be. Fortunately, we've arranged things so that normal files are opened with zfile_from_glk_strid(), and autosave files with fsi->openfile(). */
+	bool is_normal_file = (save_file->implementation==FILE_IMPLEMENTATION_GLK);
 	
 	int res = restore_game_from_stream(0,
 		(uint16_t)(active_z_story->dynamic_memory_end - z_mem + 1),
-		save_file, false);
+		save_file, is_normal_file);
 	/* save_file is now closed */
 	
 	if (!res) {

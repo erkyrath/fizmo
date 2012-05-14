@@ -699,6 +699,13 @@ void ensure_dot_fizmo_dir_exists()
 
 /*@external@*/ void fizmo_new_screen_size(uint8_t width, uint8_t height)
 {
+  if (!z_mem)
+  {
+    /* This shouldn't be called before z_mem is allocated. However, the
+       startup sequence is complicated and I want to be extra careful. */
+    return;
+  }
+
   if (ver >= 4)
   {
     TRACE_LOG("Writing %d to $20, %d to $21.\n", height, width);

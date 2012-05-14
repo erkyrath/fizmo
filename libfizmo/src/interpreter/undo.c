@@ -30,6 +30,9 @@
  */
 
 
+#ifndef undo_c_INCLUDED 
+#define undo_c_INCLUDED
+
 #include <string.h>
 
 #include "../tools/tracelog.h"
@@ -54,10 +57,53 @@ struct undo_frame
   uint8_t number_of_locals_from_function_call;
 };
 
-
-static struct undo_frame* undo_frames[MAX_UNDO_STEPS];
+static int max_undo_steps = DEFAULT_MAX_UNDO_STEPS;
+static struct undo_frame** undo_frames = NULL;
 static int undo_index = 0;
 
+void set_max_undo_steps(int val)
+{
+  int ix;
+
+  /* Free any existing frames beyond the new limit */
+  if (undo_index > val)
+  {
+    for (ix=val; ix<undo_index; ix++) 
+    {
+      free(undo_frames[ix]->stack);
+      free(undo_frames[ix]->dynamic_memory);
+      free(undo_frames[ix]);
+    }
+    undo_index = val;
+  }
+
+  if (val == 0)
+  {
+    if (undo_frames)
+    {
+      free(undo_frames);
+      undo_frames = NULL;
+    }
+    undo_index = 0;
+    return;
+  }
+
+  if (!undo_frames) 
+  {
+    undo_frames = (struct undo_frame**)malloc(val * sizeof(struct undo_frame*));
+  }
+  else 
+  {
+    undo_frames = (struct undo_frame**)realloc(undo_frames, val * sizeof(struct undo_frame*));
+  }
+
+  if (!undo_frames)
+  {
+    return; /* allocation failed; we will have no undoing */
+  }
+
+  max_undo_steps = val;
+}
 
 void opcode_save_undo(void)
 {
@@ -68,7 +114,7 @@ void opcode_save_undo(void)
 
   TRACE_LOG("Opcode: SAVE_UNDO.\n");
 
-  if (MAX_UNDO_STEPS == 0)
+  if (max_undo_steps <= 0 || undo_frames == NULL)
   {
     result = 0;
   }
@@ -101,16 +147,20 @@ void opcode_save_undo(void)
       }
       else
       {
-        if (undo_index == MAX_UNDO_STEPS)
+        if (undo_index == max_undo_steps)
         {
+          /* Remove the first frame from the array. */
           free(undo_frames[0]->stack);
           free(undo_frames[0]->dynamic_memory);
           free(undo_frames[0]);
 
-          memmove(
+          if (max_undo_steps > 1) 
+          {
+            memmove(
               undo_frames,
               undo_frames + 1,
-              sizeof(struct undo_frame*) * MAX_UNDO_STEPS - 1);
+              sizeof(struct undo_frame*) * (max_undo_steps - 1));
+          }
 
           undo_index--;
         }
@@ -224,4 +274,6 @@ size_t get_allocated_undo_memory_size(void)
   return result;
 }
 
+
+#endif /* undo_c_INCLUDED */
 

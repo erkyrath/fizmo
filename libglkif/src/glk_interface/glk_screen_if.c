@@ -67,11 +67,13 @@ static bool instatuswin = false;
 static int statuscurheight = 0; /* what the VM thinks the height is */
 static int statusmaxheight = 0; /* height including possible quote box */
 static int statusseenheight = 0; /* last height the user saw */
+static int screenestwidth = 0; /* width of screen in status-line characters */
+static int screenestheight = 0; /* height of screen in status-line characters */
 static int inputbuffer_size = 0;
 static glui32 *inputbuffer = NULL;
 
-static void glkint_get_screen_size(glui32 *, glui32 *);
 static void glkint_resolve_status_height(void);
+static void glkint_estimate_screen_size(void);
 static char *glkint_get_game_id(void);
 
 z_file *glkint_open_interface(z_file *(*game_open_func)(z_file *))
@@ -85,6 +87,8 @@ z_file *glkint_open_interface(z_file *(*game_open_func)(z_file *))
   statuscurheight = 0; 
   statusmaxheight = 0;
   statusseenheight = 0;
+  screenestwidth = 0;
+  screenestheight = 0;
   /* Skip inputbuffer; that's just a malloced block and a size, so it can 
      persist across restarts. */
 
@@ -107,10 +111,16 @@ z_file *glkint_open_interface(z_file *(*game_open_func)(z_file *))
   glk_set_window(mainwin);
   instatuswin = false;
 
-  glui32 width, height;
-  glkint_get_screen_size( &width, &height);
-  fizmo_new_screen_size(width, height);
-
+  if (1) {
+      /* First approximation of the screen size has to be based on the
+         story window. When a status window is opened, we'll refine
+         this. */
+      glui32 width, height;
+      glk_window_get_size(mainwin, &width, &height);
+      screenestwidth = width;
+      screenestheight = height;
+  }
+  
   return story_stream;
 }
 
@@ -206,36 +216,18 @@ void glkint_recover_library_state()
       FILETYPE_TRANSCRIPT, FILEACCESS_APPEND);
     restore_stream_2(transcriptzfile);
   }
-}
-
-static void glkint_get_screen_size(glui32 *width, glui32 *height)
-{
-  if (statuswin) {
-    glk_window_get_size(statuswin, width, height);
-    return;
-  }
-  if (mainwin) {
-    glk_window_get_size(mainwin, width, height);
-    return;
-  }
-  /* Fallback values, for when no windows are open at all */
-  *width = 80;
-  *height = 24;
-  return;
+  
+  glkint_estimate_screen_size();
 }
 
 uint8_t glkint_get_screen_height()
 {
-  glui32 width, height;
-  glkint_get_screen_size(&width, &height);
-  return height;
+  return screenestheight;
 }
 
 uint8_t glkint_get_screen_width()
 {
-  glui32 width, height;
-  glkint_get_screen_size(&width, &height);
-  return width;
+  return screenestwidth;
 }
 
 z_colour glkint_get_default_foreground_colour()
@@ -287,6 +279,9 @@ void glkint_reset_interface()
   glk_set_window(mainwin);
   glk_set_style(style_Normal);
   glk_window_clear(mainwin);
+  
+  /* Leave the screen-size estimates alone. Closing the status window
+     doesn't give us new information. */
 }
 
 /* This is called from two points: abort_interpreter() with an error message,
@@ -363,9 +358,7 @@ int16_t glkint_interface_read_line(zscii *dest, uint16_t maximum_length,
       break;
 
     if (event.type == evtype_Arrange) {
-      glui32 width, height;
-      glkint_get_screen_size( &width, &height);
-      fizmo_new_screen_size(width, height);
+      glkint_estimate_screen_size();
       continue;
     }
 
@@ -427,9 +420,7 @@ int glkint_interface_read_char(uint16_t tenth_seconds,
       break;
 
     if (event.type == evtype_Arrange) {
-      glui32 width, height;
-      glkint_get_screen_size( &width, &height);
-      fizmo_new_screen_size(width, height);
+      glkint_estimate_screen_size();
       continue;
     }
 
@@ -565,6 +556,8 @@ void glkint_split_window(int16_t nof_lines)
   else {
     glk_window_set_arrangement(glk_window_get_parent(statuswin), winmethod_Above | winmethod_Fixed, statusmaxheight, statuswin);
   }
+  
+  glkint_estimate_screen_size();
 }
 
 /* If the status height is too large because of last turn's quote box,
@@ -586,6 +579,37 @@ static void glkint_resolve_status_height()
 
   statusseenheight = statusmaxheight;
   statusmaxheight = statuscurheight;
+
+  glkint_estimate_screen_size();
+}
+
+/* Construct an estimate of the current screen size, and pass it to the VM.
+ 
+   The estimate uses the width (in status chars) of the status window --
+   that's what's important for 99% of games. For the height, we add
+   the number of lines in the status and story windows; this won't be
+   perfect (because the fonts are different) but it's close enough.
+ */
+static void glkint_estimate_screen_size()
+{
+    glui32 width, height;
+    
+    if (!statuswin) {
+        /* Leave the screen-size estimates alone. Closing the status
+           window doesn't give us new information. It's better to keep
+           using an old exact measurement of the status window than to
+           approximate it in the story window. */
+        return;
+    }
+    
+    glk_window_get_size(statuswin, &width, &height);
+    screenestwidth = width;
+    screenestheight = height;
+    
+    glk_window_get_size(mainwin, &width, &height);
+    screenestheight += height;
+    
+    fizmo_new_screen_size(screenestwidth, screenestheight);
 }
 
 /* 1 is the status window; 0 is the story window. */

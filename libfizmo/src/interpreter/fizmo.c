@@ -55,6 +55,7 @@
 #include "filelist.h"
 #include "routine.h"
 #include "variable.h"
+#include "undo.h"
 #include "blorb.h"
 #include "../tools/z_ucs.h"
 #include "../tools/types.h"
@@ -1116,6 +1117,7 @@ void fizmo_start(z_file* story_stream, z_file *blorb_stream,
   char *value;
   bool evaluate_result;
   uint8_t flags2;
+  int val;
   char *str, *default_savegame_filename = DEFAULT_SAVEGAME_FILENAME;
   z_colour default_colour;
 
@@ -1185,6 +1187,11 @@ void fizmo_start(z_file* story_stream, z_file *blorb_stream,
 
   if ((str = get_configuration_value("savegame-default-filename")) != NULL)
     default_savegame_filename = str;
+
+  val = DEFAULT_MAX_UNDO_STEPS;
+  if ((str = get_configuration_value("max-undo-steps")) != NULL)
+    val = atoi(str);
+  set_max_undo_steps(val);
 
   init_streams(default_savegame_filename);
 

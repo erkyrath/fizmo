@@ -113,6 +113,7 @@ void glk_main(void)
 	set_configuration_value("disable-stream-2-wrap", "true");
 	set_configuration_value("disable-stream-2-hyphenation", "true");
 	set_configuration_value("stream-2-left-margin", "0");
+	set_configuration_value("max-undo-steps", "32"); //### should be able to customize this per-game
 	
 	NSString *approot = [NSBundle mainBundle].bundlePath;
 	NSString *locales = [approot stringByAppendingPathComponent:@"FizmoLocales"];

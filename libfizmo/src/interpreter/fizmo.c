@@ -736,7 +736,7 @@ void write_interpreter_info_into_header()
 {
   uint16_t width, height;
 
-  if (active_interface == NULL)
+  if (active_interface == NULL || z_mem == NULL)
     return;
 
   TRACE_LOG("Linking interface \"%s\" to active story.\n",
@@ -1382,6 +1382,7 @@ void fizmo_start(z_file* story_stream, z_file *blorb_stream,
 
   free_z_story(active_z_story);
   active_z_story = NULL;
+  z_mem = NULL;
 
   if (upper_window_buffer != NULL)
     destroy_blockbuffer(upper_window_buffer);

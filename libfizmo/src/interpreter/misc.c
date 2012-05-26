@@ -51,9 +51,14 @@
 #include "debugger.h"
 #endif // ENABLE_DEBUGGER
 
-#if !defined(__WIN32__)
-static struct sigaction fizmo_sigactions;
+#if defined(__WIN32__)
+/* Never use signal handlers on Win32. */
+#define DISABLE_SIGNAL_HANDLERS
 #endif // defined(__WIN32__)
+
+#ifndef DISABLE_SIGNAL_HANDLERS
+static struct sigaction fizmo_sigactions;
+#endif // DISABLE_SIGNAL_HANDLERS
 
 
 void opcode_restart(void)
@@ -177,11 +182,6 @@ void abort_interpreter(int exit_code, z_ucs *error_message)
   exit(exit_code);
 }
 
-
-#if defined(__WIN32__)
-/* Never use signal handlers on Win32. */
-#define DISABLE_SIGNAL_HANDLERS
-#endif // defined(__WIN32__)
 
 #ifndef DISABLE_SIGNAL_HANDLERS
 static void catch_signal_and_abort(int sig_num)

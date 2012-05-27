@@ -1384,9 +1384,11 @@ void fizmo_start(z_file* story_stream, z_file *blorb_stream,
   active_z_story = NULL;
   z_mem = NULL;
 
+#ifndef DISABLE_BLOCKBUFFER
   if (upper_window_buffer != NULL)
     destroy_blockbuffer(upper_window_buffer);
   upper_window_buffer = NULL;
+#endif // DISABLE_BLOCKBUFFER
 
   if (active_sound_interface != NULL)
     active_sound_interface->close_sound();

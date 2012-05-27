@@ -51,9 +51,14 @@
 #include "debugger.h"
 #endif // ENABLE_DEBUGGER
 
-#if !defined(__WIN32__)
-static struct sigaction fizmo_sigactions;
+#if defined(__WIN32__)
+/* Never use signal handlers on Win32. */
+#define DISABLE_SIGNAL_HANDLERS
 #endif // defined(__WIN32__)
+
+#ifndef DISABLE_SIGNAL_HANDLERS
+static struct sigaction fizmo_sigactions;
+#endif // DISABLE_SIGNAL_HANDLERS
 
 
 void opcode_restart(void)
@@ -178,7 +183,7 @@ void abort_interpreter(int exit_code, z_ucs *error_message)
 }
 
 
-#if !defined(__WIN32__)
+#ifndef DISABLE_SIGNAL_HANDLERS
 static void catch_signal_and_abort(int sig_num)
 {
   TRACE_LOG("Caught signal %d.\n", sig_num);
@@ -189,12 +194,12 @@ static void catch_signal_and_abort(int sig_num)
       -1,
       (long)sig_num);
 }
-#endif // defined(__WIN32__)
+#endif // DISABLE_SIGNAL_HANDLERS
 
 
 void init_signal_handlers(void)
 {
-#if !defined(__WIN32__)
+#ifndef DISABLE_SIGNAL_HANDLERS
   TRACE_LOG("Initialiazing signal handlers.\n");
 
   sigemptyset(&fizmo_sigactions.sa_mask);
@@ -207,13 +212,13 @@ void init_signal_handlers(void)
   sigaction(SIGQUIT, &fizmo_sigactions, NULL);
   sigaction(SIGBUS, &fizmo_sigactions, NULL);
   sigaction(SIGILL, &fizmo_sigactions, NULL);
-#endif // !defined(__WIN32__)
+#endif // DISABLE_SIGNAL_HANDLERS
 }
 
 
 void deactivate_signal_handlers(void)
 {
-#if !defined(__WIN32__)
+#ifndef DISABLE_SIGNAL_HANDLERS
   TRACE_LOG("Deactivating signal handlers.\n");
 
   sigemptyset(&fizmo_sigactions.sa_mask);
@@ -226,6 +231,6 @@ void deactivate_signal_handlers(void)
   sigaction(SIGQUIT, &fizmo_sigactions, NULL);
   sigaction(SIGBUS, &fizmo_sigactions, NULL);
   sigaction(SIGILL, &fizmo_sigactions, NULL);
-#endif // !defined(__WIN32__)
+#endif // DISABLE_SIGNAL_HANDLERS
 }
 

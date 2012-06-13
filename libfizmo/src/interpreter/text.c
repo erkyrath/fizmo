@@ -167,6 +167,15 @@ static void zchar_storage_start(uint8_t *output, uint16_t output_buffer_size)
   zchar_storage_symbols_stored = 0;
 }
 
+static void zchar_storage_clear()
+{
+  zchar_storage_word = 0;
+  zchar_storage_output = NULL;
+  zchar_storage_output_index = NULL;
+  zchar_storage_index_behind = NULL;
+  zchar_storage_word_index = 0;
+  zchar_storage_symbols_stored = 0;
+}
 
 // This method will accept input for the zchar_storage.
 // - unsigned int five_bits: Ths input bits are expected to be stored in the
@@ -570,7 +579,11 @@ static void tokenise(
   // we'll need ((n*3)/3)*2 = n*2 bytes of input length: input_length * 3
   // gives the maximum possible number of Z-Chars. One word will take up
   // 3 Z-Chars, so we'll need a maximum of (n*3)/3 words, meaning n*2 bytes.
-  uint8_t tokenize_buffer_length = input_length * 2;
+  // ZARF: Except in practice I find it takes n*3 bytes. Also, an empty
+  // string requires a minimum of 2 (for the terminator). Also, this buffer
+  // is passed to locate_dictionary_entry(), which writes a six-byte word,
+  // so it's really a minimum of 6. To be completely safe I use n*3+8.
+  uint8_t tokenize_buffer_length = input_length * 3 + 8;
   uint8_t tokenize_buffer[tokenize_buffer_length];
 
   // The number and values of non-space-seperating input codes:
@@ -756,6 +769,8 @@ static void tokenise(
 
     z_text_buffer_offset++;
   }
+
+  zchar_storage_clear();
 
   TRACE_LOG("Found %d word(s), storing %d to %lx.\n", number_of_words_found,
       number_of_words_found,
@@ -2437,6 +2452,7 @@ void opcode_encode_text(void)
   }
 
   zchar_storage_finish();
+  zchar_storage_clear();
 }
 
 

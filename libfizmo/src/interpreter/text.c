@@ -167,6 +167,15 @@ static void zchar_storage_start(uint8_t *output, uint16_t output_buffer_size)
   zchar_storage_symbols_stored = 0;
 }
 
+static void zchar_storage_clear()
+{
+  zchar_storage_word = 0;
+  zchar_storage_output = NULL;
+  zchar_storage_output_index = NULL;
+  zchar_storage_index_behind = NULL;
+  zchar_storage_word_index = 0;
+  zchar_storage_symbols_stored = 0;
+}
 
 // This method will accept input for the zchar_storage.
 // - unsigned int five_bits: Ths input bits are expected to be stored in the
@@ -756,6 +765,8 @@ static void tokenise(
 
     z_text_buffer_offset++;
   }
+
+  zchar_storage_clear();
 
   TRACE_LOG("Found %d word(s), storing %d to %lx.\n", number_of_words_found,
       number_of_words_found,
@@ -2437,6 +2448,7 @@ void opcode_encode_text(void)
   }
 
   zchar_storage_finish();
+  zchar_storage_clear();
 }
 
 

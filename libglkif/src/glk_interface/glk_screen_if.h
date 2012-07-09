@@ -38,8 +38,16 @@
 extern struct z_screen_interface glkint_screen_interface;
 #endif // glk_screen_if_c_INCLUDED
 
+typedef struct library_state_data_struct {
+  int active; /* does this structure contain meaningful data? */
+  int statusseenheight;
+  int statusmaxheight;
+  int statuscurheight;
+} library_state_data;
+
 z_file *glkint_open_interface(z_file *(*game_open_func)(z_file *));
-void glkint_recover_library_state(void);
+void glkint_recover_library_state(library_state_data *dat);
+void glkint_stash_library_state(library_state_data *dat);
 
 #endif // glk_screen_if_h_INCLUDED
 

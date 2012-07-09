@@ -40,6 +40,10 @@
 #include "glk_filesys_if.h"
 #include "filesys.h"
 
+static void iosglk_library_archive(NSCoder *encoder);
+static void iosglk_library_unarchive(NSCoder *decoder);
+static library_state_data library_state; /* used by the archive/unarchive hooks */
+
 static NSString *normal_start_save = nil;
 
 static NSString *documents_dir() {
@@ -91,8 +95,14 @@ int iosglk_do_autosave() {
 		return 0;
 	}
 	
+	bzero(&library_state, sizeof(library_state));
+	glkint_stash_library_state(&library_state);
+	/* The iosglk_library_archive hook will write out the contents of library_state. */
+	
 	NSString *tmplibpath = [dirname stringByAppendingPathComponent:@"autosave-tmp.plist"];
+	[GlkLibrary setExtraArchiveHook:iosglk_library_archive];
 	res = [NSKeyedArchiver archiveRootObject:library toFile:tmplibpath];
+	[GlkLibrary setExtraArchiveHook:nil];
 
 	if (!res) {
 		NSLog(@"library serialize failed!");
@@ -189,11 +199,14 @@ int iosglk_restore_autosave(z_file *save_file) {
 		NSLog(@"unable to restore autosave file.");
 		return 0;
 	}
+	
+	bzero(&library_state, sizeof(library_state));
 
 	GlkLibrary *newlib = nil;
 	NSString *dirname = documents_dir();	
 	if (dirname) {
 		NSString *finallibpath = [dirname stringByAppendingPathComponent:@"autosave.plist"];
+		[GlkLibrary setExtraUnarchiveHook:iosglk_library_unarchive];
 		
 		@try {
 			newlib = [NSKeyedUnarchiver unarchiveObjectWithFile:finallibpath];
@@ -202,13 +215,35 @@ int iosglk_restore_autosave(z_file *save_file) {
 			// leave newlib as nil
 			NSLog(@"Unable to restore autosave library: %@", ex);
 		}
+
+		[GlkLibrary setExtraUnarchiveHook:nil];
 	}
 	
 	if (newlib) {
 		[library updateFromLibrary:newlib];
-		glkint_recover_library_state();
+		glkint_recover_library_state(&library_state);
 	}
 	
 	return 1;
+}
+
+static void iosglk_library_archive(NSCoder *encoder) {
+	if (library_state.active) {
+		//NSLog(@"### archive hook: seenheight %d, maxheight %d, curheight %d", library_state.statusseenheight, library_state.statusmaxheight, library_state.statuscurheight);
+		[encoder encodeBool:YES forKey:@"fizmo_library_state"];
+		[encoder encodeInt32:library_state.statusseenheight forKey:@"fizmo_statusseenheight"];
+		[encoder encodeInt32:library_state.statusmaxheight forKey:@"fizmo_statusmaxheight"];
+		[encoder encodeInt32:library_state.statuscurheight forKey:@"fizmo_statuscurheight"];
+	}
+}
+
+static void iosglk_library_unarchive(NSCoder *decoder) {
+	if ([decoder decodeBoolForKey:@"fizmo_library_state"]) {
+		library_state.active = true;
+		library_state.statusseenheight = [decoder decodeInt32ForKey:@"fizmo_statusseenheight"];
+		library_state.statusmaxheight = [decoder decodeInt32ForKey:@"fizmo_statusmaxheight"];
+		library_state.statuscurheight = [decoder decodeInt32ForKey:@"fizmo_statuscurheight"];
+		//NSLog(@"### unarchive hook: seenheight %d, maxheight %d, curheight %d", library_state.statusseenheight, library_state.statusmaxheight, library_state.statuscurheight);
+	}
 }
 

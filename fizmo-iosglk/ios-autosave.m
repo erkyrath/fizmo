@@ -47,7 +47,7 @@ static NSString *documents_dir() {
 	
 	NSArray *dirlist = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
 	if (!dirlist || [dirlist count] == 0) {
-		NSLog(@"### unable to locate Documents directory.");
+		NSLog(@"unable to locate Documents directory.");
 		return nil;
 	}
 	
@@ -74,7 +74,7 @@ int iosglk_do_autosave() {
 	// cpathname will be freed when the pathname is freed; openfile() will strdup it before that happens.
 	z_file *save_file = fsi->openfile(cpathname, FILETYPE_DATA, FILEACCESS_WRITE);
 	if (!save_file) {
-		NSLog(@"### unable to create z_file!");
+		NSLog(@"unable to create z_file!");
 		return 0;
 	}
 	
@@ -87,7 +87,7 @@ int iosglk_do_autosave() {
 	pc = orig_pc;
 	
 	if (!res) {
-		NSLog(@"### save_game_to_stream failed!");
+		NSLog(@"save_game_to_stream failed!");
 		return 0;
 	}
 	
@@ -95,7 +95,7 @@ int iosglk_do_autosave() {
 	res = [NSKeyedArchiver archiveRootObject:library toFile:tmplibpath];
 
 	if (!res) {
-		NSLog(@"### library serialize failed!");
+		NSLog(@"library serialize failed!");
 		return 0;
 	}
 
@@ -108,13 +108,13 @@ int iosglk_do_autosave() {
 
 	res = [library.filemanager moveItemAtPath:tmpgamepath toPath:finalgamepath error:nil];
 	if (!res) {
-		NSLog(@"### could not move game autosave to final position!");
+		NSLog(@"could not move game autosave to final position!");
 		return 0;
 	}
 	res = [library.filemanager moveItemAtPath:tmplibpath toPath:finallibpath error:nil];
 	if (!res) {
 		/* We don't abort out in this case; we leave the game autosave in place by itself, which is not ideal but better than data loss. */
-		NSLog(@"### could not move library autosave to final position (continuing)");
+		NSLog(@"could not move library autosave to final position (continuing)");
 	}
 
 	return 0;
@@ -174,7 +174,7 @@ void iosglk_clear_autosave() {
 	This is called in the VM thread, from inside fizmo_start(). glkint_open_interface() has already happened, so we're going to have to replace the initial library state with the autosaved state.
  */
 int iosglk_restore_autosave(z_file *save_file) {
-	//NSLog(@"### restore_autosave of file (%s)", (save_file->implementation==0) ? "glk" : "stdio");
+	//NSLog(@"restore_autosave of file (%s)", (save_file->implementation==0) ? "glk" : "stdio");
 	GlkLibrary *library = [GlkLibrary singleton];
 	
 	/* A normal file must be restored with evaluate_result. An autosave file must not be. Fortunately, we've arranged things so that normal files are opened with zfile_from_glk_strid(), and autosave files with fsi->openfile(). */
@@ -186,7 +186,7 @@ int iosglk_restore_autosave(z_file *save_file) {
 	/* save_file is now closed */
 	
 	if (!res) {
-		NSLog(@"### unable to restore autosave file.");
+		NSLog(@"unable to restore autosave file.");
 		return 0;
 	}
 

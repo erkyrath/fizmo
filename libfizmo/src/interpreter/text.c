@@ -1839,7 +1839,9 @@ void opcode_read(void)
   bool interpreter_command_found;
   int i;
   // TODO: Implement permanent buffer for current_line.
+#ifndef DISABLE_OUTPUT_HISTORY
   z_ucs *current_line = NULL;
+#endif /* DISABLE_OUTPUT_HISTORY */
   bool stream_1_active_buf;
   int offset;
   size_t bytes_required;

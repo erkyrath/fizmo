@@ -207,7 +207,6 @@ struct babel_info *load_babel_info_from_blorb(z_file *infile, int length,
   struct babel_info *result;
   char *xmlData = (char*)fizmo_malloc(length + 1);
   xmlDocPtr babel_doc;
-  int return_code;
 
   if (fsi->getchars(xmlData, length, infile) != (size_t)length)
   {
@@ -579,7 +578,10 @@ void store_babel_info_timestamps(struct babel_info *babel)
 
   if ((out = fsi->openfile(filename, FILETYPE_DATA, FILEACCESS_WRITE))
       == NULL)
+  {
+    free(filename);
     return;
+  }
 
   if (babel)
   {
@@ -592,6 +594,7 @@ void store_babel_info_timestamps(struct babel_info *babel)
     }
   }
 
+  free(filename);
   fsi->closefile(out);
 }
 
@@ -635,7 +638,10 @@ bool babel_files_have_changed(struct babel_info *babel)
 
   if ((timestamp_file = fsi->openfile(
           filename, FILETYPE_DATA, FILEACCESS_READ)) == NULL)
+  {
+    free(filename);
     return true;
+  }
 
   if ((data = fsi->getchar(timestamp_file)) != EOF)
   {
@@ -646,6 +652,7 @@ bool babel_files_have_changed(struct babel_info *babel)
       while ((data = fsi->getchar(timestamp_file)) != '\t')
         if (data == EOF)
         {
+          free(filename);
           abort_timestamp_input();
           return true;
         }
@@ -654,6 +661,7 @@ bool babel_files_have_changed(struct babel_info *babel)
       if (ensure_mem_size(&timestamp_input, &timestamp_input_size, size + 2)
           == -1)
       {
+        free(filename);
         abort_timestamp_input();
         return true;
       }
@@ -664,6 +672,7 @@ bool babel_files_have_changed(struct babel_info *babel)
         if (fsi->getchars(timestamp_input, size+1, timestamp_file)
             != (size_t)size+1)
         {
+          free(filename);
           abort_timestamp_input();
           return true;
         }
@@ -674,13 +683,15 @@ bool babel_files_have_changed(struct babel_info *babel)
       while ((data = fsi->getchar(timestamp_file)) != '\n')
         if (data == EOF)
         {
+          free(filename);
           abort_timestamp_input();
           return true;
         }
 
       size = fsi->getfilepos(timestamp_file) - offset - 1;
-      if (ensure_mem_size(&filename_input, &filename_input_size, size + 2) == -1)
+      if (ensure_mem_size(&filename_input, &filename_input_size, size+2) == -1)
       {
+        free(filename);
         abort_timestamp_input();
         return true;
       }
@@ -691,6 +702,7 @@ bool babel_files_have_changed(struct babel_info *babel)
         if (fsi->getchars(filename_input, size+1, timestamp_file)
             != (size_t)size+1)
         {
+          free(filename);
           abort_timestamp_input();
           return true;
         }
@@ -711,6 +723,7 @@ bool babel_files_have_changed(struct babel_info *babel)
             if (isdigit(timestamp_input[j]) == 0)
             {
               abort_timestamp_input();
+              free(filename);
               return true;
             }
 
@@ -723,6 +736,7 @@ bool babel_files_have_changed(struct babel_info *babel)
           {
             //printf("Timestamps dont match\n");
             abort_timestamp_input();
+            free(filename);
             return true;
           }
 
@@ -734,6 +748,7 @@ bool babel_files_have_changed(struct babel_info *babel)
       {
         abort_timestamp_input();
         //printf("File not found: %s\n", filename_input);
+        free(filename);
         return true;
       }
 
@@ -745,6 +760,7 @@ bool babel_files_have_changed(struct babel_info *babel)
     }
   }
 
+  free(filename);
   abort_timestamp_input();
 
   if (nof_babel_timestamp_entries != (babel ? babel->nof_entries : 0))

@@ -176,7 +176,7 @@ void init_streams()
     stream_2_filename_stored = true;
   }
   else
-    src = fizmo_strdup(DEFAULT_TRANSCRIPT_FILE_NAME);
+    src = DEFAULT_TRANSCRIPT_FILE_NAME;
 
   (void)latin1_string_to_zucs_string(
       last_script_filename,
@@ -202,7 +202,7 @@ void init_streams()
     input_stream_1_was_already_active = true;
   }
   else
-    src = fizmo_strdup(DEFAULT_INPUT_COMMAND_FILE_NAME);
+    src = DEFAULT_INPUT_COMMAND_FILE_NAME;
 
   (void)latin1_string_to_zucs_string(
       last_input_stream_filename,
@@ -223,7 +223,7 @@ void init_streams()
     stream_4_was_already_active = true;
   }
   else
-    src = fizmo_strdup(DEFAULT_RECORD_COMMAND_FILE_NAME);
+    src = DEFAULT_RECORD_COMMAND_FILE_NAME;
 
   (void)latin1_string_to_zucs_string(
       last_stream_4_filename,
@@ -260,13 +260,15 @@ void restore_stream_2(z_file *str)
 
 void ask_for_input_stream_filename(void)
 {
-  z_ucs *current_line;
   bool stream_1_active_buf;
   int16_t input_length;
   int16_t i;
   size_t bytes_required;
   z_ucs *ptr;
   int len;
+#ifndef DISABLE_OUTPUT_HISTORY
+  z_ucs *current_line;
+#endif // DISABLE_OUTPUT_HISTORY
 
   input_stream_init_underway = true;
 
@@ -383,11 +385,13 @@ void ask_for_input_stream_filename(void)
 
   TRACE_LOG("Converted filename: '%s'.\n", stream_2_filename);
 
+#ifndef DISABLE_OUTPUT_HISTORY
   if (current_line != NULL)
   {
     (void)streams_z_ucs_output(current_line);
     free(current_line);
   }
+#endif // DISABLE_OUTPUT_HISTORY
 
   input_stream_init_underway = false;
 }
@@ -395,20 +399,20 @@ void ask_for_input_stream_filename(void)
 
 void ask_for_stream2_filename()
 {
-  z_ucs *current_line;
   bool stream_1_active_buf;
   int16_t input_length;
   int16_t i;
   size_t bytes_required;
   z_ucs *ptr;
   int len;
+#ifndef DISABLE_OUTPUT_HISTORY
+  z_ucs *current_line;
+#endif // DISABLE_OUTPUT_HISTORY
 
   stream_2_init_underway = true;
 
 #ifndef DISABLE_OUTPUT_HISTORY
   current_line = get_current_line(outputhistory[active_window_number]);
-#else
-  current_line = NULL;
 #endif /* DISABLE_OUTPUT_HISTORY */
 
   stream_1_active_buf = stream_1_active;
@@ -524,11 +528,14 @@ void ask_for_stream2_filename()
 
   TRACE_LOG("Converted filename: '%s'.\n", stream_2_filename);
 
+#ifndef DISABLE_OUTPUT_HISTORY
   if (current_line != NULL)
   {
     (void)streams_z_ucs_output(current_line);
     free(current_line);
   }
+#endif // DISABLE_OUTPUT_HISTORY
+
   stream_2_filename_stored = true;
   stream_2_init_underway = false;
 }
@@ -637,7 +644,6 @@ void ask_for_stream4_filename_if_required(bool dont_output_current_line)
 void ask_for_stream4_filename_if_required(bool UNUSED(dont_output_current_line))
 #endif // DISABLE_OUTPUT_HISTORY
 {
-  z_ucs *current_line = NULL;
   bool stream_1_active_buf;
   int16_t input_length;
   int16_t i;
@@ -645,6 +651,9 @@ void ask_for_stream4_filename_if_required(bool UNUSED(dont_output_current_line))
   z_ucs *ptr;
   int len;
   int return_code;
+#ifndef DISABLE_OUTPUT_HISTORY
+  z_ucs *current_line = NULL;
+#endif // DISABLE_OUTPUT_HISTORY
 
   if (
       (bool_equal(stream_4_active, true))
@@ -788,11 +797,13 @@ void ask_for_stream4_filename_if_required(bool UNUSED(dont_output_current_line))
           &ptr,
           bytes_required);
 
+#ifndef DISABLE_OUTPUT_HISTORY
       if (current_line != NULL)
       {
         (void)streams_z_ucs_output(current_line);
         free(current_line);
       }
+#endif // DISABLE_OUTPUT_HISTORY
       stream_4_was_already_active = true;
       stream_4_init_underway = false;
     }
@@ -1392,6 +1403,12 @@ void close_streams(z_ucs *error_message)
 
   if (stream_2 != NULL)
     close_script_file();
+
+  if (stream_2_wrapper != NULL)
+  {
+    wordwrap_destroy_wrapper(stream_2_wrapper);
+    stream_2_wrapper = NULL;
+  }
 
   if (stream_4 != NULL)
   {

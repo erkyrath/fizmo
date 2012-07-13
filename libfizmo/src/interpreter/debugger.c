@@ -67,7 +67,6 @@
 // breakspoints are stored as pointers relative to z_mem in order to
 // speed up searching.
 list *pcs = NULL;
-
 list *breakpoints = NULL;
 bool story_has_been_loaded = false;
 int sockfd;
@@ -127,6 +126,7 @@ void debugger_story_has_been_loaded()
       free(element);
     }
     delete_list(pcs);
+    pcs = NULL;
   }
 
   sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -316,8 +316,28 @@ void debugger()
 
 void debugger_interpreter_stopped()
 {
+  int nof_elements;
+  uint32_t **elements;
+  int i;
+
   close(newsockfd);
   close(sockfd);
+
+  if (pcs != NULL)
+  {
+    nof_elements = get_list_size(pcs);
+    elements = (uint32_t**)delete_list_and_get_ptrs(pcs);
+    for (i=0; i<nof_elements; i++)
+      free(elements[i]);
+  }
+
+  if (breakpoints != NULL)
+  {
+    nof_elements = get_list_size(breakpoints);
+    elements = (uint32_t**)delete_list_and_get_ptrs(breakpoints);
+    for (i=0; i<nof_elements; i++)
+      free(elements[i]);
+  }
 }
 
 #endif /* debugger_c_INCLUDED */

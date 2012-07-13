@@ -55,7 +55,10 @@
 #include "filelist.h"
 #include "routine.h"
 #include "variable.h"
+#include "undo.h"
 #include "blorb.h"
+#include "hyphenation.h"
+#include "undo.h"
 #include "../tools/z_ucs.h"
 #include "../tools/types.h"
 #include "../tools/i18n.h"
@@ -108,6 +111,7 @@ static bool config_files_were_parsed = false;
 #endif // DISABLE_BLOCKBUFFER
 
 
+// "load_z_story" returns malloc()ed z_story, may be freed using free_z_story().
 static struct z_story *load_z_story(z_file *story_stream, z_file *blorb_stream)
 {
   struct z_story *result;
@@ -228,6 +232,7 @@ static struct z_story *load_z_story(z_file *story_stream, z_file *blorb_stream)
   if (cwd != NULL)
     fsi->ch_dir(cwd);
   free(cwd);
+  free(ptr);
 
   if ((fsi->setfilepos(
           result->z_story_file, result->story_file_exec_offset, SEEK_SET)) != 0)
@@ -488,6 +493,8 @@ static void free_z_story(struct z_story *story)
     free(story->title);
   if (story->blorb_map != NULL)
     active_blorb_interface->free_blorb_map(story->blorb_map);
+  if (story->blorb_file != NULL)
+    fsi->closefile(story->blorb_file);
   free(story->absolute_file_name);
   free(story);
 }
@@ -629,8 +636,6 @@ char *get_xdg_config_dir_name()
     xdg_config_home = fizmo_strdup(config_dir_used);
   }
 
-  // REVISIT: free(xdg_config_home) on end.
-
   xdg_config_dir_name_initialized = true;
 
   return xdg_config_home;
@@ -697,8 +702,24 @@ void ensure_dot_fizmo_dir_exists()
 #endif // DISABLE_CONFIGFILES
 
 
-/*@external@*/ void fizmo_new_screen_size(uint8_t width, uint8_t height)
+ void fizmo_new_screen_size(uint8_t width, uint8_t height)
 {
+  if (!z_mem)
+  {
+    /* This shouldn't be called before z_mem is allocated. However, the
+       startup sequence is complicated and I want to be extra careful. */
+    return;
+  }
+
+#ifndef DISABLE_BLOCKBUFFER
+  if ( (ver >= 3) && (upper_window_buffer != NULL)
+      && (upper_window_buffer->height > 0) )
+    blockbuf_resize(
+        upper_window_buffer,
+        (int)width,
+        upper_window_buffer->height);
+#endif // DISABLE_BLOCKBUFFER
+
   if (ver >= 4)
   {
     TRACE_LOG("Writing %d to $20, %d to $21.\n", height, width);
@@ -728,7 +749,7 @@ void write_interpreter_info_into_header()
 {
   uint16_t width, height;
 
-  if (active_interface == NULL)
+  if (active_interface == NULL || z_mem == NULL)
     return;
 
   TRACE_LOG("Linking interface \"%s\" to active story.\n",
@@ -1109,6 +1130,7 @@ void fizmo_start(z_file* story_stream, z_file *blorb_stream,
   char *value;
   bool evaluate_result;
   uint8_t flags2;
+  int val;
   char *str, *default_savegame_filename = DEFAULT_SAVEGAME_FILENAME;
   z_colour default_colour;
 
@@ -1179,6 +1201,11 @@ void fizmo_start(z_file* story_stream, z_file *blorb_stream,
   if ((str = get_configuration_value("savegame-default-filename")) != NULL)
     default_savegame_filename = str;
 
+  val = DEFAULT_MAX_UNDO_STEPS;
+  if ((str = get_configuration_value("max-undo-steps")) != NULL)
+    val = atoi(str);
+  set_max_undo_steps(val);
+
   init_streams(default_savegame_filename);
 
   (void)latin1_string_to_zucs_string(
@@ -1244,6 +1271,16 @@ void fizmo_start(z_file* story_stream, z_file *blorb_stream,
   // REVISIT: Implement general initalization for restore / restart etc.
   active_window_number = 0;
   current_font = Z_FONT_NORMAL;
+
+#ifndef DISABLE_BLOCKBUFFER
+  if (ver >= 3)
+    upper_window_buffer
+      = create_blockbuffer(
+          Z_STYLE_ROMAN,
+          Z_FONT_NORMAL,
+          current_foreground_colour,
+          current_background_colour);
+#endif // DISABLE_BLOCKBUFFER
 
 #ifndef DISABLE_OUTPUT_HISTORY
   outputhistory[0]
@@ -1367,17 +1404,40 @@ void fizmo_start(z_file* story_stream, z_file *blorb_stream,
 #endif // ENABLE_DEBUGGER
 
   free_z_story(active_z_story);
+  active_z_story = NULL;
+  z_mem = NULL;
 
+#ifndef DISABLE_BLOCKBUFFER
   if (upper_window_buffer != NULL)
     destroy_blockbuffer(upper_window_buffer);
+  upper_window_buffer = NULL;
+#endif // DISABLE_BLOCKBUFFER
+
+#ifndef DISABLE_OUTPUT_HISTORY
+  destroy_outputhistory(outputhistory[0]);
+#endif // DISABLE_OUTPUT_HISTORY
 
   if (active_sound_interface != NULL)
     active_sound_interface->close_sound();
 
   // Close all streams, this will also close the active interface.
   close_streams(NULL);
+  free_undo_memory();
+  free_hyphenation_memory();
+  free_i18n_memory();
 
-  // TODO: Free memory.
+#ifndef DISABLE_CONFIGFILES
+  if (xdg_config_home != NULL)
+  {
+    free(xdg_config_home);
+    xdg_config_home = NULL;
+  }
+  if (fizmo_config_dir_name != NULL)
+  {
+    free(fizmo_config_dir_name);
+    fizmo_config_dir_name = NULL;
+  }
+#endif // DISABLE_CONFIGFILES
 }
 
 #endif /* fizmo_c_INCLUDED */

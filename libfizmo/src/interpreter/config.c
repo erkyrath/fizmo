@@ -73,6 +73,7 @@ struct configuration_option configuration_options[] = {
   { "i18n-search-path", NULL },
   { "input-command-filename", NULL },
   { "locale", NULL },
+  { "max-undo-steps", NULL },
   { "random-mode", NULL },
   { "record-command-filename", NULL },
   { "save-text-history-paragraphs", NULL },
@@ -184,7 +185,10 @@ static char *expand_configuration_value(char *unexpanded_value)
         while ( (*ptr != 0) && (*ptr != ')') )
           ptr++;
         if (*ptr != ')')
+        {
+          free(result);
           return NULL;
+        }
         buf = *ptr;
         *ptr = 0;
 
@@ -349,16 +353,25 @@ int set_configuration_value(char *key, char* new_unexpanded_value)
           (strcmp(key, "stream-2-line-width") == 0)
           ||
           (strcmp(key, "stream-2-left-margin") == 0)
+          ||
+          (strcmp(key, "max-undo-steps") == 0)
           )
       {
-        if ( (new_value == NULL) || (strlen(new_value) == 0) )
+        if (new_value == NULL)
           return -1;
+        if (strlen(new_value) == 0)
+        {
+          free(new_value);
+          return -1;
+        }
         strtol(new_value, &endptr, 10);
         if (*endptr != 0)
         {
           free(new_value);
           return -1;
         }
+        if (configuration_options[i].value != NULL)
+          free(configuration_options[i].value);
         configuration_options[i].value = new_value;
         return 0;
       }
@@ -366,28 +379,32 @@ int set_configuration_value(char *key, char* new_unexpanded_value)
       // Color options
       else if (strcmp(key, "foreground-color") == 0)
       {
-        if ((color_code = color_name_to_z_colour(new_value)) == -1)
-        {
-          free(new_value);
+        if (new_value == NULL)
           return -1;
-        }
+        color_code = color_name_to_z_colour(new_value);
         free(new_value);
+        if (color_code == -1)
+          return -1;
         if (snprintf(buf, BUFSIZE, "%d", color_code) >= BUFSIZE)
           return -1;
+        if (configuration_options[i].value != NULL)
+          free(configuration_options[i].value);
         configuration_options[i].value = fizmo_strdup(buf);
         default_foreground_colour = color_code;
         return 0;
       }
       else if (strcmp(key, "background-color") == 0)
       {
-        if ((color_code = color_name_to_z_colour(new_value)) == -1)
-        {
-          free(new_value);
+        if (new_value == NULL)
           return -1;
-        }
+        color_code = color_name_to_z_colour(new_value);
         free(new_value);
+        if (color_code == -1)
+          return -1;
         if (snprintf(buf, BUFSIZE, "%d", color_code) >= BUFSIZE)
           return -1;
+        if (configuration_options[i].value != NULL)
+          free(configuration_options[i].value);
         configuration_options[i].value = fizmo_strdup(buf);
         default_background_colour = color_code;
         return 0;
@@ -625,6 +642,8 @@ char *get_configuration_value(char *key)
             (strcmp(key, "stream-2-line-width") == 0)
             ||
             (strcmp(key, "stream-2-left-margin") == 0)
+            ||
+            (strcmp(key, "max-undo-steps") == 0)
             )
         {
           TRACE_LOG("Returning value at %p.\n", configuration_options[i].value);

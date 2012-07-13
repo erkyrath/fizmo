@@ -38,6 +38,7 @@
 #include "object.h"
 #include "zpu.h"
 #include "streams.h"
+#include "config.h" // for IGNORE_TOO_LONG_PROPERTIES_ERROR
 #include "../locales/libfizmo_locales.h"
 
 

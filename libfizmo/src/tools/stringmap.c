@@ -137,6 +137,25 @@ void *get_stringmap_value(stringmap *map, z_ucs *name)
 }
 
 
+z_ucs **get_names_in_stringmap(stringmap *map)
+{
+  z_ucs **result;
+  size_t i;
+
+  if (map->nof_elements_stored == 0)
+    return NULL;
+
+  if ((result = malloc(sizeof(z_ucs*) * (map->nof_elements_stored+1))) == NULL)
+    return NULL;
+
+  for (i=0; i<map->nof_elements_stored; i++)
+    result[i] = map->elements[i]->name;
+  result[i] = NULL;
+
+  return result;
+}
+
+
 void delete_stringmap(stringmap *map)
 {
   size_t i;

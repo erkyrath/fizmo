@@ -75,7 +75,7 @@
 // Assuming that the maximum dynamic memory of a story may be 100kb and
 // that we'll spare 10 Megabytes of RAM for undo purposes we can store
 // a maximum of 10240 undo steps.
-#define MAX_UNDO_STEPS 10240
+#define DEFAULT_MAX_UNDO_STEPS 10240
 
 #define RANDOM_SEED_SIZE 32
 

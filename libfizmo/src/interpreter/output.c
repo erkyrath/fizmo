@@ -70,31 +70,6 @@ z_font current_font  = Z_FONT_NORMAL;
 static int upper_window_height = 0;
 
 
-#ifndef DISABLE_BLOCKBUFFER
-static void check_upper_window_blockbuffer(int height)
-{
-  if (upper_window_buffer == NULL)
-  {
-    upper_window_buffer
-      = create_blockbuffer(
-          (int)active_interface->get_screen_width(),
-          (int)height,
-          Z_STYLE_ROMAN,
-          Z_FONT_NORMAL,
-          current_foreground_colour,
-          current_background_colour);
-  }
-  else
-  {
-    blockbuf_resize(
-        upper_window_buffer,
-        (int)active_interface->get_screen_width(),
-        (int)op[0]);
-  }
-}
-#endif // DISABLE_BLOCKBUFFER
-
-
 void opcode_split_window(void)
 {
   TRACE_LOG("Opcode: SPLIT_WINDOW\n");
@@ -105,7 +80,10 @@ void opcode_split_window(void)
 #ifndef DISABLE_BLOCKBUFFER
   if ((ver >= 3) && (ver != 6))
   {
-    check_upper_window_blockbuffer((int)op[0]);
+    blockbuf_resize(
+        upper_window_buffer,
+        (int)active_interface->get_screen_width(),
+        (int)op[0]);
   }
 #endif // DISABLE_BLOCKBUFFER
 
@@ -133,7 +111,10 @@ void opcode_set_window(void)
     TRACE_LOG("Opening upper window with 1 line for set_window.\n");
 
 #ifndef DISABLE_BLOCKBUFFER
-    check_upper_window_blockbuffer(1);
+    blockbuf_resize(
+        upper_window_buffer,
+        (int)active_interface->get_screen_width(),
+        1);
 #endif // DISABLE_BLOCKBUFFER
 
     active_interface->split_window((int16_t)1);
@@ -224,11 +205,10 @@ void process_set_cursor(int16_t y, int16_t x, int16_t window)
         TRACE_LOG("Resizing upper window to %d lines for cursor movement.\n",y);
 
 #ifndef DISABLE_BLOCKBUFFER
-        if (upper_window_buffer != NULL)
-          blockbuf_resize(
-              upper_window_buffer,
-              (int)active_interface->get_screen_width(),
-              (int)y);
+        blockbuf_resize(
+            upper_window_buffer,
+            (int)active_interface->get_screen_width(),
+            (int)y);
 #endif // DISABLE_BLOCKBUFFER
 
         active_interface->split_window(y);

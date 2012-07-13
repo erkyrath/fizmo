@@ -57,53 +57,11 @@ struct undo_frame
   uint8_t number_of_locals_from_function_call;
 };
 
+
 static int max_undo_steps = DEFAULT_MAX_UNDO_STEPS;
 static struct undo_frame** undo_frames = NULL;
 static int undo_index = 0;
 
-void set_max_undo_steps(int val)
-{
-  int ix;
-
-  /* Free any existing frames beyond the new limit */
-  if (undo_index > val)
-  {
-    for (ix=val; ix<undo_index; ix++) 
-    {
-      free(undo_frames[ix]->stack);
-      free(undo_frames[ix]->dynamic_memory);
-      free(undo_frames[ix]);
-    }
-    undo_index = val;
-  }
-
-  if (val == 0)
-  {
-    if (undo_frames)
-    {
-      free(undo_frames);
-      undo_frames = NULL;
-    }
-    undo_index = 0;
-    return;
-  }
-
-  if (!undo_frames) 
-  {
-    undo_frames = (struct undo_frame**)malloc(val * sizeof(struct undo_frame*));
-  }
-  else 
-  {
-    undo_frames = (struct undo_frame**)realloc(undo_frames, val * sizeof(struct undo_frame*));
-  }
-
-  if (!undo_frames)
-  {
-    return; /* allocation failed; we will have no undoing */
-  }
-
-  max_undo_steps = val;
-}
 
 static void delete_undo_frame(struct undo_frame *frame)
 {

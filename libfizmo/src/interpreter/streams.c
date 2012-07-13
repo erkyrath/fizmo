@@ -274,8 +274,6 @@ void ask_for_input_stream_filename(void)
 
 #ifndef DISABLE_OUTPUT_HISTORY
   current_line = get_current_line(outputhistory[active_window_number]);
-#else
-  current_line = NULL;
 #endif /* DISABLE_OUTPUT_HISTORY */
 
   stream_1_active_buf = stream_1_active;

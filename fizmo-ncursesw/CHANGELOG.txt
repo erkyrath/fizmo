@@ -3,6 +3,7 @@
  + 0.7.3 was finished at about (?).
  - Merged Andrew Plotkin's iOS-fizmo changes: Adapted to "prompt_for_filename"
    function in screen-cell-interface.
+ - Minor memory leak cleanups.
 
    Version 0.7.2
  + 0.7.2 was finished at about Fri Mar 9 21:01:12 CET 2012.

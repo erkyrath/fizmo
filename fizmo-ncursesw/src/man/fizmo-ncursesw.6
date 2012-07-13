@@ -1,4 +1,4 @@
-.TH FIZMO-NCURSESW 6 "March 9, 2012" "0.7.2"
+.TH FIZMO-NCURSESW 6 "May 7, 2012" "0.7.3"
 .SH NAME
 fizmo-ncursesw
 - wide-character-ncurses implementation of the fizmo Z-Machine Interpreter.
@@ -163,6 +163,9 @@ option will allow you to run the re-indexing manually.
 .B -um, --umem
 Use UMem instead of CMem for saving.
 .TP
+.B -mu, --maximum-undo-steps
+Set number of maximum undo steps.
+.TP
 .B -xi, -enable-x11-inline-graphics
 Enable XTerm graphics. This will make fizmo try to display graphics into
 a X-Terminal. Since this represents a rather ugly hack\[em]and may not
@@ -311,6 +314,8 @@ force-8bit-sound = <any value means yes, empty no>
 enable-xterm-title = <no value or \[lq]true\[rq] means yes, otherwise no>
 .br
 dont-udpate-story-list = <no value or \[lq]true\[rq] means yes, otherwise no>
+.br
+max-undo-steps = <maximum number of stored undo steps as numerical value>
 .br
 enable-xterm-graphics = <no value or \[lq]true\[rq] means yes, otherwise no>
 .br

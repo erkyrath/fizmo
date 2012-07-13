@@ -75,7 +75,6 @@ struct configuration_option configuration_options[] = {
   { "locale", NULL },
   { "max-undo-steps", NULL },
   { "random-mode", NULL },
-  { "max-undo-steps", NULL },
   { "record-command-filename", NULL },
   { "save-text-history-paragraphs", NULL },
   { "savegame-default-filename", NULL },

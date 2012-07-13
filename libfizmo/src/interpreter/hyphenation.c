@@ -317,6 +317,7 @@ static int load_patterns()
       fsi->closefile(patternfile);
       return -7;
     }
+    pattern_data = data;
 
     nof_comments = 0;
     lines = create_list();
@@ -370,7 +371,6 @@ static int load_patterns()
     nof_patterns = get_list_size(lines);
     patterns = (z_ucs**)delete_list_and_get_ptrs(lines);
     TRACE_LOG("Read %d patterns, %ld comments.\n", nof_patterns, nof_comments);
-    pattern_data = data;
 
     sort_patterndata(0, nof_patterns - 1);
 
@@ -478,7 +478,10 @@ z_ucs *hyphenate(z_ucs *word_to_hyphenate)
 
   if ((word_buf = malloc(
           sizeof(z_ucs) * (word_to_hyphenate_len + 3))) == NULL)
+  {
+    free(result_buf);
     return NULL;
+  }
 
   *word_buf = '.';
   z_ucs_cpy(word_buf + 1, word_to_hyphenate);
@@ -585,6 +588,33 @@ z_ucs *hyphenate(z_ucs *word_to_hyphenate)
   return result_buf;
 }
 
+
+void free_hyphenation_memory(void)
+{
+  if (last_pattern_locale != NULL)
+  {
+    free(last_pattern_locale);
+    last_pattern_locale = NULL;
+  }
+
+  if (pattern_data != NULL)
+  {
+    free(pattern_data);
+    pattern_data = NULL;
+  }
+
+  if (patterns != NULL)
+  {
+    free(patterns);
+    patterns = NULL;
+  }
+
+  if (search_path == NULL)
+  {
+    free(search_path);
+    search_path = NULL;
+  }
+}
 
 #endif /* hyphenation_c_INCLUDED */
 

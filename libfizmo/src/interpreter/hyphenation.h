@@ -34,6 +34,7 @@
 #define hyphenation_h_INCLUDED
 
 z_ucs *hyphenate(z_ucs *word_to_hyphenate);
+void free_hyphenation_memory(void);
 
 #endif /* hyphenation_h_INCLUDED */
 

@@ -34,11 +34,11 @@
 #include "../tools/i18n.h"
 #include "property.h"
 #include "fizmo.h"
-#include "config.h"
 #include "variable.h"
 #include "object.h"
 #include "zpu.h"
 #include "streams.h"
+#include "config.h" // for IGNORE_TOO_LONG_PROPERTIES_ERROR
 #include "../locales/libfizmo_locales.h"
 
 

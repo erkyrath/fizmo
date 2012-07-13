@@ -65,6 +65,7 @@ uint16_t z_stack_pull_word();
 uint16_t z_stack_peek_word();
 void drop_z_stack_words(int byte_counter);
 /*@only@*/ struct z_stack_container *create_new_stack();
+void delete_stack_container(struct z_stack_container *stack_data);
 /*@dependent@*/ uint16_t *allocate_z_stack_words(uint32_t byte_counter);
 void restore_old_stack(/*@only@*/ struct z_stack_container *old_stack_data);
 void store_first_stack_frame();

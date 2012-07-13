@@ -107,6 +107,7 @@ static int i18n_send_output(z_ucs *z_ucs_data, int output_mode,
       if ((output = dup_zucs_string_to_utf8_string(z_ucs_data)) == NULL)
         return -1;
       fputs(output, stdout);
+      free(output);
       return 0;
     }
     else
@@ -191,7 +192,7 @@ static locale_module *parse_locale_file(z_ucs *module_name,
   nof_zucs_chars = 0;
   while ((parse_utf8_char_from_file(in)) != UEOF)
     nof_zucs_chars++;
-  nof_zucs_chars++; // Add space for terminating zero (yes, really requried).
+  nof_zucs_chars++; // Add space for terminating zero (yes, really required).
 
   if (fsi->setfilepos(in, 0, SEEK_SET) == -1)
   {
@@ -386,6 +387,7 @@ static void delete_locale_module(locale_module *module)
 }
 
 
+// Returns malloc()ed string which needs to be free()d later.
 static char *get_path_for_locale(z_ucs *locale_name)
 {
   z_dir *dir;
@@ -1153,6 +1155,7 @@ size_t i18n_message_length(z_ucs *module_name, int string_code, ...)
 }
 
 
+// Returnes malloc()ed string which needs to be free()d later on.
 z_ucs *i18n_translate_to_string(z_ucs* module_name, int string_code, ...)
 {
   va_list ap;
@@ -1449,6 +1452,58 @@ int set_current_locale_name(char *new_locale_name)
 char *get_i18n_default_search_path(void)
 {
   return default_search_path;
+}
+
+
+void free_i18n_memory(void)
+{
+  z_ucs **locale_names, **locale_name;
+  z_ucs **module_names, **module_name;
+  stringmap *module_map;
+  locale_module *module= NULL;
+
+  if (locale_modules != NULL)
+  {
+    locale_names = get_names_in_stringmap(locale_modules);
+    locale_name = locale_names;
+
+    while (*locale_name != NULL)
+    {
+      module_map = (stringmap*)get_stringmap_value(locale_modules,*locale_name);
+
+      module_names = get_names_in_stringmap(module_map);
+      module_name = module_names;
+
+      while (*module_name != NULL)
+      {
+        module = (locale_module*)get_stringmap_value(module_map, *module_name);
+        delete_locale_module(module);
+        module_name++;
+      }
+      free(module_names);
+
+      delete_stringmap(module_map);
+      locale_name++;
+    }
+
+    free(locale_names);
+    delete_stringmap(locale_modules);
+    locale_modules = NULL;
+  }
+
+  if (current_locale_name != NULL)
+  {
+    free(current_locale_name);
+    current_locale_name = NULL;
+    free(current_locale_name_in_utf8);
+    current_locale_name_in_utf8 = NULL;
+  }
+
+  if (default_locale_name_in_utf8 == NULL)
+  {
+    free(default_locale_name_in_utf8);
+    default_locale_name_in_utf8 = NULL;
+  }
 }
 
 #endif /* i18n_c_INCLUDED */

@@ -53,3 +53,4 @@ Disable hyphenation.
 Set transcript filename.
 Filename to record input to.
 Could not open or find "\{0s}".
+Set number of maximum undo steps.

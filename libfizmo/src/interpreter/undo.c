@@ -57,27 +57,39 @@ struct undo_frame
   uint8_t number_of_locals_from_function_call;
 };
 
+
 static int max_undo_steps = DEFAULT_MAX_UNDO_STEPS;
 static struct undo_frame** undo_frames = NULL;
 static int undo_index = 0;
 
-void set_max_undo_steps(int val)
+
+static void delete_undo_frame(struct undo_frame *frame)
+{
+  if (frame != NULL)
+  {
+    if (frame->dynamic_memory != NULL)
+      free(frame->dynamic_memory);
+    if (frame->stack != NULL)
+      free(frame->stack);
+    free(frame);
+  }
+}
+
+
+int set_max_undo_steps(int new_max_steps)
 {
   int ix;
 
   /* Free any existing frames beyond the new limit */
-  if (undo_index > val)
+  if (undo_index > new_max_steps)
   {
-    for (ix=val; ix<undo_index; ix++) 
-    {
-      free(undo_frames[ix]->stack);
-      free(undo_frames[ix]->dynamic_memory);
-      free(undo_frames[ix]);
-    }
-    undo_index = val;
+    for (ix=new_max_steps; ix<undo_index; ix++) 
+      delete_undo_frame(undo_frames[ix]);
+
+    undo_index = new_max_steps;
   }
 
-  if (val == 0)
+  if (new_max_steps == 0)
   {
     if (undo_frames)
     {
@@ -85,25 +97,33 @@ void set_max_undo_steps(int val)
       undo_frames = NULL;
     }
     undo_index = 0;
-    return;
+    return -1;
   }
 
-  if (!undo_frames) 
+  if ((undo_frames = (struct undo_frame**)realloc(
+          undo_frames, new_max_steps * sizeof(struct undo_frame*))) != NULL)
   {
-    undo_frames = (struct undo_frame**)malloc(val * sizeof(struct undo_frame*));
+    max_undo_steps = new_max_steps;
+    return 0;
   }
-  else 
-  {
-    undo_frames = (struct undo_frame**)realloc(undo_frames, val * sizeof(struct undo_frame*));
-  }
-
-  if (!undo_frames)
-  {
-    return; /* allocation failed; we will have no undoing */
-  }
-
-  max_undo_steps = val;
+  else
+    return 1;
 }
+
+
+static struct undo_frame *create_new_undo_frame()
+{
+  struct undo_frame *result;
+
+  if ((result = (struct undo_frame*)malloc(sizeof(struct undo_frame))) == NULL)
+    return NULL;
+
+  result->dynamic_memory = NULL;
+  result->stack = NULL;
+
+  return result;
+}
+
 
 void opcode_save_undo(void)
 {
@@ -114,81 +134,83 @@ void opcode_save_undo(void)
 
   TRACE_LOG("Opcode: SAVE_UNDO.\n");
 
-  if (max_undo_steps <= 0 || undo_frames == NULL)
-  {
-    result = 0;
-  }
-  else if ((new_undo_frame
-        = (struct undo_frame*)malloc(sizeof(struct undo_frame))) == NULL)
+  if (max_undo_steps <= 0)
   {
     result = 0;
   }
   else
   {
-    dynamic_memory_size = (size_t)(
-        active_z_story->dynamic_memory_end - z_mem + 1 );
-
-    if ( (new_undo_frame->dynamic_memory = malloc(dynamic_memory_size))
-        == NULL)
+    if ( (undo_frames == NULL) && (set_max_undo_steps(max_undo_steps) != 0) )
     {
-      free(new_undo_frame);
       result = 0;
     }
     else
     {
-      nof_stack_bytes_in_use = (z_stack_index - z_stack) * sizeof(uint16_t);
-
-      if ((new_undo_frame->stack
-            = (uint16_t*)malloc(nof_stack_bytes_in_use)) == NULL)
+      if ((new_undo_frame = create_new_undo_frame()) == NULL)
       {
-        free(new_undo_frame->dynamic_memory);
-        free(new_undo_frame);
         result = 0;
       }
       else
       {
-        if (undo_index == max_undo_steps)
+        dynamic_memory_size = (size_t)(
+            active_z_story->dynamic_memory_end - z_mem + 1 );
+
+        if ( (new_undo_frame->dynamic_memory = malloc(dynamic_memory_size))
+            == NULL)
         {
-          /* Remove the first frame from the array. */
-          free(undo_frames[0]->stack);
-          free(undo_frames[0]->dynamic_memory);
-          free(undo_frames[0]);
-
-          if (max_undo_steps > 1) 
-          {
-            memmove(
-              undo_frames,
-              undo_frames + 1,
-              sizeof(struct undo_frame*) * (max_undo_steps - 1));
-          }
-
-          undo_index--;
+          delete_undo_frame(new_undo_frame);
+          result = 0;
         }
+        else
+        {
+          nof_stack_bytes_in_use = (z_stack_index - z_stack) * sizeof(uint16_t);
 
-        memcpy(
-            new_undo_frame->stack,
-            z_stack, // non-null when size > 0
-            nof_stack_bytes_in_use);
+          if ((new_undo_frame->stack
+                = (uint16_t*)malloc(nof_stack_bytes_in_use)) == NULL)
+          {
+            delete_undo_frame(new_undo_frame);
+            result = 0;
+          }
+          else
+          {
+            if (undo_index == max_undo_steps)
+            {
+              delete_undo_frame(undo_frames[0]);
 
-        memcpy(
-            new_undo_frame->dynamic_memory,
-            z_mem,
-            dynamic_memory_size);
+              memmove(
+                  undo_frames,
+                  undo_frames + 1,
+                  sizeof(struct undo_frame*) * (max_undo_steps - 1));
 
-        // new_undo_frame->pc is not allocated, no free required.
-        new_undo_frame->pc = pc;
+              undo_index--;
+            }
 
-        new_undo_frame->z_stack_size = z_stack_index - z_stack;
-        new_undo_frame->stack_words_from_active_routine
-          = stack_words_from_active_routine;
-        new_undo_frame->number_of_locals_active
-          = number_of_locals_active;
-        new_undo_frame->number_of_locals_from_function_call
-          = number_of_locals_from_function_call;
+            memcpy(
+                new_undo_frame->stack,
+                z_stack, // non-null when size > 0
+                nof_stack_bytes_in_use);
 
-        undo_frames[undo_index++] = new_undo_frame;
+            memcpy(
+                new_undo_frame->dynamic_memory,
+                z_mem,
+                dynamic_memory_size);
 
-        result = 1;
+            // new_undo_frame->pc is not allocated, no free required.
+            new_undo_frame->pc = pc;
+
+            new_undo_frame->z_stack_size = z_stack_index - z_stack;
+            new_undo_frame->stack_words_from_active_routine
+              = stack_words_from_active_routine;
+            new_undo_frame->number_of_locals_active
+              = number_of_locals_active;
+            new_undo_frame->number_of_locals_from_function_call
+              = number_of_locals_from_function_call;
+
+            undo_frames[undo_index++] = new_undo_frame;
+
+            result = 1;
+          }
+        }
       }
     }
   }
@@ -196,6 +218,7 @@ void opcode_save_undo(void)
   read_z_result_variable();
   set_variable(z_res_var, (uint16_t)result, false);
 }
+
 
 void opcode_restore_undo(void)
 {
@@ -216,7 +239,7 @@ void opcode_restore_undo(void)
 
     ensure_z_stack_size(frame_to_restore->z_stack_size);
 
-    pc =  frame_to_restore->pc;
+    pc = frame_to_restore->pc;
     //current_z_stack_size = frame_to_restore->z_stack_size;
     //behind_z_stack = z_stack + current_z_stack_size;
     z_stack_index = z_stack + frame_to_restore->z_stack_size;
@@ -242,9 +265,7 @@ void opcode_restore_undo(void)
         frame_to_restore->dynamic_memory,
         dynamic_memory_size);
 
-    free(frame_to_restore->stack);
-    free(frame_to_restore->dynamic_memory);
-    free(frame_to_restore);
+    delete_undo_frame(frame_to_restore);
 
     write_interpreter_info_into_header();
 
@@ -266,7 +287,8 @@ size_t get_allocated_undo_memory_size(void)
   size_t dynamic_memory_size = (size_t)(
       active_z_story->dynamic_memory_end - z_mem + 1 );
   size_t result
-    = undo_index * (sizeof(struct undo_frame) + dynamic_memory_size);
+    = ( sizeof(struct undo_frame*) * max_undo_steps )
+    + ( undo_index * (sizeof(struct undo_frame) + dynamic_memory_size) );
 
   while (i < undo_index)
     result += undo_frames[i++]->z_stack_size * sizeof(uint16_t);
@@ -274,6 +296,20 @@ size_t get_allocated_undo_memory_size(void)
   return result;
 }
 
+
+void free_undo_memory(void)
+{
+  if (undo_frames != NULL)
+  {
+    while (undo_index > 0)
+    {
+      delete_undo_frame(undo_frames[undo_index]);
+      undo_index--;
+    }
+    free(undo_frames);
+    undo_frames = NULL;
+  }
+}
 
 #endif /* undo_c_INCLUDED */
 

@@ -44,61 +44,25 @@
 #include "../tools/z_ucs.h"
 
 
-BLOCKBUF *create_blockbuffer(int width, int height, z_style default_style,
-    z_font default_font, z_colour default_foreground_colour,
-    z_colour default_background_colour)
+BLOCKBUF *create_blockbuffer(z_style default_style, z_font default_font,
+    z_colour default_foreground_colour, z_colour default_background_colour)
 {
   BLOCKBUF *result;
-  int x,y;
-  struct blockbuf_char *ptr;
-  size_t memory_size;
 
-  if ( (width < 1) && (height < 1) )
-    return NULL;
+  TRACE_LOG("New blockbuffer, foreground:%d, background: %d.\n",
+      default_foreground_colour, default_background_colour);
 
-  TRACE_LOG("New blockbuffer %d*%d, foreground:%d, background: %d.\n",
-      width, height,  default_foreground_colour, default_background_colour);
+  result = (BLOCKBUF*)fizmo_malloc(sizeof(BLOCKBUF));
 
-  memory_size = sizeof(BLOCKBUF);
-
-  result = (BLOCKBUF*)fizmo_malloc(memory_size);
-
-  result->width = width;
-  result->height = height;
+  result->width = 0;
+  result->height = 0;
   result->xpos = 0;
   result->ypos = 0;
-
-  memory_size = sizeof(struct blockbuf_char) * width * height + 1;
-
-  result->content = (struct blockbuf_char*)fizmo_malloc(memory_size);
-
-  /*
-  for (ptr=result->content, y=0; y<height; y++)
-  {
-    for (x=0; x<width; x++)
-      */
-
-  ptr=result->content;
-  ptr->character = Z_UCS_SPACE;
-
-  /*@+forloopexec@*/ for (ptr=result->content, y=0; y<1; y++)
-  {
-    /*@+forloopexec@*/ for (x=0; x<1; x++)
-    {
-      ptr->character = Z_UCS_SPACE;
-      ptr->foreground_colour = default_foreground_colour;
-      ptr->background_colour = default_background_colour;
-      ptr->style = default_style;
-      ptr->font = default_font;
-      ptr++;
-    }
-  }
-
+  result->content = NULL;
   result->default_style = default_style;
   result->default_font = default_font;
   result->default_foreground_colour = default_foreground_colour;
   result->default_background_colour = default_background_colour;
-
   result->current_style = default_style;
   result->current_font = default_font;
   result->current_foreground_colour = default_foreground_colour;
@@ -110,7 +74,8 @@ BLOCKBUF *create_blockbuffer(int width, int height, z_style default_style,
 
 void destroy_blockbuffer(BLOCKBUF *blockbuffer)
 {
-  free(blockbuffer->content);
+  if (blockbuffer->content != NULL)
+    free(blockbuffer->content);
   free(blockbuffer);
 }
 
@@ -137,17 +102,18 @@ void store_z_ucs_output_in_blockbuffer(BLOCKBUF *buffer, z_ucs *z_ucs_output)
     }
     else
     {
+      if (buffer->xpos >= buffer->width)
+      {
+        TRACE_LOG("Terminating blockbuffer output prematurely at x:%d.\n",
+            buffer->xpos);
+        break;
+      }
+
       ptr->character = *z_ucs_output;
       ptr->font = buffer->current_font;
       ptr->style = buffer->current_style;
       ptr->foreground_colour = buffer->current_foreground_colour;
       ptr->background_colour = buffer->current_background_colour;
-
-      if (buffer->xpos == buffer->width - 1)
-      {
-        TRACE_LOG("Terminating blockbuffer output prematurely at x:%d.\n", buffer->xpos);
-        break;
-      }
 
       ptr++;
       buffer->xpos++;
@@ -234,7 +200,7 @@ void blockbuf_resize(BLOCKBUF *buffer, int new_width, int new_height)
       new_width, new_height, new_buffer_size);
 
   buffer->content = (struct blockbuf_char*)fizmo_realloc(
-      buffer->content,new_buffer_size);
+      buffer->content, new_buffer_size);
 
   // Realign existing lines.
   if (buffer->width != new_width)
@@ -290,6 +256,13 @@ void blockbuf_resize(BLOCKBUF *buffer, int new_width, int new_height)
 
   buffer->width = new_width;
   buffer->height = new_height;
+}
+
+
+size_t count_allocated_blockbuf_memory(BLOCKBUF *buffer)
+{
+  return sizeof(BLOCKBUF)
+    + sizeof(struct blockbuf_char) * buffer->height * buffer->width;
 }
 
 #endif // blockbuf_c_INCLUDED

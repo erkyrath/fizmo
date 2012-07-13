@@ -1566,9 +1566,8 @@ int restore_game_from_stream(uint16_t address, uint16_t length,
       "Restored stack: %d locals active, %d, words from active routine.\n",
       number_of_locals_active, stack_words_from_active_routine);
 
-  if (saved_stack->z_stack != NULL)
-    free(saved_stack->z_stack);
-  free(saved_stack);
+  if (saved_stack != NULL)
+    delete_stack_container(saved_stack);
 
   // restored_story_mem has been filled via dynamix_index above so inhibit
   // warning is okay.

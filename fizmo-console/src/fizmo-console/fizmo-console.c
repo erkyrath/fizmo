@@ -51,7 +51,7 @@ static char* interface_name = "fizmo-console";
 static char* interface_version = "0.7.3";
 int line_length = -1;
 bool disable_hyphenation = false;
-static WORDWRAP *output_wordwrapper;
+static WORDWRAP *output_wordwrapper = NULL;
 
 
 static char *simple_c_get_interface_name()
@@ -126,8 +126,15 @@ static void simple_c_interface_output_z_ucs(z_ucs *z_ucs_output)
 
 static int simple_c_close_interface(z_ucs *error_message)
 {
+  if (output_wordwrapper != NULL)
+  {
+    wordwrap_destroy_wrapper(output_wordwrapper);
+    output_wordwrapper = NULL;
+  }
+
   if (error_message != NULL)
     simple_c_interface_output_z_ucs(error_message);
+
   return 0;
 }
 

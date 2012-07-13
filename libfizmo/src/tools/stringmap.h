@@ -56,6 +56,7 @@ typedef struct
 stringmap *create_stringmap();
 int add_stringmap_element(stringmap *map, z_ucs *name, void *value);
 void *get_stringmap_value(stringmap *map, z_ucs *name);
+z_ucs **get_names_in_stringmap(stringmap *map);
 void delete_stringmap(stringmap *map);
 
 

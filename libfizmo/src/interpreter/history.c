@@ -46,12 +46,12 @@
  * or completely filled in case "wrapped_around" is true.
  *
  * Metadata -- font, style and colour attributes -- is directly written
- * into the buffer. In order to distinguish metadata from regular buffer
+ * into this buffer. In order to distinguish metadata from regular buffer
  * contents, metadata is prefixed with a HISTORY_METADATA_ESCAPE character
- * which is 0. Regular buffer contents can never contain a plain 0, since
- * 0 is used as a string-terminator. Thus, when writing output into the
- * buffer, 0 characters don't have to be explicitely escaped since these
- * are never written.
+ * which is 0. Since 0 is used as a string-terminator, regular buffer contents
+ * can never contain a plain 0. Thus, when writing output into the buffer, 0
+ * characters don't have to be explicitely escaped since these are never
+ * written.
  *
  * In order to use the history one can create a *history_output using
  * "init_history_output" which will point to the current end of the history.
@@ -541,7 +541,9 @@ void store_data_in_history(OUTPUTHISTORY *h, z_ucs *data, size_t len,
 void store_z_ucs_output_in_history(OUTPUTHISTORY *h, z_ucs *z_ucs_output)
 {
   size_t len;
+#ifdef ENABLE_TRACING
   z_ucs *cl;
+#endif // ENABLE_TRACING
 
   if (z_ucs_output == NULL)
     return;

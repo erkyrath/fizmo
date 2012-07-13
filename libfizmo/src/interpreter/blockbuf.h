@@ -66,9 +66,8 @@ typedef struct
 } BLOCKBUF;
 
 
-BLOCKBUF *create_blockbuffer(int width, int height, z_style default_style,
-    z_font default_font, z_colour default_foreground_colour,
-    z_colour default_background_colour);
+BLOCKBUF *create_blockbuffer(z_style default_style, z_font default_font,
+    z_colour default_foreground_colour, z_colour default_background_colour);
 
 void destroy_blockbuffer(BLOCKBUF *blockbuffer);
 void store_z_ucs_output_in_blockbuffer(BLOCKBUF *buffer, z_ucs *z_ucs_output);
@@ -78,6 +77,7 @@ void set_blockbuf_foreground_colour(BLOCKBUF *buffer, z_colour new_colour);
 void set_blockbuf_background_colour(BLOCKBUF *buffer, z_colour new_colour);
 void set_blockbuf_font(BLOCKBUF *buffer, z_font font);
 void blockbuf_resize(BLOCKBUF *buffer, int new_width, int new_height);
+size_t count_allocated_blockbuf_memory(BLOCKBUF *buffer);
 
 #endif // blockbuf_h_INCLUDED
 

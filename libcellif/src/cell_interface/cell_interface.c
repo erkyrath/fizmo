@@ -108,7 +108,7 @@ static int active_z_window_id = -1;
 static z_colour current_output_foreground_colour = -3;
 static z_colour current_output_background_colour = -3;
 static z_style current_output_text_style = -1;
-static WORDWRAP *refresh_wordwrapper;
+static WORDWRAP *refresh_wordwrapper = NULL;
 static int refresh_newline_counter;
 static bool refresh_count_mode;
 static int refresh_lines_to_skip;
@@ -1119,6 +1119,7 @@ static int cell_close_interface(z_ucs *error_message)
 {
   int event_type;
   z_ucs input;
+  int i;
 
   if ( (error_message == NULL) && (interface_open == true) )
   {
@@ -1136,7 +1137,39 @@ static int cell_close_interface(z_ucs *error_message)
   }
 
   screen_cell_interface->close_interface(error_message);
+
+  free(libcellif_more_prompt);  
+  free(libcellif_score_string);
+  free(libcellif_turns_string);
+
+  if (refresh_wordwrapper != NULL)
+  {
+    wordwrap_destroy_wrapper(refresh_wordwrapper);
+    refresh_wordwrapper = NULL;
+  }
+
+  for (i=0; i<nof_active_z_windows; i++)
+  {
+    if (z_windows[i]->wordwrapper != NULL)
+    {
+      if (z_windows[i] != NULL)
+      {
+        wordwrap_destroy_wrapper(z_windows[i]->wordwrapper);
+        z_windows[i]->wordwrapper = NULL;
+        free(z_windows[i]);
+        z_windows[i] = NULL;
+      }
+    }
+  }
+
+  if (z_windows != NULL)
+  {
+    free(z_windows);
+    z_windows = NULL;
+  }
+
   interface_open = false;
+
   return 0;
 }
 
@@ -1622,7 +1655,7 @@ static void refresh_screen()
       block_index = i * upper_window_buffer->width;
 
       j = 0;
-      screen_cell_interface->goto_yx(1+i, 1);
+      screen_cell_interface->goto_yx(i + (ver <= 3 ? 2 : 1), 1);
 
       while (
           (j < z_windows[1]->xsize)
@@ -1722,6 +1755,8 @@ static void refresh_screen()
         }
       }
     }
+
+    free(blockbuf_line);
   }
 
   update_output_colours(0);
@@ -3184,6 +3219,7 @@ void new_cell_screen_size(int newysize, int newxsize)
       z_windows[i]->ycursorpos = z_windows[i]->ysize;
 
     TRACE_LOG("new ycursorpos[%d]: %d\n", i, z_windows[i]->ycursorpos);
+    TRACE_LOG("new ypos[%d]: %d\n", i, z_windows[i]->ypos);
 
     if (z_windows[i]->xcursorpos > z_windows[i]->xsize)
       z_windows[i]->xcursorpos = z_windows[i]->xsize;
@@ -3200,26 +3236,9 @@ void new_cell_screen_size(int newysize, int newxsize)
     *current_input_display_width
       = z_windows[0]->xpos + z_windows[0]->xsize - *current_input_x;
 
-    /*
-    *current_input_y += dy;
-
-    if (*current_input_y > z_windows[0]->ypos + z_windows[0]->ysize - 1)
-      *current_input_y = z_windows[0]->ypos + z_windows[0]->ysize - 1;
-    */
-
     // If the screen is redrawn, the screen contents are always aligned
     // to the bottom so we also have to move the input line downward.
     *current_input_y = z_windows[0]->ypos + z_windows[0]->ysize - 1;
-
-    /*
-       current_input_size = &input_size;
-       current_input_scroll_x = &input_scroll_x;
-       current_input_index = &input_index;
-       current_input_display_width = &input_display_width;
-       current_input_x = &input_x;
-       current_input_y = &input_y;
-       current_input_buffer = input_buffer;
-     */
 
     TRACE_LOG("current_input_display_width: %d\n",*current_input_display_width);
 
@@ -3227,8 +3246,6 @@ void new_cell_screen_size(int newysize, int newxsize)
     TRACE_LOG("input-y-after: %d\n", *current_input_y);
   }
 
-
-  //wordwrap_output_left_padding(z_windows[i]->wordwrapper);
   refresh_screen();
 
   for (i=0; i<nof_active_z_windows; i++)

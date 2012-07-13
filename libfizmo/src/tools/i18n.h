@@ -72,6 +72,7 @@ char *get_current_locale_name_in_utf8();
 int set_current_locale_name(char *new_locale_name);
 char **get_available_locale_names();
 char *get_i18n_default_search_path(void);
+void free_i18n_memory();
 
 #endif /* i18n_h_INCLUDED */
 

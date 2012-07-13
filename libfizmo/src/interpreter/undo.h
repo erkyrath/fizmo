@@ -35,10 +35,11 @@
 
 #include "../tools/types.h"
 
-void set_max_undo_steps(int);
+int set_max_undo_steps(int new_max_steps);
 void opcode_save_undo(void);
 void opcode_restore_undo(void);
 size_t get_allocated_undo_memory_size(void);
+void free_undo_memory(void);
 
 #endif /* undo_h_INCLUDED */
 

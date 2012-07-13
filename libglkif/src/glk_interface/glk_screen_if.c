@@ -39,6 +39,7 @@
 #include <strings.h>
 
 #include "glk.h"
+#include "gi_dispa.h"
 #include "glkstart.h" /* This comes with the Glk library. */
 
 #include "glk_interface.h"
@@ -66,14 +67,37 @@ static bool instatuswin = false;
 static int statuscurheight = 0; /* what the VM thinks the height is */
 static int statusmaxheight = 0; /* height including possible quote box */
 static int statusseenheight = 0; /* last height the user saw */
+static int screenestwidth = 0; /* width of screen in status-line characters */
+static int screenestheight = 0; /* height of screen in status-line characters */
 static int inputbuffer_size = 0;
 static glui32 *inputbuffer = NULL;
 
-static void glkint_get_screen_size(glui32 *, glui32 *);
 static void glkint_resolve_status_height(void);
+static void glkint_estimate_screen_size(void);
+static char *glkint_get_game_id(void);
 
 z_file *glkint_open_interface(z_file *(*game_open_func)(z_file *))
 {
+  /* Clear all of the static variables. We might be restarting (on iOS)
+     so we can't rely on the static initializers. */
+  mainwin = NULL;
+  statusline = NULL;
+  statuswin = NULL;
+  instatuswin = false;
+  statuscurheight = 0; 
+  statusmaxheight = 0;
+  statusseenheight = 0;
+  screenestwidth = 0;
+  screenestheight = 0;
+  /* Skip inputbuffer; that's just a malloced block and a size, so it can 
+     persist across restarts. */
+
+  /* Set up the game-ID hook. (This is ifdeffed because not all Glk
+     libraries have this call.) */
+#ifdef GI_DISPA_GAME_ID_AVAILABLE
+  gidispatch_set_game_id_hook(&glkint_get_game_id);
+#endif /* GI_DISPA_GAME_ID_AVAILABLE */
+
   /* The awkward nature of iOS autosave-restore means that we need to
      retain a reference to the story_stream, and possibly fix it up
      later on. If this isn't iOS, just ignore this juggling. */
@@ -87,10 +111,16 @@ z_file *glkint_open_interface(z_file *(*game_open_func)(z_file *))
   glk_set_window(mainwin);
   instatuswin = false;
 
-  glui32 width, height;
-  glkint_get_screen_size( &width, &height);
-  fizmo_new_screen_size(width, height);
-
+  if (1) {
+      /* First approximation of the screen size has to be based on the
+         story window. When a status window is opened, we'll refine
+         this. */
+      glui32 width, height;
+      glk_window_get_size(mainwin, &width, &height);
+      screenestwidth = width;
+      screenestheight = height;
+  }
+  
   return story_stream;
 }
 
@@ -168,14 +198,14 @@ void glkint_recover_library_state()
   while ((str=glk_stream_iterate(str, &rock)) != NULL) {
     if (rock == 1)
       storystream = str;
-    else if (rock == 2)
+    else if (rock == 4)
       transcriptstream = str;
   }
 
   /* Close the old story stream which we found in the library state. (We're
      about to open a fresh version.) */
   if (storystream) {
-    glk_stream_close(str, NULL);
+    glk_stream_close(storystream, NULL);
   }
 
   game_open_interface(story_stream);
@@ -186,36 +216,18 @@ void glkint_recover_library_state()
       FILETYPE_TRANSCRIPT, FILEACCESS_APPEND);
     restore_stream_2(transcriptzfile);
   }
-}
-
-static void glkint_get_screen_size(glui32 *width, glui32 *height)
-{
-  if (statuswin) {
-    glk_window_get_size(statuswin, width, height);
-    return;
-  }
-  if (mainwin) {
-    glk_window_get_size(mainwin, width, height);
-    return;
-  }
-  /* Fallback values, for when no windows are open at all */
-  *width = 80;
-  *height = 24;
-  return;
+  
+  glkint_estimate_screen_size();
 }
 
 uint8_t glkint_get_screen_height()
 {
-  glui32 width, height;
-  glkint_get_screen_size(&width, &height);
-  return height;
+  return screenestheight;
 }
 
 uint8_t glkint_get_screen_width()
 {
-  glui32 width, height;
-  glkint_get_screen_size(&width, &height);
-  return width;
+  return screenestwidth;
 }
 
 z_colour glkint_get_default_foreground_colour()
@@ -267,6 +279,9 @@ void glkint_reset_interface()
   glk_set_window(mainwin);
   glk_set_style(style_Normal);
   glk_window_clear(mainwin);
+  
+  /* Leave the screen-size estimates alone. Closing the status window
+     doesn't give us new information. */
 }
 
 /* This is called from two points: abort_interpreter() with an error message,
@@ -343,9 +358,7 @@ int16_t glkint_interface_read_line(zscii *dest, uint16_t maximum_length,
       break;
 
     if (event.type == evtype_Arrange) {
-      glui32 width, height;
-      glkint_get_screen_size( &width, &height);
-      fizmo_new_screen_size(width, height);
+      glkint_estimate_screen_size();
       continue;
     }
 
@@ -407,9 +420,7 @@ int glkint_interface_read_char(uint16_t tenth_seconds,
       break;
 
     if (event.type == evtype_Arrange) {
-      glui32 width, height;
-      glkint_get_screen_size( &width, &height);
-      fizmo_new_screen_size(width, height);
+      glkint_estimate_screen_size();
       continue;
     }
 
@@ -545,6 +556,8 @@ void glkint_split_window(int16_t nof_lines)
   else {
     glk_window_set_arrangement(glk_window_get_parent(statuswin), winmethod_Above | winmethod_Fixed, statusmaxheight, statuswin);
   }
+  
+  glkint_estimate_screen_size();
 }
 
 /* If the status height is too large because of last turn's quote box,
@@ -566,6 +579,37 @@ static void glkint_resolve_status_height()
 
   statusseenheight = statusmaxheight;
   statusmaxheight = statuscurheight;
+
+  glkint_estimate_screen_size();
+}
+
+/* Construct an estimate of the current screen size, and pass it to the VM.
+ 
+   The estimate uses the width (in status chars) of the status window --
+   that's what's important for 99% of games. For the height, we add
+   the number of lines in the status and story windows; this won't be
+   perfect (because the fonts are different) but it's close enough.
+ */
+static void glkint_estimate_screen_size()
+{
+    glui32 width, height;
+    
+    if (!statuswin) {
+        /* Leave the screen-size estimates alone. Closing the status
+           window doesn't give us new information. It's better to keep
+           using an old exact measurement of the status window than to
+           approximate it in the story window. */
+        return;
+    }
+    
+    glk_window_get_size(statuswin, &width, &height);
+    screenestwidth = width;
+    screenestheight = height;
+    
+    glk_window_get_size(mainwin, &width, &height);
+    screenestheight += height;
+    
+    fizmo_new_screen_size(screenestwidth, screenestheight);
 }
 
 /* 1 is the status window; 0 is the story window. */
@@ -632,27 +676,32 @@ int glkint_prompt_for_filename(char *UNUSED(filename_suggestion),
 {
   frefid_t fileref = NULL;
   strid_t str = NULL;
-  glui32 usage, fmode;
+  glui32 usage, fmode, strrock;
 
   if (filetype == FILETYPE_SAVEGAME)
   {
     usage = fileusage_SavedGame | fileusage_BinaryMode;
+    strrock = 3;
   }
   else if (filetype == FILETYPE_TRANSCRIPT)
   {
     usage = fileusage_Transcript | fileusage_TextMode;
+    strrock = 4;
   }
   else if (filetype == FILETYPE_INPUTRECORD)
   {
     usage = fileusage_InputRecord | fileusage_TextMode;
+    strrock = 5;
   }
   else if (filetype == FILETYPE_DATA)
   {
     usage = fileusage_Data | fileusage_BinaryMode;
+    strrock = 6;
   }
   else if (filetype == FILETYPE_TEXT)
   {
     usage = fileusage_Data | fileusage_TextMode;
+    strrock = 7;
   }
   else
     return -1;
@@ -671,7 +720,7 @@ int glkint_prompt_for_filename(char *UNUSED(filename_suggestion),
   if (!fileref)
     return -1;
 
-  str = glk_stream_open_file(fileref, fmode, 0);
+  str = glk_stream_open_file(fileref, fmode, strrock);
   /* Dispose of the fileref, whether the stream opened successfully
    * or not. */
   glk_fileref_destroy(fileref);
@@ -686,6 +735,47 @@ int glkint_prompt_for_filename(char *UNUSED(filename_suggestion),
   return 0;
 }
 
+static char *glkint_get_game_id()
+{
+  /* This buffer gets rewritten on every call, but that's okay -- the caller
+     is supposed to copy out the result. */
+  static char buf[32];
+  char ch;
+  int ix;
+  int jx;
+
+  if (!z_mem)
+    return NULL;
+
+  /* This is computed in a way similar to the game-identifier chunk 
+     for the save file. */
+  
+  jx = 0;
+
+  /* Release number: */
+  for (ix=2; ix<4; ix++) {
+    ch = z_mem[ix];
+    buf[jx++] = (((ch >> 4) & 0x0F) + 'A');
+    buf[jx++] = ((ch & 0x0F) + 'A');
+  }
+
+  /* Serial number: */
+  for (ix=0x12; ix<0x18; ix++) {
+    ch = z_mem[ix];
+    buf[jx++] = (((ch >> 4) & 0x0F) + 'A');
+    buf[jx++] = ((ch & 0x0F) + 'A');
+  }
+
+  /* Checksum: */
+  for (ix=0x1C; ix<0x1E; ix++) {
+    ch = z_mem[ix];
+    buf[jx++] = (((ch >> 4) & 0x0F) + 'A');
+    buf[jx++] = ((ch & 0x0F) + 'A');
+  }
+
+  buf[jx++] = '\0';
+  return buf;
+}
 
 struct z_screen_interface glkint_screen_interface =
 {

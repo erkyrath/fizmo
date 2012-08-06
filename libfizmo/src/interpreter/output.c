@@ -96,30 +96,38 @@ void opcode_set_window(void)
   TRACE_LOG("Opcode: SET_WINDOW\n");
   TRACE_LOG("New window number: %d.\n", op[0]);
 
-  if (
-      (upper_window_height == 0)
-      &&
-      (bool_equal(auto_open_upper_window, true))
-     )
-  {
-    // Zokoban.z5 does set_window(1) without splitting the screen.
+  if (op[0] == 1) {
+    if (
+        (upper_window_height == 0)
+        &&
+        (bool_equal(auto_open_upper_window, true))
+       )
+    {
+      // Zokoban.z5 does set_window(1) without splitting the screen.
 
-    //height = (int)(active_interface->get_screen_height() / 2);
-    // -> If the height is larger than 1 or 2, the code above gives
-    //    a wrong cursor position after restoring "Lost Pig".
+      //height = (int)(active_interface->get_screen_height() / 2);
+      // -> If the height is larger than 1 or 2, the code above gives
+      //    a wrong cursor position after restoring "Lost Pig".
 
-    TRACE_LOG("Opening upper window with 1 line for set_window.\n");
+      TRACE_LOG("Opening upper window with 1 line for set_window.\n");
 
 #ifndef DISABLE_BLOCKBUFFER
-    blockbuf_resize(
-        upper_window_buffer,
-        (int)active_interface->get_screen_width(),
-        1);
+      blockbuf_resize(
+          upper_window_buffer,
+          (int)active_interface->get_screen_width(),
+          1);
 #endif // DISABLE_BLOCKBUFFER
 
-    active_interface->split_window((int16_t)1);
+      active_interface->split_window((int16_t)1);
 
-    upper_window_height = 1;
+      upper_window_height = 1;
+    }
+
+#ifndef DISABLE_BLOCKBUFFER
+    if (active_window_number != 1) {
+      set_blockbuf_cursor(upper_window_buffer, 0, 0);
+    }
+#endif // DISABLE_BLOCKBUFFER
   }
 
   active_window_number = (int16_t)op[0];

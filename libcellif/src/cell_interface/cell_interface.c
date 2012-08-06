@@ -2050,8 +2050,6 @@ static int16_t read_line(zscii *dest, uint16_t maximum_length,
 
   TRACE_LOG("Flush finished.\n");
 
-  timeout_millis = (is_timed_keyboard_input_available() == true ? 100 : 0);
-
   TRACE_LOG("1/10s: %d, routine: %d.\n",
       tenth_seconds, verification_routine);
 
@@ -2068,7 +2066,10 @@ static int16_t read_line(zscii *dest, uint16_t maximum_length,
       *tenth_seconds_elapsed = 0;
   }
   else
+  {
+    timeout_millis = 0;
     timed_input_active = false;
+  }
 
   screen_cell_interface->update_screen();
   update_output_colours(active_z_window_id);

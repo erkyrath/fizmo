@@ -1,6 +1,6 @@
 
    Version 0.7.3
- + 0.7.3 was finished at about (?).
+ + 0.7.3 was finished at about Wed Aug 1 21:42:17 CEST 2012.
  - Merged Andrew Plotkin's iOS-fizmo changes: No more raw exit() calls,
    added screeninterface-specific filename prompt, new screeninterface-specific
    filename prompt replaces fizmo_register_ask_user_for_file_function, fixed
@@ -14,6 +14,11 @@
  - Added new option to set number of maximum stored undo steps.
  - Changed blockbuffer initialization to allow for output at any time, made
    fizmo_new_screen_size adapt blockbuffer size correctly.
+ - Fixed a buffer overflow during tokenization, thanks for Andrew Plotkin.
+ - Implemented binary chop dictionary search.
+ - Fixed screen interface invocation in libcellif to not require timeouts
+   from screen interface if not actually required by the game, saving a bit
+   of CPU time.
 
    Version 0.7.2
  + 0.7.2 was finished at about Fri Mar 9 21:01:12 CET 2012.

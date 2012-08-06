@@ -127,12 +127,16 @@ void set_blockbuf_cursor(BLOCKBUF *buffer, int x, int y)
 {
   TRACE_LOG("Set blockbuffer-cursor to x:%d, y:%d.\n", x, y);
 
-  if (x < buffer->width)
+  if (x < 0)
+    buffer->xpos = 0;
+  else if (x < buffer->width)
     buffer->xpos = x;
   else
     buffer->xpos = buffer->width - 1;
 
-  if (y < buffer->height)
+  if (y < 0)
+    buffer->ypos = 0;
+  else if (y < buffer->height)
     buffer->ypos = y;
   else
     buffer->ypos = buffer->height - 1;
@@ -203,7 +207,7 @@ void blockbuf_resize(BLOCKBUF *buffer, int new_width, int new_height)
       buffer->content, new_buffer_size);
 
   // Realign existing lines.
-  if (buffer->width != new_width)
+  if (buffer->width < new_width)
   {
     for (y=buffer->height-1; y>=0; y--)
     {
@@ -254,8 +258,16 @@ void blockbuf_resize(BLOCKBUF *buffer, int new_width, int new_height)
     }
   }
 
-  buffer->width = new_width;
-  buffer->height = new_height;
+  if (new_width > buffer->width) {
+    buffer->width = new_width;
+  }
+
+  if (new_height > buffer->height) {
+    buffer->height = new_height;
+  }
+
+  TRACE_LOG("New blockbuffer dimensions: %d * %d.\n",
+      buffer->width,  buffer->height);
 }
 
 

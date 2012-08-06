@@ -79,6 +79,7 @@ static void delete_undo_frame(struct undo_frame *frame)
 int set_max_undo_steps(int new_max_steps)
 {
   int ix;
+  struct undo_frame** realloced_undo_frames;
 
   /* Free any existing frames beyond the new limit */
   if (undo_index > new_max_steps)
@@ -96,13 +97,15 @@ int set_max_undo_steps(int new_max_steps)
       free(undo_frames);
       undo_frames = NULL;
     }
+    max_undo_steps = 0;
     undo_index = 0;
     return -1;
   }
 
-  if ((undo_frames = (struct undo_frame**)realloc(
+  if ((realloced_undo_frames = (struct undo_frame**)realloc(
           undo_frames, new_max_steps * sizeof(struct undo_frame*))) != NULL)
   {
+    undo_frames = realloced_undo_frames;
     max_undo_steps = new_max_steps;
     return 0;
   }
@@ -303,12 +306,13 @@ void free_undo_memory(void)
   {
     while (undo_index > 0)
     {
-      delete_undo_frame(undo_frames[undo_index]);
       undo_index--;
+      delete_undo_frame(undo_frames[undo_index]);
     }
     free(undo_frames);
     undo_frames = NULL;
   }
+  max_undo_steps = 0;
 }
 
 #endif /* undo_c_INCLUDED */

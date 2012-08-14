@@ -132,9 +132,6 @@ static z_file *glkint_openfile(char *filename, int filetype, int fileaccess)
       return NULL;
     }
 
-    if ((result = malloc(sizeof(z_file))) == NULL)
-      return NULL;
-
     result = zfile_from_glk_strid(str, filename, filetype, fileaccess);
   }
   else if (implementation == FILE_IMPLEMENTATION_STDIO)

@@ -1407,6 +1407,11 @@ void fizmo_start(z_file* story_stream, z_file *blorb_stream,
   active_z_story = NULL;
   z_mem = NULL;
 
+  drop_z_stack_words(z_stack_index - z_stack);
+  number_of_stack_frames = 0;
+  stack_words_from_active_routine = 0;
+  number_of_locals_active = 0;
+
 #ifndef DISABLE_BLOCKBUFFER
   if (upper_window_buffer != NULL)
     destroy_blockbuffer(upper_window_buffer);

@@ -118,6 +118,12 @@ z_file *glkint_open_interface(z_file *(*game_open_func)(z_file *))
          this. */
       glui32 width, height;
       glk_window_get_size(mainwin, &width, &height);
+      if (!width) {
+          /* Unfortunately IosGlk does not support measuring the story
+             window. This confuses some older games (like Trinity),
+             so we have to make up a value. */
+          width = 80;
+      }
       screenestwidth = width;
       screenestheight = height;
   }

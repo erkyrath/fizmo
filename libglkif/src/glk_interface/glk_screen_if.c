@@ -671,8 +671,16 @@ void glkint_erase_window(int16_t window_number)
 void glkint_set_cursor(int16_t line, int16_t column,
     int16_t window)
 {
-  if (window && statuswin)
-    glk_window_move_cursor(statuswin, column-1, line-1);
+    /* if (window && statuswin)
+     glk_window_move_cursor(statuswin, column-1, line-1); */
+
+    /* FIXME: This is a hack to make Freefall.z5 work after autorestore.
+     After restoring, the active_window_number global will be set to 0 (main window)
+     instead of 1 (status window) as it was when autosaving, and this function will
+     be called with window set to 0 instead of 1. This hack makes it ignore the window
+     setting */
+    if (statuswin)
+        glk_window_move_cursor(statuswin, column-1, line-1);
 }
 
 /* Glk doesn't support this. */

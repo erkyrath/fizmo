@@ -758,7 +758,7 @@ char *get_user_homedir()
   {
 #if !defined (__WIN32__)
     pw_entry = getpwuid(getuid());
-    if (pw_entry->pw_dir == NULL)
+    if (pw_entry == NULL || pw_entry->pw_dir == NULL)
       user_homedir = NULL;
     else
       user_homedir = strdup(pw_entry->pw_dir);

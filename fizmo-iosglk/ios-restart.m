@@ -1,9 +1,9 @@
 
-/* glk_screen_if.h
+/* ios-autosave.m
  *
  * This file is part of fizmo.
  *
- * Copyright (c) 2011-2012 Andrew Plotkin and Christoph Ender.
+ * Copyright (c) 2012 Andrew Plotkin.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,25 +29,21 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef glk_screen_if_h_INCLUDED
-#define glk_screen_if_h_INCLUDED
+static int can_restart = NO;
 
-#include <screen_interface/screen_interface.h>
+void iosglk_set_can_restart_flag(int val)
+{
+	can_restart = val;
+}
 
-#ifndef glk_screen_if_c_INCLUDED
-extern struct z_screen_interface glkint_screen_interface;
-#endif // glk_screen_if_c_INCLUDED
+int iosglk_can_restart_cleanly()
+{
+	return can_restart;
+}
 
-typedef struct library_state_data_struct {
-  int active; /* does this structure contain meaningful data? */
-  int statusseenheight;
-  int statusmaxheight;
-  int statuscurheight;
-} library_state_data;
-
-z_file *glkint_open_interface(z_file *(*game_open_func)(z_file *));
-void glkint_recover_library_state(library_state_data *dat);
-void glkint_stash_library_state(library_state_data *dat);
-
-#endif // glk_screen_if_h_INCLUDED
-
+void iosglk_shut_down_process()
+{
+	/* Yes, we really do want to exit the app here. A fatal error has occurred at the interpreter level, so we can't restart it cleanly. The user has either hit a "goodbye" dialog button or the Home button; either way, it's time for suicide. */
+	NSLog(@"iosglk_shut_down_process: goodbye!");
+	exit(1);
+}

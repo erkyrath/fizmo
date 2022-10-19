@@ -29,8 +29,12 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#import "GlkWindow.h"
 #import "GlkStream.h"
 #import "GlkLibrary.h"
+#import "GlkFileRef.h"
+#import "GlkUtilTypes.h"
+#import "Geometry.h"
 #include "fizmo.h"
 #include "savegame.h"
 #include "zpu.h"
@@ -50,12 +54,12 @@ static NSString *documents_dir() {
 	/* We use an old-fashioned way of locating the Documents directory. (The NSManager method for this is iOS 4.0 and later.) */
 	
 	NSArray *dirlist = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-	if (!dirlist || [dirlist count] == 0) {
+	if (!dirlist || dirlist.count == 0) {
 		NSLog(@"unable to locate Documents directory.");
 		return nil;
 	}
 	
-	return [dirlist objectAtIndex:0];
+	return dirlist[0];
 }
 
 /* Do an auto-save of the game state, to an iOS-appropriate location. This also saves the Glk library state.
@@ -66,7 +70,7 @@ static NSString *documents_dir() {
  
 	This is called in the VM thread, just before setting up line input and calling glk_select(). (So no window will actually be requesting line input at this time.)
  */
-int iosglk_do_autosave() {
+int iosglk_do_autosave(void) {
 	GlkLibrary *library = [GlkLibrary singleton];
 	uint8_t *orig_pc;
 
@@ -99,48 +103,43 @@ int iosglk_do_autosave() {
 	glkint_stash_library_state(&library_state);
 	/* The iosglk_library_archive hook will write out the contents of library_state. */
 	
-	NSString *tmplibpath = [dirname stringByAppendingPathComponent:@"autosave-tmp.plist"];
+    NSString *finallibpath = [dirname stringByAppendingPathComponent:@"autosave.plist"];
 	[GlkLibrary setExtraArchiveHook:iosglk_library_archive];
-	res = [NSKeyedArchiver archiveRootObject:library toFile:tmplibpath];
+    NSError *error = nil;
+    NSData *data = [NSKeyedArchiver archivedDataWithRootObject:library requiringSecureCoding:NO error:&error];
+    BOOL result = [data writeToURL:[NSURL fileURLWithPath:finallibpath] options:NSDataWritingAtomic error:&error];
+    res = (result == YES);
 	[GlkLibrary setExtraArchiveHook:nil];
 
 	if (!res) {
-		NSLog(@"library serialize failed!");
+		NSLog(@"library serialize failed! Error:%@", error);
 		return 0;
 	}
 
 	NSString *finalgamepath = [dirname stringByAppendingPathComponent:@"autosave.glksave"];
-	NSString *finallibpath = [dirname stringByAppendingPathComponent:@"autosave.plist"];
 
 	/* This is not really atomic, but we're already past the serious failure modes. */
-	[library.filemanager removeItemAtPath:finallibpath error:nil];
 	[library.filemanager removeItemAtPath:finalgamepath error:nil];
 
-	res = [library.filemanager moveItemAtPath:tmpgamepath toPath:finalgamepath error:nil];
-	if (!res) {
-		NSLog(@"could not move game autosave to final position!");
-		return 0;
-	}
-	res = [library.filemanager moveItemAtPath:tmplibpath toPath:finallibpath error:nil];
-	if (!res) {
-		/* We don't abort out in this case; we leave the game autosave in place by itself, which is not ideal but better than data loss. */
-		NSLog(@"could not move library autosave to final position (continuing)");
-	}
+    error = nil;
+    res = [library.filemanager moveItemAtPath:tmpgamepath toPath:finalgamepath error:&error];
+    if (!res) {
+        NSLog(@"could not move game autosave to final position (continuing) Error: %@", error);
+    }
 
 	return 0;
 }
 
 /* The argument is actually an NSString. We retain it for the next iosglk_find_autosave() call.
  */
-void iosglk_queue_autosave(void *pathnameval) {
+void iosglk_queue_autosave(NSString *pathnameval) {
 	NSString *pathname = pathnameval;
-	normal_start_save = [pathname retain];
+	normal_start_save = pathname;
 }
 
-z_file *iosglk_find_autosave() {
+z_file *iosglk_find_autosave(void) {
 	if (normal_start_save) {
-		strid_t savefile = [[[GlkStreamFile alloc] initWithMode:filemode_Read rock:1 unicode:NO textmode:NO dirname:@"." pathname:normal_start_save] autorelease];
-		[normal_start_save release];
+		strid_t savefile = [[GlkStreamFile alloc] initWithMode:filemode_Read rock:1 unicode:NO textmode:NO dirname:@"." pathname:normal_start_save];
 		normal_start_save = nil;
 		
 		if (savefile) {
@@ -163,7 +162,7 @@ z_file *iosglk_find_autosave() {
 
 /* Delete an autosaved game, if one exists.
  */
-void iosglk_clear_autosave() {
+void iosglk_clear_autosave(void) {
 	GlkLibrary *library = [GlkLibrary singleton];
 	
 	NSString *dirname = documents_dir();
@@ -207,14 +206,14 @@ int iosglk_restore_autosave(z_file *save_file) {
 	if (dirname) {
 		NSString *finallibpath = [dirname stringByAppendingPathComponent:@"autosave.plist"];
 		[GlkLibrary setExtraUnarchiveHook:iosglk_library_unarchive];
-		
-		@try {
-			newlib = [NSKeyedUnarchiver unarchiveObjectWithFile:finallibpath];
-		}
-		@catch (NSException *ex) {
-			// leave newlib as nil
-			NSLog(@"Unable to restore autosave library: %@", ex);
-		}
+        NSError *error = nil;
+        @try {
+            newlib = [NSKeyedUnarchiver unarchivedObjectOfClasses:[NSSet setWithArray:@[[GlkLibrary class], [NSString class], [NSMutableArray class], [NSMutableString class], [GlkWindow class], [GlkStream class], [GlkFileRef class], [NSValue class], [NSNumber class], [GlkStyledLine class], [GlkStyledString class], [GlkGridLine class], [Geometry class]]] fromData:[NSData dataWithContentsOfURL:[NSURL fileURLWithPath:finallibpath]] error:&error];
+        }
+        @catch (NSException *ex) {
+            // leave newlib as nil
+            NSLog(@"Unable to restore autosave library: Exception %@ Error %@", ex, error);
+        }
 
 		[GlkLibrary setExtraUnarchiveHook:nil];
 	}

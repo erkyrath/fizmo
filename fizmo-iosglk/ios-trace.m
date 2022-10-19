@@ -78,7 +78,6 @@ void _trace_log_ios_z_ucs(z_ucs *output)
 		int len = z_ucs_len(output);		
 		NSString *str = [[NSString alloc] initWithBytes:output length:len*sizeof(z_ucs) encoding:NSUTF32LittleEndianStringEncoding];
 		NSLog(@"fizmo: %@", str);
-		[str release];
 	}
 }
 

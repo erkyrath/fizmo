@@ -59,8 +59,8 @@ void iosglk_startup_code()
 	GlkLibrary *library = [GlkLibrary singleton];
 	FizmoGlkDelegate *libdelegate = library.glkdelegate;
 	if (libdelegate) {
-		NSString *path = [libdelegate gamePath];
-		gamepathname = [path retain]; // retain forever
+		NSString *path = libdelegate.gamePath;
+		gamepathname = path; // retain forever
 	}
 	
 	if (!gamepathname || ![library.filemanager isReadableFileAtPath:gamepathname])
@@ -73,7 +73,6 @@ static z_file *iosglk_open_game_stream(z_file *current_stream)
 {
 	if (gamefilestream) {
 		// This is the old stream object; it's just been closed. Discard it.
-		[gamefilestream release];
 		gamefilestream = nil;
 	}
 	

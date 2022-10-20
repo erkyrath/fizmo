@@ -1,9 +1,9 @@
 
-/* glk_screen_if.h
+/* ios-trace.m
  *
  * This file is part of fizmo.
  *
- * Copyright (c) 2011-2012 Andrew Plotkin and Christoph Ender.
+ * Copyright (c) 2012 Andrew Plotkin.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,25 +29,55 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef glk_screen_if_h_INCLUDED
-#define glk_screen_if_h_INCLUDED
+#include <tools/tracelog.h>
+#include <tools/z_ucs.h>
 
-#include <screen_interface/screen_interface.h>
+static BOOL trace_active = NO;
 
-#ifndef glk_screen_if_c_INCLUDED
-extern struct z_screen_interface glkint_screen_interface;
-#endif // glk_screen_if_c_INCLUDED
+void turn_on_trace(void)
+{
+	if (trace_active) {
+		TRACE_LOG("Tracelog already active.\n");
+		return;
+	}
+	
+	trace_active = YES;
+}
 
-typedef struct library_state_data_struct {
-  int active; /* does this structure contain meaningful data? */
-  int statusseenheight;
-  int statusmaxheight;
-  int statuscurheight;
-} library_state_data;
+void turn_off_trace(void)
+{
+	if (!trace_active) {
+		TRACE_LOG("Tracelog already deactivated.\n");
+		return;
+	}
+	
+	trace_active = NO;
+}
 
-z_file *glkint_open_interface(z_file *(*game_open_func)(z_file *));
-void glkint_recover_library_state(library_state_data *dat);
-void glkint_stash_library_state(library_state_data *dat);
+void _trace_log_ios(char *format, ...)
+{
+	char *buf = nil;
+	
+	va_list args;
+	va_start(args, format);
+	vasprintf(&buf, format, args);
+	va_end(args);
+	
+	if (trace_active) {
+		NSLog(@"fizmo: %s", buf);
+	}
+	
+	free(buf);
+}
 
-#endif // glk_screen_if_h_INCLUDED
+void _trace_log_ios_z_ucs(z_ucs *output)
+{
+	if (trace_active) {
+		/* Turn the buffer into an NSString. We'll release this at the end of the function. 
+		 This is an endianness dependency; we're telling NSString that our array of 32-bit words in stored little-endian. (True for all iOS, as I write this.) */
+		int len = z_ucs_len(output);		
+		NSString *str = [[NSString alloc] initWithBytes:output length:len*sizeof(z_ucs) encoding:NSUTF32LittleEndianStringEncoding];
+		NSLog(@"fizmo: %@", str);
+	}
+}
 

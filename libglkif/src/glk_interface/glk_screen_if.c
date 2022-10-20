@@ -43,6 +43,7 @@
 #include "glkstart.h" /* This comes with the Glk library. */
 
 #include "glk_interface.h"
+#include "glk_screen_if.h"
 
 #include <interpreter/fizmo.h>
 #include <interpreter/text.h>
@@ -117,6 +118,12 @@ z_file *glkint_open_interface(z_file *(*game_open_func)(z_file *))
          this. */
       glui32 width, height;
       glk_window_get_size(mainwin, &width, &height);
+      if (!width) {
+          /* Unfortunately IosGlk does not support measuring the story
+             window. This confuses some older games (like Trinity),
+             so we have to make up a value. */
+          width = 80;
+      }
       screenestwidth = width;
       screenestheight = height;
   }
@@ -142,12 +149,15 @@ uint8_t glkint_return_1()
 /* This is called after an autosave-restore (iOS only). We've just
    pulled a new Glk library state from disk. We need to go through it
    and set mainwin, statuswin, etc appropriately.
+ 
+   The argument, if present, supplies extra fizmo-specific data that
+   was stashed in the library state.
 
    Note that at this point, the Glk streams opened by the interpreter
    (the original story file, and a transcript stream if any) have been
    closed. We'll need to update the interpreter with replacements.
  */
-void glkint_recover_library_state()
+void glkint_recover_library_state(library_state_data *dat)
 {
   strid_t storystream = NULL;
   strid_t transcriptstream = NULL;
@@ -217,7 +227,26 @@ void glkint_recover_library_state()
     restore_stream_2(transcriptzfile);
   }
   
+  if (dat && dat->active) {
+    statuscurheight = dat->statuscurheight;
+    statusmaxheight = dat->statusmaxheight;
+    statusseenheight = dat->statusseenheight;
+  }
+  
   glkint_estimate_screen_size();
+}
+
+/* This is called during an autosave (iOS only). It exports the
+   fizmo-specific data which will be needed for the autosave.
+ */
+void glkint_stash_library_state(library_state_data *dat)
+{
+  if (dat) {
+    dat->active = true;
+    dat->statuscurheight = statuscurheight;
+    dat->statusmaxheight = statusmaxheight;
+    dat->statusseenheight = statusseenheight;
+  }
 }
 
 uint8_t glkint_get_screen_height()

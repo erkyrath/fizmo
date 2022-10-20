@@ -1,9 +1,9 @@
 
-/* glk_screen_if.h
+/* ios-autosave.h
  *
  * This file is part of fizmo.
  *
- * Copyright (c) 2011-2012 Andrew Plotkin and Christoph Ender.
+ * Copyright (c) 2012 Andrew Plotkin.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,25 +29,6 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef glk_screen_if_h_INCLUDED
-#define glk_screen_if_h_INCLUDED
-
-#include <screen_interface/screen_interface.h>
-
-#ifndef glk_screen_if_c_INCLUDED
-extern struct z_screen_interface glkint_screen_interface;
-#endif // glk_screen_if_c_INCLUDED
-
-typedef struct library_state_data_struct {
-  int active; /* does this structure contain meaningful data? */
-  int statusseenheight;
-  int statusmaxheight;
-  int statuscurheight;
-} library_state_data;
-
-z_file *glkint_open_interface(z_file *(*game_open_func)(z_file *));
-void glkint_recover_library_state(library_state_data *dat);
-void glkint_stash_library_state(library_state_data *dat);
-
-#endif // glk_screen_if_h_INCLUDED
-
+extern void iosglk_set_can_restart_flag(int val);
+extern int iosglk_can_restart_cleanly(void);
+extern void iosglk_shut_down_process(void);

@@ -57,7 +57,9 @@
 #include "glk_filesys_if.h"
 #include "glk_interface.h"
 
-
+#ifdef IOS_GLK
+#include "fizmo-config.h"
+#endif
 
 static char *vsnprintf_buf = NULL;
 static size_t vsnprintf_buf_size = 0;
@@ -156,7 +158,7 @@ int glkint_closefile(z_file *file_to_close)
   else
   {
     if (file_to_close->file_object)
-      glk_stream_close((strid_t)file_to_close->file_object, NULL);
+        glk_stream_close((__bridge strid_t)file_to_close->file_object, NULL);
     if (file_to_close->filename)
       free(file_to_close->filename);
     file_to_close->file_object = NULL;
@@ -172,7 +174,7 @@ int glkint_getchar(z_file *fileref)
     return z_filesys_interface_c.getchar(fileref);
   else
   {
-    int ch = glk_get_char_stream((strid_t)fileref->file_object);
+      int ch = glk_get_char_stream((__bridge strid_t)fileref->file_object);
     if (ch < 0)
       return -1;
     return ch;
@@ -184,7 +186,7 @@ size_t glkint_getchars(void *ptr, size_t len, z_file *fileref)
   if (fileref->implementation == FILE_IMPLEMENTATION_STDIO)
     return z_filesys_interface_c.getchars(ptr, len, fileref);
   else
-    return glk_get_buffer_stream((strid_t)fileref->file_object, ptr, len);
+      return glk_get_buffer_stream((__bridge strid_t)fileref->file_object, ptr, len);
 }
 
 int glkint_writechar(int ch, z_file *fileref)
@@ -193,7 +195,7 @@ int glkint_writechar(int ch, z_file *fileref)
     return z_filesys_interface_c.writechar(ch, fileref);
   else
   {
-    glk_put_char_stream((strid_t)fileref->file_object, ch);
+      glk_put_char_stream((__bridge strid_t)fileref->file_object, ch);
     return ch;
   }
 }
@@ -204,7 +206,7 @@ size_t glkint_writechars(void *ptr, size_t len, z_file *fileref)
     return z_filesys_interface_c.writechars(ptr, len, fileref);
   else
   {
-    glk_put_buffer_stream((strid_t)fileref->file_object, ptr, len);
+      glk_put_buffer_stream((__bridge strid_t)fileref->file_object, ptr, len);
     return len;
   }
 }
@@ -225,7 +227,7 @@ int glkint_writeucsstring(z_ucs *s, z_file *fileref)
   else {
     int len;
     for (len=0; s[len]; len++) { };
-    glk_put_buffer_stream_uni((strid_t)fileref->file_object, s, len);
+      glk_put_buffer_stream_uni((__bridge strid_t)fileref->file_object, s, len);
     return len;
   }
 }
@@ -305,7 +307,7 @@ long glkint_getfilepos(z_file *fileref)
   if (fileref->implementation == FILE_IMPLEMENTATION_STDIO)
     return z_filesys_interface_c.getfilepos(fileref);
   else
-    return glk_stream_get_position((strid_t)fileref->file_object);
+      return glk_stream_get_position((__bridge strid_t)fileref->file_object);
 }
 
 int glkint_setfilepos(z_file *fileref, long seek, int whence)
@@ -316,13 +318,13 @@ int glkint_setfilepos(z_file *fileref, long seek, int whence)
   {
     if (whence == SEEK_SET)
       glk_stream_set_position(
-          (strid_t)fileref->file_object, seek, seekmode_Start);
+                              (__bridge strid_t)fileref->file_object, seek, seekmode_Start);
     else if (whence == SEEK_CUR)
       glk_stream_set_position(
-          (strid_t)fileref->file_object, seek, seekmode_Current);
+                              (__bridge strid_t)fileref->file_object, seek, seekmode_Current);
     else if (whence == SEEK_END)
       glk_stream_set_position(
-          (strid_t)fileref->file_object, seek, seekmode_End);
+                              (__bridge strid_t)fileref->file_object, seek, seekmode_End);
     return 0;
   }
 }

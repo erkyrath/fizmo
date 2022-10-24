@@ -53,6 +53,10 @@
 #include "undo.h"
 #include "../locales/libfizmo_locales.h"
 
+#ifdef IOS_GLK
+#include "fizmo-config.h"
+#endif
+
 #ifdef ENABLE_DEBUGGER
 #include "debugger.h"
 #endif // ENABLE_DEBUGGER
@@ -334,71 +338,86 @@ static void interpret(/*@null@*/ int frame_index_to_quit_on)
 
   while (terminate_interpreter == INTERPRETER_QUIT_NONE)
   {
-    /*
-    if (start_interrupt_routine != 0)
-    {
-      TRACE_LOG("\nInvoking sound interrupt routine at %x.\n",
-          get_packed_routinecall_address(start_interrupt_routine));
 
-      start_interrupt_routine_buf = start_interrupt_routine;
-      start_interrupt_routine = 0;
-      interpret_from_call_without_result(
-          get_packed_routinecall_address(start_interrupt_routine_buf));
-    }
-    */
+#ifdef IOS_GLK
+    int called_glk_select = 0;
+    @autoreleasepool { /* autoreleasepool */
+      while (called_glk_select == 0 && terminate_interpreter == INTERPRETER_QUIT_NONE) { /* Inner loop */
+#endif /* IOS_GLK */
 
-    if (active_sound_interface != NULL)
-    {
-      if ((start_interrupt_routine
-            = active_sound_interface->get_next_sound_end_routine()) != 0)
-      {
-        TRACE_LOG("\nInvoking sound interrupt routine at %x.\n",
-            get_packed_routinecall_address(start_interrupt_routine));
+        /*
+         if (start_interrupt_routine != 0)
+         {
+         TRACE_LOG("\nInvoking sound interrupt routine at %x.\n",
+         get_packed_routinecall_address(start_interrupt_routine));
 
-        interpret_from_call_without_result(
-            get_packed_routinecall_address(start_interrupt_routine));
-      }
-    }
+         start_interrupt_routine_buf = start_interrupt_routine;
+         start_interrupt_routine = 0;
+         interpret_from_call_without_result(
+         get_packed_routinecall_address(start_interrupt_routine_buf));
+         }
+         */
 
-    TRACE_LOG("\nPC: %lx.\n", (unsigned long int)(pc - z_mem));
+        if (active_sound_interface != NULL)
+        {
+          if ((start_interrupt_routine
+               = active_sound_interface->get_next_sound_end_routine()) != 0)
+          {
+            TRACE_LOG("\nInvoking sound interrupt routine at %x.\n",
+                      get_packed_routinecall_address(start_interrupt_routine));
+
+            interpret_from_call_without_result(
+                                               get_packed_routinecall_address(start_interrupt_routine));
+          }
+        }
+
+        TRACE_LOG("\nPC: %lx.\n", (unsigned long int)(pc - z_mem));
 
 #ifdef ENABLE_DEBUGGER
-    do_breakpoint_actions();
+        do_breakpoint_actions();
 #endif // ENABLE_DEBUGGER
 
 #ifdef ENABLE_TRACING
-    TRACE_LOG("Step #%d.\n", zpu_step_number);
+        TRACE_LOG("Step #%d.\n", zpu_step_number);
 
-    dump_locals();
-    dump_stack();
-    //dump_stack_to_tracelog();
+        dump_locals();
+        dump_stack();
+        //dump_stack_to_tracelog();
 #endif /* ENABLE_TRACING */
-    zpu_step_number++;
+        zpu_step_number++;
 
-    // Remember PC for output of warnings and save-on-read.
-    current_instruction_location = pc;
+        // Remember PC for output of warnings and save-on-read.
+        current_instruction_location = pc;
 
-    parse_opcode(
-        &z_instr,
-        &z_instr_form,
-        &number_of_operands,
-        &pc);
+        parse_opcode(
+                     &z_instr,
+                     &z_instr_form,
+                     &number_of_operands,
+                     &pc);
 
-    current_z_opcode_function = z_opcode_functions[z_instr_form + z_instr];
+        current_z_opcode_function = z_opcode_functions[z_instr_form + z_instr];
 
-    if (current_z_opcode_function == NULL)
-      i18n_translate_and_exit(
-          libfizmo_module_name,
-          i18n_libfizmo_OPCODE_P0D_IN_FORM_P1D_NOT_IMPLEMENTED,
-          -1,
-          (long int)z_instr,
-          (long int)z_instr_form);
+        if (current_z_opcode_function == NULL)
+          i18n_translate_and_exit(
+                                  libfizmo_module_name,
+                                  i18n_libfizmo_OPCODE_P0D_IN_FORM_P1D_NOT_IMPLEMENTED,
+                                  -1,
+                                  (long int)z_instr,
+                                  (long int)z_instr_form);
 
-    current_z_opcode_function();
+        if (current_z_opcode_function == opcode_read)
+          called_glk_select = 1;
 
-    if ((frame_index_to_quit_on != -1)
-        && (frame_index_to_quit_on >= number_of_stack_frames))
-      terminate_interpreter = INTERPRETER_QUIT_ROUTINE;
+        current_z_opcode_function();
+
+        if ((frame_index_to_quit_on != -1)
+            && (frame_index_to_quit_on >= number_of_stack_frames))
+          terminate_interpreter = INTERPRETER_QUIT_ROUTINE;
+
+#ifdef IOS_GLK
+      } /* Inner loop */
+    } /* autoreleasepool */
+#endif /* IOS_GLK */
   }
 
   TRACE_LOG("End of interpreting, PC now at %lx.\n",

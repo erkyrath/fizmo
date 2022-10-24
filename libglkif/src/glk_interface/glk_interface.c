@@ -51,6 +51,10 @@
 #include <tools/filesys.h>
 #include <tools/tracelog.h>
 
+#ifdef IOS_GLK
+#include "fizmo-config.h"
+#endif
+
 static void stream_hexnum(glsi32 val);
 
 
@@ -155,7 +159,7 @@ z_file *zfile_from_glk_strid(strid_t str, char *filename, int filetype,
   if ((result = malloc(sizeof(z_file))) == NULL)
     return NULL;
 
-  result->file_object = str;
+    result->file_object = (__bridge void *)(str);
   result->filename = filename != NULL ? strdup(filename) : NULL;
   result->filetype = filetype;
   result->fileaccess = fileaccess;
@@ -170,6 +174,6 @@ z_file *zfile_from_glk_strid(strid_t str, char *filename, int filetype,
    on iOS. It's not used otherwise. */
 void zfile_replace_glk_strid(z_file *result, strid_t str)
 {
-  result->file_object = str;
+    result->file_object = (__bridge void *)(str);
 }
 

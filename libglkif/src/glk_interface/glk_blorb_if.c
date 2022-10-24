@@ -53,6 +53,9 @@
 #include <tools/i18n.h>
 #include <tools/tracelog.h>
 
+#ifdef IOS_GLK
+#include "fizmo-config.h"
+#endif
 
 //#include "glk.h"
 //#include "glkstart.h" /* This comes with the Glk library. */
@@ -67,7 +70,7 @@ z_blorb_map* glkint_init_blorb_map(z_file *blorb_file)
   if ((result = malloc(sizeof(z_blorb_map))) == NULL)
     return NULL;
 
-  giblorb_create_map((strid_t)blorb_file->file_object, &map_ptr);
+    giblorb_create_map((__bridge strid_t)blorb_file->file_object, &map_ptr);
   result->blorb_map_implementation = map_ptr;
 
   return result;

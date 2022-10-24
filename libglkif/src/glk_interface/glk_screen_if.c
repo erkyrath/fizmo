@@ -55,6 +55,10 @@
 #include <tools/filesys.h>
 #include <tools/tracelog.h>
 
+#ifdef IOS_GLK
+#include "fizmo-config.h"
+#endif
+
 static char* interface_name = "glk-screen";
 static char* interface_version = "0.1.2";
 

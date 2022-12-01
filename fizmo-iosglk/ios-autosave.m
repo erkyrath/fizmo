@@ -208,7 +208,7 @@ int iosglk_restore_autosave(z_file *save_file) {
 		[GlkLibrary setExtraUnarchiveHook:iosglk_library_unarchive];
         NSError *error = nil;
         @try {
-            newlib = [NSKeyedUnarchiver unarchivedObjectOfClasses:[NSSet setWithArray:@[[GlkLibrary class], [NSString class], [NSMutableArray class], [NSMutableString class], [GlkWindow class], [GlkStream class], [GlkFileRef class], [NSValue class], [NSNumber class], [GlkStyledLine class], [GlkStyledString class], [GlkGridLine class], [Geometry class]]] fromData:[NSData dataWithContentsOfURL:[NSURL fileURLWithPath:finallibpath]] error:&error];
+            newlib = [NSKeyedUnarchiver unarchivedObjectOfClasses:[NSSet setWithArray:@[[GlkLibrary class], [NSString class], [NSMutableArray class], [NSMutableString class], [GlkWindow class], [GlkStream class], [GlkFileRef class], [NSValue class], [NSNumber class], [Geometry class]]] fromData:[NSData dataWithContentsOfURL:[NSURL fileURLWithPath:finallibpath]] error:&error];
         }
         @catch (NSException *ex) {
             // leave newlib as nil

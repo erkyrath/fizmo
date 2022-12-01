@@ -208,7 +208,7 @@ int iosglk_restore_autosave(z_file *save_file) {
 		[GlkLibrary setExtraUnarchiveHook:iosglk_library_unarchive];
         NSError *error = nil;
         @try {
-            newlib = [NSKeyedUnarchiver unarchivedObjectOfClasses:[NSSet setWithArray:@[[GlkLibrary class], [NSString class], [NSMutableArray class], [NSMutableString class], [GlkWindow class], [GlkStream class], [GlkFileRef class], [NSValue class], [NSNumber class], [Geometry class]]] fromData:[NSData dataWithContentsOfURL:[NSURL fileURLWithPath:finallibpath]] error:&error];
+            newlib = [NSKeyedUnarchiver unarchivedObjectOfClasses:[NSSet setWithArray:@[[GlkLibrary class], [NSString class], [NSMutableArray class], [NSMutableString class], [NSMutableAttributedString class], [GlkWindow class], [GlkStream class], [GlkFileRef class], [NSValue class], [NSNumber class], [Geometry class]]] fromData:[NSData dataWithContentsOfURL:[NSURL fileURLWithPath:finallibpath]] error:&error];
         }
         @catch (NSException *ex) {
             // leave newlib as nil
@@ -221,6 +221,7 @@ int iosglk_restore_autosave(z_file *save_file) {
 	if (newlib) {
 		[library updateFromLibrary:newlib];
 		glkint_recover_library_state(&library_state);
+        NSLog(@"Autorestore succeeded");
 	}
 	
 	return 1;
@@ -242,7 +243,7 @@ static void iosglk_library_unarchive(NSCoder *decoder) {
 		library_state.statusseenheight = [decoder decodeInt32ForKey:@"fizmo_statusseenheight"];
 		library_state.statusmaxheight = [decoder decodeInt32ForKey:@"fizmo_statusmaxheight"];
 		library_state.statuscurheight = [decoder decodeInt32ForKey:@"fizmo_statuscurheight"];
-		//NSLog(@"### unarchive hook: seenheight %d, maxheight %d, curheight %d", library_state.statusseenheight, library_state.statusmaxheight, library_state.statuscurheight);
+		NSLog(@"### unarchive hook: seenheight %d, maxheight %d, curheight %d", library_state.statusseenheight, library_state.statusmaxheight, library_state.statuscurheight);
 	}
 }
 
